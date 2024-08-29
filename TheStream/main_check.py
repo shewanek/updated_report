@@ -28,9 +28,7 @@ def main():
     tab1, tab2 = st.tabs(["In Arrears Loan", "Collection Status"])
 
     with tab1:
-        if user:
-
-             arrears_acess()
+        arrears_acess()
     with tab2:
         collectionData()
 

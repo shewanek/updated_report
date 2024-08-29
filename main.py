@@ -5,7 +5,7 @@ from time import sleep  # Assuming dash.py contains your dashboard layout
 import sys
 sys.path.append('DASHBOARD')  # Assuming 'DASHBOARD' is the parent directory containing the 'pages' package
 
-import dash
+# import dash
 from navigation import make_sidebar, login_bar
 import sys
 sys.path.append('DASHBOARD')  # Assuming 'DASHBOARD' is the parent directory containing the 'pages' package
@@ -16,8 +16,15 @@ def sessiontInitisaliza():
     if "branch_codes" in st.session_state:
         st.session_state.branch_codes= []
 
+    if "branchSelection" not in st.session_state:
+        st.session_state.branchSelection=None
+    if "districtSelection" not in st.session_state:
+        st.session_state.districtSelection = None
+
 # Main function to handle user login
 def main():
+
+    sessiontInitisaliza()
     st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
     custom_cs = """
     <style>

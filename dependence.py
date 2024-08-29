@@ -17,8 +17,8 @@ def connect_to_database():
             host="localhost",
             port="3306",
             user="root",
-            password="SH36@jit",
-            database="michuDashBoard" 
+            password="mysqlsane!4422",
+            database="michu_brachdashBoard" 
         )
         print("Connected to MySQL database successfully.")
         return mydb

@@ -7,35 +7,16 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, AgGridTheme
 from dependence import connect_to_database, get_branch_code, get_dis_and_branch
 import time
 
-# branch_user = True
-# user = branch_user 
 
 mydb = connect_to_database()
 def role_fetch():
     if mydb is not None:
         cursor = mydb.cursor()
         branch_code, role = get_branch_code(mydb)
-        # print(role, "role of mydb")
-
-        # list_branchcode= branch_code
         return branch_code, role
 
 dis_branch = get_dis_and_branch(mydb)
 
-# branch_code, role = role_fetch()
-# list_branchcode = branch_code
-
-
-# # branch=True
-# if role == 'Branch User':
-#     user = True
-#     # st.write(f"under if of collection data, {role}")
-# else:
-#     user = False
-    # st.write(f"under else of collection data, {role}")
-    
-
-# user=branch
 
 def initialize_session():
     if "selectedRow" not in st.session_state:
@@ -53,7 +34,9 @@ def fetchCollectionData(branchCodes):
         st.session_state.collectionDatas=response.json()
     except requests.exceptions.HTTPError as ero:
         print(f"Http error occurred: {ero}")
-        st.error("Unable to load data")
+        # st.error("Unable to load data")
+        error_message = response.json().get("detail", "Unknown error occurred")
+        st.error(f"{error_message}")
     except Exception as err:
         print("The Error__---",err)
         st.error("Something went wrong:")
@@ -83,6 +66,19 @@ def collectionManagement():
 
         columns_to_display = ["cust_id", "District", "Branch", "customer_name","phone_number","saving_account","approved_amount", "oustanding_total","paid_amount",
                             "application_status","loan_status","collectionStatus", "remark","approved_date","expiry_date"]
+        
+        if st.session_state.districtSelection or st.session_state.branchSelection:
+            if st.session_state.districtSelection and st.session_state.branchSelection:
+                df_merged= df_merged [ 
+                    (df_merged['District']== st.session_state.districtSelection[0]) & 
+                    (df_merged["Branch"]==st.session_state.branchSelection[0])
+                    ]
+            elif st.session_state.districtSelection:
+                df_merged= df_merged [ df_merged['District']==st.session_state.districtSelection[0]]
+            elif st.session_state.branchSelection:
+                df_merged=df_merged[df_merged["Branch"]==st.session_state.branchSelection[0]] 
+
+
         selectedDataFrame = df_merged[columns_to_display]
         gb = GridOptionsBuilder.from_dataframe(selectedDataFrame)
         gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=10)
@@ -178,7 +174,6 @@ def collectionData(branch_code, role):
     else:
         user = False
     initialize_session()
-    
     fetchCollectionData(branch_code)
     if user:
         collectionHistory()
@@ -186,8 +181,6 @@ def collectionData(branch_code, role):
     else:
         
         collectionManagement()
-        # collectionHistory()
-        # st.write("The user is not branch collectionManagement() is clickable")
 
     
 
