@@ -3,6 +3,7 @@ from PIL import Image
 from time import sleep  # Assuming dash.py contains your dashboard layout
 from navigation import login_bar
 from navigation import make_sidebar
+# from pages.dureati_reg import registerr
 
 
 
@@ -96,8 +97,8 @@ def register():
             if st.form_submit_button("Michu New/Unique Customer Registration Form"):
                 sleep(0.5)
                 st.switch_page('pages/unique_register.py')
-            st.write("")
-            st.write("")
+            # st.write("")
+            # st.write("")
             # # if st.form_submit_button("Michu Collection & Conversion Report Form "):
             # #     sleep(0.5)
             # #     st.switch_page('pages/conversionregister.py')
@@ -105,6 +106,10 @@ def register():
             # if st.form_submit_button("Michu Customers Detail Report"):
             #     sleep(0.5)
             #     st.switch_page('pages/branch_dash.py')
+            if st.form_submit_button("Michu Kiyya Product Report"):
+                # registerr()
+                sleep(0.5)
+                st.switch_page('pages/kiyya_branch.py')
             
     with col2:
         # st.subheader(":orange[Report]") 

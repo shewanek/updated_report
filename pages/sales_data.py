@@ -261,7 +261,7 @@ def main():
             """, unsafe_allow_html=True)
         with tab1:
               
-            st.markdown('<span style="color: #e38524;">**Registered by Branch** (<span style="color: #00adef;">which has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+            st.markdown('<span style="color: #e38524;">**Registered by Branch** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
             # st.write(df_unique.drop(columns=['uniqueId', 'userName', 'Upload Date']).reset_index(drop=True).rename(lambda x: x + 1))
             if df_unique is not None and not df_unique.empty:
                 st.write(df_unique.reset_index(drop=True).rename(lambda x: x + 1))
@@ -272,7 +272,7 @@ def main():
             else:
                 st.info("There are no customers registered by your distirct.")
 
-            st.markdown('<span style="color: #e38524;">**Self Registered** (<span style="color: #00adef;">which has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+            st.markdown('<span style="color: #e38524;">**Self Registered** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
             if unique_by_self is not None and not unique_by_self.empty:
                 st.write(unique_by_self.reset_index(drop=True).rename(lambda x: x + 1))
 
@@ -280,7 +280,7 @@ def main():
             else:
                 st.info("There are no self-registered customers at your district.")
 
-            st.markdown('<span style="color: #e38524;">**Registered by the branch, but  has not yet been disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+            st.markdown('<span style="color: #e38524;">**Registered by the branch, but not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
             if registed_by_branch is not None and not registed_by_branch.empty:
                 st.info("NB: This customer is not countable as unique until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered branch, but rather for where the account is open.")
                 st.write(registed_by_branch.reset_index(drop=True).rename(lambda x: x + 1))

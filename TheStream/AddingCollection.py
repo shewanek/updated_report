@@ -9,16 +9,17 @@ from dependence import connect_to_database, get_branch_code, get_dis_and_branch
 # user=branch_user
 mydb = connect_to_database()
 def role_fetch():
+    mydb = connect_to_database()
     if mydb is not None:
-        cursor = mydb.cursor()
+        # cursor = mydb.cursor()
         branch_code, role = get_branch_code(mydb)
-        
+        # st.write("the erro", get_branch_code(mydb))
         # print(role, "role of mydb")
 
         # list_branchcode= branch_code
         return branch_code, role
 dis_branch = get_dis_and_branch(mydb)
-common_code = pd.DataFrame(dis_branch)
+
 
 # branch_code, role = role_fetch()
 # list_branchcode = branch_code

@@ -257,7 +257,7 @@ def main():
 
         with col4:
             # Group by Branch and aggregate data
-            grouped_df = df_combine.groupby(["District", "Branch"]).agg(Total_Registered=("uniqueId", "count")).reset_index().rename(lambda x: x + 1)
+            grouped_df = df_combine.groupby(["District", "Branch", "Product Type"]).agg(Total_Registered=("uniqueId", "count")).reset_index().rename(lambda x: x + 1)
 
             # Display the grouped data in a table
             st.write(":orange[Grouped Data by Branch 👇🏻]")

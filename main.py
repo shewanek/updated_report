@@ -1,15 +1,14 @@
 import streamlit as st
-from dependence import connect_to_database, get_usernames, get_password_by_username, verify_password, get_role_by_username, get_fullname_by_username
+from dependence import connect_to_database, get_usernames, get_password_by_username, verify_password, get_role_by_username, get_fullname_by_username, get_crmusernames, get_crmpassword_by_username, get_role_by_crmusername, get_fullname_by_crmusername
 from PIL import Image
 from time import sleep  # Assuming dash.py contains your dashboard layout
 import sys
 sys.path.append('DASHBOARD')  # Assuming 'DASHBOARD' is the parent directory containing the 'pages' package
 
-import dash
-from navigation import make_sidebar, login_bar
 import sys
 sys.path.append('DASHBOARD')  # Assuming 'DASHBOARD' is the parent directory containing the 'pages' package
 # from pages import forgetp
+from sign_in import sign_up
 
 
 def sessiontInitisaliza():
@@ -18,7 +17,7 @@ def sessiontInitisaliza():
 
 # Main function to handle user login
 def main():
-    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide")
     custom_cs = """
     <style>
         div.block-container {
@@ -74,7 +73,7 @@ def main():
         border-radius:6px
         }
         </style>
-        <center> <h2 class = "title_dash"> Michu Report Portal </h2> </center>
+        <center> <h3 class = "title_dash"> Michu Reporting Portal </h3> </center>
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
@@ -95,10 +94,15 @@ def main():
 
         # Inject custom CSS into the Streamlit app
         st.markdown(custom_ss, unsafe_allow_html=True)
-        username = st.text_input('Username', key='login_username_input', placeholder='Enter Your Username')
+        username = st.text_input('Username', key='login_username_input', placeholder='Enter Your Username').strip()
         password = st.text_input('Password', key='login_password_input', placeholder='Enter Your Password', type='password')
+        back_image = Image.open('pages/MichuHome.jpg')
+        st.sidebar.image(back_image)
 
-        col1,col2 = st.columns([0.5,0.5])
+        # Display the rotating message
+        st.sidebar.markdown('Welcome to <span style="color: #e38524;">MICHU</span> Reporting Portal<span style="color: #00adef; font-size: 20px;">!</span>', unsafe_allow_html=True)
+
+        col1,col2 = st.columns([0.4,0.6])
 
        
         with col1:
@@ -145,6 +149,35 @@ def main():
                             elif role == 'collection_user':
                                 sleep(0.5)
                                 st.switch_page('pages/collection_userdash.py')
+                            elif role == 'under_admin':
+                                sleep(0.5)
+                                st.switch_page('pages/report.py')
+                                
+                            else:
+                                st.warning("No Role given for this User")
+                            st.balloons()
+
+                        else:
+                            st.error('Incorrect Password. Please try again.')
+                    elif username in get_crmusernames(cursor):
+                        stored_password = get_crmpassword_by_username(cursor, username)
+                        if not password.strip():
+                            st.error('Please enter your Password')
+                        elif stored_password and verify_password(password, stored_password):
+                            role = get_role_by_crmusername(cursor, username)
+                            full_name = get_fullname_by_crmusername(cursor, username)
+                            st.session_state.logged_in = True
+                            st.session_state['username'] = username 
+                            st.session_state['password'] = password
+                            st.session_state['role'] = role
+
+                            st.session_state['full_name'] = full_name
+                            # st.success(f'Welcome back, {full_name}!')
+                            st.sidebar.subheader(f'Welcome, {full_name}')
+                            # return username  # Return authenticated username
+                            if role == 'CRM':
+                                sleep(0.5)
+                                st.switch_page("pages/dashB.py")
                                 
                             else:
                                 st.warning("No Role given for this User")
@@ -154,14 +187,19 @@ def main():
                             st.error('Incorrect Password. Please try again.')
                     else:
                         st.warning('Username not found. Please contact Admin if you are a new user.')
-        with  col2:
-            col3, col4 = st.columns([0.5,0.5])
-            with col3:
-                st.write("") 
-            with col4:
-                if st.form_submit_button('Forgot Password?'):
-                    sleep(0.5)
-                    st.switch_page("pages/forgetps.py")
+            
+        # with  col2:
+        col3, col4, col5 = st.columns([0.4,0.3, 0.3])
+        with col3:
+            st.write("")
+            st.write("Don't have an account?")
+        with col4:
+            if st.form_submit_button('Sign Up'):
+                sign_up()
+        with col5:
+            if st.form_submit_button('Forgot Password?'):
+                sleep(0.5)
+                st.switch_page("pages/forgetps.py")
    
 
 if __name__ == '__main__':

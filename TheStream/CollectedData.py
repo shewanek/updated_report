@@ -13,12 +13,15 @@ import time
 mydb = connect_to_database()
 def role_fetch():
     if mydb is not None:
-        cursor = mydb.cursor()
-        branch_code, role = get_branch_code(mydb)
+        # cursor = mydb.cursor()
+        if get_branch_code(mydb) is not None: 
+            branch_code, role = get_branch_code(mydb)
         # print(role, "role of mydb")
 
         # list_branchcode= branch_code
-        return branch_code, role
+            return branch_code, role
+        else:
+            return None
 
 dis_branch = get_dis_and_branch(mydb)
 
