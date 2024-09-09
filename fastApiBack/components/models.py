@@ -1,6 +1,10 @@
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, UUID, Text, func
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, UUID, Text, func, Enum, DECIMAL, Text, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 import uuid
+
+from sqlalchemy.dialects.mysql import CHAR
+
+import enum
 from .database import Base
 
 # Base = declarative_base()
@@ -50,19 +54,37 @@ class updatingData(Base):
     created_date = Column(DateTime)  # `timestamp` in MySQL
 
 
+# Enums
+class GenderEnum(str, enum.Enum):
+    Male = 'Male'
+    Female = 'Female'
 
-# class AprilCollection(Base):
-#     __tablename__ = 'apprilCollection'
-    
-#     collectionId = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-#     userId = Column(String(36))
-#     customerName = Column(Text, nullable=True)
-#     customerPhone = Column(Text, nullable=True)
-#     customerAccount = Column(Text, nullable=True)
-#     callResponce = Column(String(255))
-#     paymentStatus = Column(String(255))
-#     payedAmount = Column(Float)
-#     date = Column(Date)
+class MaritalStatusEnum(str, enum.Enum):
+    Unmarried = 'Unmarried'
+    Married = 'Married'
+    Divorced = 'Divorced'
+    Widowed = 'Widowed'
 
-#     createdAt=Column(DateTime, default=func.now())
-#     updatedAt=Column(DateTime, default=func.now())
+class Kiyya(Base):
+    __tablename__ = 'kiyya_customer'
+
+    kiyya_id = Column(CHAR(36), primary_key=True)
+    userId = Column(String(36))
+    fullName = Column(String(255))
+    phone_number = Column(String(36))
+    account_number = Column(String(36))
+    customer_ident_type = Column(String(255))
+    gender = Column(Enum(GenderEnum))
+    marital_status = Column(Enum(MaritalStatusEnum))
+    date_of_birth = Column(Date)
+    region = Column(String(255))
+    zone_subcity = Column(String(255))
+    woreda = Column(String(255))
+    educational_level = Column(String(255))
+    economic_sector = Column(String(255))
+    line_of_business = Column(String(255))
+    initial_working_capital = Column(DECIMAL(15, 2))
+    source_of_initial_capital = Column(String(100))
+    daily_sales = Column(DECIMAL(15, 2))
+    purpose_of_loan = Column(Text)
+    registered_date = Column(TIMESTAMP)

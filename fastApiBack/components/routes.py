@@ -141,3 +141,50 @@ def update_collection_data(data: schemas.confirmCollection, db: Session = Depend
         logger.error(f"An unexpected error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail="Something went wrong")
     
+
+
+@router.get("/kiyya_customers/", response_model=List[schemas.CustomerResponse])
+def get_kiyya_customer(db: Session = Depends(get_db)): 
+    try:
+        # Query customers in descending order and apply pagination
+        customers = db.query(models.Kiyya).order_by(models.Kiyya.registered_date.desc())
+
+        if not customers:
+            logger.warning("No customers found.")
+            raise HTTPException(status_code=404, detail="No customers found.")
+
+        logger.info("Fetched customers successfully.")
+        return customers
+
+    except SQLAlchemyError as e:
+        logger.error(f"Database error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="Database query failed")
+
+    except Exception as e:
+        logger.error(f"Unexpected error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+    
+
+@router.get("/recent_kiyyaCustomers/",response_model=schemas.CustomerResponse)
+def get_kiyya_customer(db: Session = Depends(get_db)): #page: int = 1, page_size: int = 10
+    try:
+        # Query customers in descending order and apply pagination
+        customers = db.query(models.Kiyya).order_by(models.Kiyya.registered_date.desc()).first()
+    
+
+        if not customers:
+            logger.warning("No customers found.")
+            raise HTTPException(status_code=404, detail="No customers found.")
+
+        logger.info("Fetched customers successfully.")
+        return customers
+
+    except SQLAlchemyError as e:
+        logger.error(f"Database error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="Database query failed")
+
+    except Exception as e:
+        logger.error(f"Unexpected error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+    
+

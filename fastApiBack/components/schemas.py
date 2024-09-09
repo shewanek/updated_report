@@ -86,3 +86,32 @@ class apprilSchemas(BaseModel):
     date: str 
     # createdAt:datetime
     # updatedAt:datetime
+
+
+class CustomerResponse(BaseModel):
+    kiyya_id: str
+    userId: str
+    fullName: str
+    phone_number: str
+    account_number: str
+    gender: str
+    marital_status: str
+    date_of_birth: date
+    region: str
+    zone_subcity: str
+    woreda: str
+    educational_level: str
+    economic_sector: str
+    line_of_business: str
+    initial_working_capital: float
+    source_of_initial_capital: str
+    daily_sales: float
+    purpose_of_loan: Optional[str]
+    registered_date: datetime  # Ensure it's a datetime object, will auto-convert to string
+
+    class Config:
+        orm_mode = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()  # Convert datetime to ISO string format
+        }
+
