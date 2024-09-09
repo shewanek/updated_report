@@ -9,16 +9,16 @@ import json
 def connect_to_database():
     try:
         mydb = mysql.connector.connect(
-            # host="63.34.199.220",
-            # port="3306",
-            # user="sane",
-            # password="sanemysql!2244",
-            # database="michu_dashBoard"
-            host="localhost",
+            host="63.34.199.220",
             port="3306",
-            user="root",
-            password="SH36essti",
-            database="michuDashBoard" 
+            user="sane",
+            password="sanemysql!2244",
+            database="michu_dashBoard"
+            # host="localhost",
+            # port="3306",
+            # user="root",
+            # password="SH36essti",
+            # database="michuDashBoard" 
         )
         print("Connected to MySQL database successfully.")
         return mydb
@@ -2385,6 +2385,20 @@ def load_kiyya_data(mydb):
 
 
     return merged_df_1, merged_df_2
+
+
+def load_kiyya_report_data(mydb):
+    
+
+    # df_user_info = pd.DataFrame(fetch_data(f"SELECT * FROM user_info WHERE userId = '{user_id}'", mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role', 'password', 'ccreatedAt'])
+    # Filtered queries for data starting from July 1
+    keyya_customer_query = f"SELECT * FROM kiyya_customer"
+    
+    kiyya_customer = pd.DataFrame(fetch_data(keyya_customer_query, mydb), columns=['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
+    
+
+    return kiyya_customer
+
 
 
 

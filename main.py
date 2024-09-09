@@ -174,6 +174,10 @@ def main():
                             if role == 'CRM':
                                 sleep(0.5)
                                 st.switch_page("pages/dashB.py")
+
+                            elif role == 'report':
+                                sleep(0.5)
+                                st.switch_page("pages/kiyyaa_Report.py")
                                 
                             else:
                                 st.warning("No Role given for this User")
