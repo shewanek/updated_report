@@ -51,7 +51,7 @@ def main():
     custom_css = """
     <style>
         div.block-container {
-            padding-top: 1rem; /* Adjust this value to reduce padding-top */
+            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
         }
     </style>
     """
@@ -125,7 +125,7 @@ def main():
         st.sidebar.header("Please filter")
 
         role = st.session_state.get("role", "")
-        if role == "Admin" or role == "Sales Admin":
+        if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
             district = st.sidebar.multiselect("Select District", options=df_merged["District"].dropna().unique())
 
             if not district:
@@ -196,7 +196,7 @@ def main():
 
 
         
-        if role == "Admin" or role == "Sales Admin":
+        if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
             if not district and not branch:
                 df_merged = df_merged
             elif district:
@@ -214,7 +214,7 @@ def main():
             </style>
         """
         st.markdown(hide_sidebar_style, unsafe_allow_html=True)
-        if role == "Admin":
+        if role == "Admin" or role == 'under_admin' or role == 'under_admin':
             home_sidebar()
         else:
             make_sidebar1()
@@ -239,7 +239,7 @@ def main():
         
         # -- for admin and sales admin --
 
-        if role == "Admin" or role == "Sales Admin":
+        if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
             tab1, tab2 = st.tabs(["📈 Aggregate Report", "🗃 Report per District & Branch"])
             # Drop duplicate target_Id and actual_Id
             with tab1:
@@ -390,9 +390,9 @@ def main():
                     }
 
                     # Calculate 'Percentage(%)' for each metric
-                    aggregated_data['Percentage(%) Unique Customer'] = (aggregated_data['Actual Unique Customer'] / aggregated_data['Target Unique Customer']) * 100
-                    aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account']) * 100
-                    aggregated_data['Percentage(%) Disbursed Amount'] = (aggregated_data['Actual Disbursed Amount'] / aggregated_data['Target Disbursed Amount']) * 100
+                    aggregated_data['Percentage(%) Unique Customer'] = (aggregated_data['Actual Unique Customer'] / aggregated_data['Target Unique Customer'] * 100 if aggregated_data['Target Unique Customer'] != 0 else 0)
+                    aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account'] * 100 if aggregated_data['Target Number Of Account'] != 0 else 0)
+                    aggregated_data['Percentage(%) Disbursed Amount'] = (aggregated_data['Actual Disbursed Amount'] / aggregated_data['Target Disbursed Amount'] * 100 if aggregated_data['Target Disbursed Amount'] != 0 else 0)
 
                     # Define the metrics
                     metrics = ['Unique Customer', 'Number Of Account', 'Disbursed Amount']
@@ -1280,9 +1280,10 @@ def main():
                     }
 
                     # Calculate 'Percentage(%)' for each metric
-                    aggregated_data['Percentage(%) Unique Customer'] = (aggregated_data['Actual Unique Customer'] / aggregated_data['Target Unique Customer']) * 100
-                    aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account']) * 100
-                    aggregated_data['Percentage(%) Disbursed Amount'] = (aggregated_data['Actual Disbursed Amount'] / aggregated_data['Target Disbursed Amount']) * 100
+                    aggregated_data['Percentage(%) Unique Customer'] = (aggregated_data['Actual Unique Customer'] / aggregated_data['Target Unique Customer'] * 100 if aggregated_data['Target Unique Customer'] != 0 else 0)
+                    aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account'] * 100 if aggregated_data['Target Number Of Account'] != 0 else 0)
+                    aggregated_data['Percentage(%) Disbursed Amount'] = (aggregated_data['Actual Disbursed Amount'] / aggregated_data['Target Disbursed Amount'] * 100 if aggregated_data['Target Disbursed Amount'] != 0 else 0)
+
 
                     # Define the metrics
                     metrics = ['Unique Customer', 'Number Of Account', 'Disbursed Amount']

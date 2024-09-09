@@ -1,9 +1,10 @@
 import streamlit as st
-from dependence import connect_to_database, get_usernames, insert_customer, validate_full_name, get_duretiphone, get_duretiacount
+from dependence import connect_to_database, get_usernames, get_crmusernames
 from PIL import Image
 from time import sleep
 from navigation import login_bar
 from navigation import make_sidebar
+from pages.forgetpassword import registertion
            
 # Main function to handle user sign-up
 def register():
@@ -91,17 +92,18 @@ def register():
                     cursor = mydb.cursor()
                     if  not user_name.strip():
                         st.warning('Please enter your user name to proceed')
-                    elif user_name not in get_usernames(cursor):
+                    elif user_name not in get_usernames(cursor) and user_name not in get_crmusernames(cursor):
                         st.warning('We do not have your user name in our database. If you\'re new or you can\'t remember your username, please try getting in touch with the administrator.') 
                     
                     
                     else:
                         st.session_state['username'] = user_name
-                        st.switch_page("pages/forgetpassword.py")
+                        registertion()
+                        # st.switch_page("pages/forgetpassword.py")
                     cursor.close()
                     mydb.close()
         with col3:
-            if st.form_submit_button(':Gold[Log In]'):
+            if st.form_submit_button(':orange[Log In]'):
                 sleep(0.5)
                 st.switch_page("main.py")
        

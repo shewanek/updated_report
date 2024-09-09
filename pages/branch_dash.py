@@ -222,7 +222,7 @@ def main():
             """, unsafe_allow_html=True)
         tab1, tab2, tab3, tab4 = st.tabs(["Unique", "In Arrears", "Closed", "Active"])
         with tab1:
-            st.markdown('<span style="color: #e38524;">**Registered by Branch** (<span style="color: #00adef;">which has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+            st.markdown('<span style="color: #e38524;">**Registered by Branch** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
             if unique_cust_by_branch is not None and not unique_cust_by_branch.empty:
                 st.write(unique_cust_by_branch.reset_index(drop=True).rename(lambda x: x + 1))
                 # df = unique_customer.drop(columns=['uniqueId', 'userName'])
@@ -231,7 +231,7 @@ def main():
             else:
                 st.info("There are no customers registered by your branch.")
 
-            st.markdown('<span style="color: #e38524;">**Self Registered** (<span style="color: #00adef;">which has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+            st.markdown('<span style="color: #e38524;">**Self Registered** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
             if unique_cust_by_self is not None and not unique_cust_by_self.empty:
                 st.write(unique_cust_by_self.reset_index(drop=True).rename(lambda x: x + 1))
                 # df = unique_customer.drop(columns=['uniqueId', 'userName'])
@@ -243,7 +243,7 @@ def main():
 
             # st.markdown('<span style="color: #e38524;">**Today Registered By Branch (Live)**</span> 👇🏻', unsafe_allow_html=True)
 
-            st.markdown('<span style="color: #e38524;">**Registered by the branch, but  has not yet been disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+            st.markdown('<span style="color: #e38524;">**Registered by the branch, but not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
             if registed_by_branch is not None and not registed_by_branch.empty:
                 st.info("NB: This customer is not countable as unique until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered branch, but rather for where the account is open.")
                 st.write(registed_by_branch.reset_index(drop=True).rename(lambda x: x + 1))

@@ -185,7 +185,7 @@ def main():
         
         # Filter branches based on selected districts
         if district:
-            st.session_state.districtSelection=district
+            # st.session_state.district=district
             filtered_branches = sorted(set(df_unique_all[df_unique_all["District"].isin(district)]["Branch"].dropna().unique()) |
                                        set(unique_customer[unique_customer["District"].isin(district)]["Branch"].dropna().unique()) |
                                        set(unique_by_self[unique_by_self["District"].isin(district)]["Branch"].dropna().unique()) |
@@ -194,8 +194,7 @@ def main():
                                        set(df_combine_active[df_combine_active["District"].isin(district)]["Branch"].dropna().unique()) |
                                        set(df_combine_arrears[df_combine_arrears["District"].isin(district)]["Branch"].dropna().unique()))
         else: 
-            st.session_state.districtSelection=None
-            st.session_state.branchSelection=None
+        
             filtered_branches = combined_branches
 
         branch = st.sidebar.multiselect("Select Branch", options=filtered_branches)
@@ -218,10 +217,6 @@ def main():
             df_combine_arrears = df_combine_arrears[df_combine_arrears["District"].isin(district)]
         
         if branch:
-            st.session_state.branchSelection=branch
-            # st.session_state.district=district
-
-            
             df_unique_all = df_unique_all[df_unique_all["Branch"].isin(branch)]
             unique_customer = unique_customer[unique_customer["Branch"].isin(branch)]
             unique_by_self = unique_by_self[unique_by_self["Branch"].isin(branch)]

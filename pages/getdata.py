@@ -2,16 +2,8 @@ import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-from dependence import connect_to_database, load_dataframes, load_unquie, load_convertion, load_unquiecustomer, load_customer_detail
+from dependence import connect_to_database, load_convertion, load_unquiecustomer, load_customer_detail
 from navigation import home_sidebar
-import pandas as pd
-from streamlit_option_menu import option_menu
-import mysql.connector
-import plotly.express as px
-import time
-import streamlit_authenticator as stauth
-import hashlib
-import os
 
 
 def main():
@@ -91,9 +83,6 @@ def main():
     mydb = connect_to_database()
     if mydb is not None:
         cursor = mydb.cursor()
-        # df_combine = load_dataframes(mydb)
-        # df_unique = load_unquie(mydb)
-        df_conversion = load_convertion(mydb)
 
         unique_customer, unique_by_self, registed_by_branch, df_unique_all = load_unquiecustomer(mydb)
         df_combine_closed, df_combine_active, df_combine_arrears = load_customer_detail(mydb)
@@ -256,22 +245,23 @@ def main():
         tab1, tab2, tab3, tab4 = st.tabs(["Unique", "In Arrears", "Closed", "Active"])
         with tab1:
             # Display unique data in a table  
-            st.markdown('<span style="color: #e38524;">**Registered by Branch** (<span style="color: #00adef;">which has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+            st.markdown('<span style="color: #e38524;">**Registered by Branch** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
             # st.write(df_unique.drop(columns=['uniqueId', 'userName', 'Upload Date']).reset_index(drop=True).rename(lambda x: x + 1))
             st.write(unique_customer.reset_index(drop=True).rename(lambda x: x + 1))
             # df = df_unique.drop(columns=['uniqueId', 'userName'])
             # csv = df.to_csv(index=False)
             # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
 
-            st.markdown('<span style="color: #e38524;">**Self Registered** (<span style="color: #00adef;">which has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+            st.markdown('<span style="color: #e38524;">**Self Registered** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
             st.write(unique_by_self.reset_index(drop=True).rename(lambda x: x + 1))
 
             # st.markdown('<span style="color: #e38524;">**Today Registered By Branch (Live)**</span> 👇🏻', unsafe_allow_html=True)
 
-            st.markdown('<span style="color: #e38524;">**Registered by the branch, but  has not yet been disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+            st.markdown('<span style="color: #e38524;">**Registered by the branch, but not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
             st.info("NB: This customer is not countable as unique until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered branch, but rather for where the account is open.")
             st.write(registed_by_branch.reset_index(drop=True).rename(lambda x: x + 1))
-
+        
+    
 
         with tab2:
             st.markdown('<span style="color: #e38524;">**Michu Customer** (<span style="color: #00adef;">In Arrears Status </span>)</span> 👇🏻', unsafe_allow_html=True)

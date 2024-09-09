@@ -43,13 +43,8 @@ def get_active_branch_customer(branchData:schemas.BranchCustomer, db:Session=Dep
         ).all()
 
         if not branchStatCustomer:
-            raise HTTPException(status_code=404, detail="No data available for loans in arrears.")
+            raise HTTPException(status_code=404, detail="Data doesn't exist")
         return branchStatCustomer
-    
-    except HTTPException as e:
-        # Log the error and re-raise the HTTPException
-        logger.error(f"HTTP error occurred: {e.detail}")
-        raise e  # Re-raise the HTTPException without changing it
     except SQLAlchemyError as error:
         logger.error(f"Data base query failed: {str(error)}")
 
@@ -84,19 +79,13 @@ def addCollection(collectionData: schemas.addCollection, db: Session = Depends(g
 @router.post("/collectionDatas", status_code=status.HTTP_200_OK)
 def get_collected_data(branch_codes: List[str]=Body(...), db: Session = Depends(get_db)):
     try:
+        # Query for multiple branch codes using the `in_` clause
         collection_datas = db.query(models.updatingData).filter(models.updatingData.branch_code.in_(branch_codes)).all()
 
         if not collection_datas:
-            logger.warning("No collection data found for the given branch codes")
-            raise HTTPException(status_code=404, detail="No collection data found for the specified branch codes.")
+            raise HTTPException(status_code=404, detail="No collection data found for the given branch codes")
 
         return collection_datas
-    
-
-    except HTTPException as e:
-        # Log the error and re-raise the HTTPException
-        logger.error(f"HTTP error occurred: {e.detail}")
-        raise e  # Re-raise the HTTPException without changing it
 
     except SQLAlchemyError as e:
         logger.error(f"Data query failed: {str(e)}")
@@ -128,6 +117,7 @@ def update_collection_data(data: schemas.confirmCollection, db: Session = Depend
         update_customer_list.loan_status = data.loan_status
         update_customer_list.oustanding_total = data.oustanding_total
 
+        print("The data to be updated_____------__", data)
         db.commit()
         db.refresh(updating_data)
 

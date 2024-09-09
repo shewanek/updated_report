@@ -69,7 +69,30 @@ def make_sidebar():
             elif get_current_page_name() != "main":
                 # Redirect to the main page if the user is not logged in
                 st.switch_page("main.py")
+        elif role == "CRM":
+            if st.session_state.get("logged_in", False):
+                st.write("") 
+                
+                # # Create two columns layout
+                # coll1, coll2 = st.columns([0.4, 0.6])
+                
 
+                # with coll1:
+                #     if st.button("Home"):
+                #         home()
+
+                col3, col4 = st.columns([0.4, 0.7])
+                with col3:
+                    if st.button('LogOut'):
+                        logout()
+                with col4:
+                    if st.button('Change Password'):
+                        password()
+            elif get_current_page_name() != "main":
+                # Redirect to the main page if the user is not logged in
+                st.switch_page("main.py")
+                
+                
 
         elif role == "District User":
              # Check both logged_in and sign_in session states
@@ -378,6 +401,24 @@ def make_sidebar2():
             elif get_current_page_name() != "main":
                 # Redirect to the main page if the user is not logged in
                 st.switch_page("main.py")
+        elif role == "under_admin":
+            # Check both logged_in and sign_in session states
+            if st.session_state.get("logged_in", False):
+                st.write("") 
+                
+                # Create two columns layout
+                col1, col2 = st.columns([0.4, 0.6])
+
+                with col1:
+                    if st.button("LogOut"):
+                        logout()
+                with col2:
+                    if st.button('Change Password'):
+                        password()
+
+            elif get_current_page_name() != "main":
+                # Redirect to the main page if the user is not logged in
+                st.switch_page("main.py")
 
         elif role == "District User":
              # Check both logged_in and sign_in session states
@@ -449,6 +490,29 @@ def home_sidebar():
                 with coll1:
                     if st.button("Home"):
                         home()
+
+                with coll2:
+                    if st.button("LogOut"):
+                        logout()
+                        # role = st.session_state.get("role", "") 
+                        # st.session_state.role = ""
+                
+
+            elif get_current_page_name() != "main":
+                # Redirect to the main page if the user is not logged in
+                st.switch_page("main.py")
+
+        elif role == 'under_admin':
+            # Check both logged_in and sign_in session states
+            if st.session_state.get("logged_in", False):
+                st.write("") 
+                
+                # Create two columns layout
+                coll1, coll2 = st.columns([0.6, 0.5])
+
+                with coll1:
+                    if st.button("Home"):
+                        home_report()
 
                 with coll2:
                     if st.button("LogOut"):
@@ -597,3 +661,9 @@ def coluser_home():
     st.info('go to home successful!')
     sleep(0.5)
     st.switch_page("pages/collection_userdash.py")
+
+def home_report():
+    st.session_state["logged_in"] = True
+    st.info('go to home successful!')
+    sleep(0.5)
+    st.switch_page("pages/report.py")
