@@ -2236,6 +2236,12 @@ def load_all_women_data(mydb):
     combined_user = pd.concat([crm_user_list, di_br_list], axis=0)
     
 
+    
+
+    # # Check if crm_id_result is empty
+    # if not crm_id_result:
+    #     st.warning("No CRM ID found for the current user.")
+    #     return pd.DataFrame(), pd.DataFrame()
 
     dureti_customer_query = f"SELECT * FROM women_product_customer"
     unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"

@@ -11,10 +11,6 @@ sys.path.append('DASHBOARD')  # Assuming 'DASHBOARD' is the parent directory con
 from sign_in import sign_up
 
 
-def sessiontInitisaliza():
-    if "branch_codes" in st.session_state:
-        st.session_state.branch_codes= []
-
 # Main function to handle user login
 def main():
     st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide")
