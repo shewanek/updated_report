@@ -8,7 +8,7 @@ def kiyya_register():
     username = st.session_state.get("username", "")
     full_name = st.session_state.get("full_name", "")
 
-    with st.form(key='customer_form'):
+    with st.form(key='customer_form', clear_on_submit= True):
         name_key = 'name_input'
         phone_key = 'phone_input'
         account_key = 'account_input'
@@ -73,7 +73,7 @@ def kiyya_register():
         source_of_initial_capital = st.selectbox("Source of Initial Capital", ["Select Source of Initial Capital", "Family", "Own", "Fund", "Loan"], key=source_key)
 
         # Daily Sales
-        daily_sales = st.number_input("Daily Sales", key = daily_key, value=None, step=1.0, placeholder='Enter Daily Sales')
+        monthly_income = st.number_input("Monthly Income", key = daily_key, value=None, step=1.0, placeholder='Enter Monthly Income')
 
         # Purpose of the Loan
         purpose_of_loan = st.text_area("Purpose of the Loan", placeholder="Write purpose of the loan", key=purpose_key).strip()
@@ -104,8 +104,11 @@ def kiyya_register():
                     # Check if the user has entered a value for Daily Sales
                     elif initial_working_capital is None or initial_working_capital == 0.00:
                         st.error("Please enter a valid initial working capital amount.")
-                    elif daily_sales is None or daily_sales == 0.00:
+                    elif monthly_income is None or monthly_income == 0.00:
                         st.error("Please enter a valid Daily Sales amount.")
+                    # Check if the date is selected (mandatory check)
+                    elif not date_of_birth:
+                        st.error("Please select your Date of Birth.")
 
                     elif not validate_full_name(name):
                         st.error('Please enter valid name (First name and father name)') 
@@ -124,7 +127,7 @@ def kiyya_register():
 
                     else:
                         
-                        if kiyya_customer(mydb, cursor, username, name, phone_nmuber, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, daily_sales, purpose_of_loan):
+                        if kiyya_customer(mydb, cursor, username, name, phone_nmuber, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan):
                             st.success(f" {name} has been successfully registered!")
                         else:
                             st.error("Error, the entered data is not registered; please contact the administrator.")

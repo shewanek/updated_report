@@ -1,8 +1,6 @@
 import streamlit as st
 from dependence import connect_to_database, validate_username, get_usernames, insert_crmuser, get_employe_usename, get_employe_id, get_employe_user
-from PIL import Image
-from time import sleep  # Assuming dash.py contains your dashboard layout
-import json
+
 
 # Establish database connection
 # mydb = connect_to_database()

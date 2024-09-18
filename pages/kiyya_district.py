@@ -1,11 +1,12 @@
 import streamlit as st
+import pandas as pd
 from PIL import Image
 from time import sleep  # Assuming dash.py contains your dashboard layout
 from streamlit_extras.metric_cards import style_metric_cards
 from navigation import make_sidebar1
 from pages.dureati_reg import registerr
 from pages.kiyya_register import kiyya_register
-from dependence import connect_to_database, load_women_data
+from dependence import connect_to_database, load_women_data, load_kiyya_data, load_kiyya_branch_data, load_formal_branch_data
            
 # Main function to handle user sign-up
 def register():
@@ -65,7 +66,7 @@ def register():
         border-radius:6px
         }
         </style>
-        <center> <h3 class = "title_dash"> Kiyya Reporting Portal </h3> </center>
+        <center> <h3 class = "title_dash"> Michu Kiyya Reporting Portal </h3> </center>
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
@@ -89,38 +90,98 @@ def register():
     # st.sidebar.write(f'Welcome, :orange[{full_name}]')
     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
    
-    # back_image = Image.open('pages/kiyya.jpg')
-    # st.sidebar.image(back_image)
                         
     make_sidebar1()
     st.markdown(custom_cs, unsafe_allow_html=True)
     mydb = connect_to_database()
     if mydb is not None:
-        combined_cust_by_crm, crm_cust_only = load_women_data(mydb)
-        col4, col5 = st.columns([0.6, 0.4])
-        with col4:
-            with st.form(key = 'Create_crmdash', clear_on_submit=True):
-                # col1, col2, col3 = st.columns([0.1, 0.8, 0.1])
-                # with col2:
-                # st.markdown('<div class="centered-form">', unsafe_allow_html=True)
-                # if st.form_submit_button("Michu Women Targeted, Registered Report"):
-                #     sleep(0.5)
-                #     st.switch_page('pages/dash.py')
-                
-            
+        # combined_cust_by_crm, crm_cust_only = load_women_data(mydb)
+        combined_cust_by_crm, crm_cust_only = load_kiyya_data(mydb)
+        f_combined_cust_by_crm, f_crm_cust_only = load_women_data(mydb)
+        b_combined_cust_by_crm, b_crm_cust_only = load_kiyya_branch_data(mydb)
+        fb_combined_cust_by_crm, fb_crm_cust_only= load_formal_branch_data(mydb)
+
+
+        start_dates = []
+        end_dates = []
+
+
+        if f_combined_cust_by_crm is not None and not f_combined_cust_by_crm.empty:
+            start_dates.append(f_combined_cust_by_crm["Disbursed Date"].min())
+            end_dates.append(f_combined_cust_by_crm["Disbursed Date"].max())
+
+        if f_crm_cust_only is not None and not f_crm_cust_only.empty:
+            start_dates.append(f_crm_cust_only["registered_date"].min())
+            end_dates.append(f_crm_cust_only["registered_date"].max())
+
+        if combined_cust_by_crm is not None and not combined_cust_by_crm.empty:
+            start_dates.append(combined_cust_by_crm["Disbursed Date"].min())
+            end_dates.append(combined_cust_by_crm["Disbursed Date"].max())
+
+        if crm_cust_only is not None and not crm_cust_only.empty:
+            # Convert "Register Date" to datetime and handle NaT values
+            crm_cust_only["Register Date"] = pd.to_datetime(crm_cust_only["Register Date"], errors='coerce', unit='s')
+            crm_cust_only["Register Date"] = crm_cust_only["Register Date"].dt.date
+
+            # Filter out NaT values
+            valid_dates = crm_cust_only["Register Date"].dropna()
+            if not valid_dates.empty:
+                min_date = valid_dates.min()
+                max_date = valid_dates.max()
+                start_dates.append(min_date)
+                end_dates.append(max_date)
+
+        if start_dates and end_dates:
+            combined_start_date = min(start_dates)
+            combined_end_date = max(end_dates)
+        else:
+            combined_start_date = None
+            combined_end_date = None
+
+
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            date1 = st.date_input("Start Date", combined_start_date, min_value=combined_start_date, max_value=combined_end_date)
+        with col2:
+            date2 = st.date_input("End Date", combined_end_date, min_value=combined_start_date, max_value=combined_end_date)
+
+
+        f_combined_cust_by_crm = f_combined_cust_by_crm[(f_combined_cust_by_crm["Disbursed Date"] >= date1) & (f_combined_cust_by_crm["Disbursed Date"] <= date2)]
+        f_crm_cust_only = f_crm_cust_only[(f_crm_cust_only["registered_date"] >= date1) & (f_crm_cust_only["registered_date"] <= date2)]
+
+        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1) & (combined_cust_by_crm["Disbursed Date"] <= date2)]
+
+        crm_cust_only = crm_cust_only[(crm_cust_only["Register Date"] >= date1) & (crm_cust_only["Register Date"] <= date2)]
+       
+        total = combined_cust_by_crm['kiyya_id'].nunique() + f_combined_cust_by_crm['wpc_id'].nunique()
+        unrtotal = crm_cust_only['kiyya_id'].nunique() + f_crm_cust_only['wpc_id'].nunique() + b_crm_cust_only['kiyya_id'].nunique() + fb_crm_cust_only['wpc_id'].nunique()
+
+        b_total = b_combined_cust_by_crm['kiyya_id'].nunique() + fb_combined_cust_by_crm['wpc_id'].nunique()
+
+
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric(label="**Total Registered by district**", value=total, delta=" Already Disbursed for")
+        col2.metric(label="**Total Registered by Branch**", value=b_total, delta=" Already Disbursed for")
+        col3.metric(label="**Total Registered Customer (Informal + formal)**", value=unrtotal, delta=" Not Yet Disbursed for")
+        style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
+
+        
+        with st.form(key = 'Create_crmdash', clear_on_submit=True):
+            col4, col5 = st.columns([0.5, 0.5])
+            with col4:
                 if st.form_submit_button("Kiyya :orange[INFORMAL] Registeration Form"):
                     kiyya_register()
+            with col5:
                 if st.form_submit_button("Kiyya :blue[FORMAL] Registeration Form"):
                     registerr()
             
-            col5.metric(label="**Total Registered Customer**", value=combined_cust_by_crm['wpc_id'].nunique(), delta=" Already Disbursed for")
-            style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
-            # st.markdown('</div>', unsafe_allow_html=True)
+    
         st.markdown("""
             <style>
                 .stTabs [data-baseweb="tab"] {
                     margin-top: -0.9rem;
-                    margin-right: 5rem; /* Adjust the value to increase or decrease space between tabs */
+                    margin-right: 13rem; /* Adjust the value to increase or decrease space between tabs */
                     background-color: black;
                     color: white; /* Optional: Change text color */
                     padding: 0.5rem 1rem; /* Add some padding for better appearance */
@@ -131,27 +192,82 @@ def register():
                 }
             </style>
             """, unsafe_allow_html=True)
-        tab1,= st.tabs(["Kiyya Registered Customer list"])
-        with tab1:
-            if (combined_cust_by_crm is not None and not combined_cust_by_crm.empty) or  (crm_cust_only is not None and not crm_cust_only.empty):
-                st.markdown(f'<span style="color: #e38524;">**Registered by You** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
-                if combined_cust_by_crm is not None and not combined_cust_by_crm.empty:
-                    st.write(combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
-                    # df = unique_customer.drop(columns=['uniqueId', 'userName'])
-                    # csv = df.to_csv(index=False)
-                    # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
-                else:
-                    st.info("You have no registered Kiyya customers whose loan have already been disbursed.")
+        tab3, tab4 = st.tabs(["Registered Customer by District", "Registered Customer by Branch"])
+        with tab3:
+            tab1, tab2 = st.tabs(["Kiyya Informal Customer List", "Kiyya Formal Customer List"])
+            with tab1:
+                if (combined_cust_by_crm is not None and not combined_cust_by_crm.empty) or  (crm_cust_only is not None and not crm_cust_only.empty):
+                    st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+                    if combined_cust_by_crm is not None and not combined_cust_by_crm.empty:
+                        st.write(combined_cust_by_crm.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
+                        # df = unique_customer.drop(columns=['uniqueId', 'userName'])
+                        # csv = df.to_csv(index=False)
+                        # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
+                    else:
+                        st.info("You have no registered Kiyya Informal customers whose loan have already been disbursed.")
 
-                st.markdown('<span style="color: #e38524;">**Registered by You but not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
-                if crm_cust_only is not None and not crm_cust_only.empty:
-                    st.info("NB: This customer is not countable as Kiyya customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
-                    st.write(crm_cust_only.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                    st.markdown('<span style="color: #e38524;">**Registered Customer but, not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+                    if crm_cust_only is not None and not crm_cust_only.empty:
+                        st.info("NB: This customer is not countable as Kiyya Informal customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
+                        st.write(crm_cust_only.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
+                    else:
+                        st.info("You have no registered  Kiyya Informal today.")
                 else:
-                    st.info("You have no registered   today.")
-            else:
-                st.info("You have no registered customers yet.")
-        
+                    st.info("You have no registered Kiyya Informal customers yet.")
+            with tab2:
+                if (f_combined_cust_by_crm is not None and not f_combined_cust_by_crm.empty) or  (f_crm_cust_only is not None and not f_crm_cust_only.empty):
+                    st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+                    if f_combined_cust_by_crm is not None and not f_combined_cust_by_crm.empty:
+                        st.write(f_combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                        
+                    else:
+                        st.info("You have no registered Kiyya Formal customers whose loan have already been disbursed.")
+
+                    st.markdown('<span style="color: #e38524;">**Registered Customer but, not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+                    if f_crm_cust_only is not None and not f_crm_cust_only.empty:
+                        st.info("NB: This customer is not countable as Kiyya Formal customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
+                        st.write(f_crm_cust_only.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                    else:
+                        st.info("You have no registered Kiyya Formal Customer today.")
+                else:
+                    st.info("You have no registered Kiyya Formal customers yet.")
+        with tab4:
+            tab1, tab2 = st.tabs(["Kiyya Informal Customer List", "Kiyya Formal Customer List"])
+            with tab1:
+                if (b_combined_cust_by_crm is not None and not b_combined_cust_by_crm.empty) or  (b_crm_cust_only is not None and not b_crm_cust_only.empty):
+                    st.markdown(f'<span style="color: #e38524;">**Registered by You** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+                    if b_combined_cust_by_crm is not None and not b_combined_cust_by_crm.empty:
+                        st.write(b_combined_cust_by_crm.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
+                        
+                    else:
+                        st.info("No branch has registered Kiyya Infprmal customers whose loan have already been disbursed.")
+
+                    st.markdown('<span style="color: #e38524;">**Registered by You but not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+                    if b_crm_cust_only is not None and not b_crm_cust_only.empty:
+                        st.info("NB: This customer is not countable as Kiyya customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
+                        st.write(b_crm_cust_only.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
+                    else:
+                        st.info("No branch has registered Kiyya Informal Customer today.")
+                else:
+                    st.info("No branch has registered Kiyya Informal customers yet.")
+
+            with tab2:
+                if (fb_combined_cust_by_crm is not None and not fb_combined_cust_by_crm.empty) or  (f_crm_cust_only is not None and not f_crm_cust_only.empty):
+                    st.markdown(f'<span style="color: #e38524;">**Registered by You** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+                    if fb_combined_cust_by_crm is not None and not fb_combined_cust_by_crm.empty:
+                        st.write(fb_combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                        
+                    else:
+                        st.info("No branch has registered Kiyya Formal customers whose loan have already been disbursed.")
+
+                    st.markdown('<span style="color: #e38524;">**Registered by You but not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+                    if fb_crm_cust_only is not None and not fb_crm_cust_only.empty:
+                        st.info("NB: This customer is not countable as Kiyya customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
+                        st.write(fb_crm_cust_only.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                    else:
+                        st.info("No branch has registered Kiyya Formal Customer today.")
+                else:
+                    st.info("No branch has registered Kiyya Formal customers yet.")
 
     
     

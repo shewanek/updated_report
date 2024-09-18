@@ -5,6 +5,7 @@ import hashlib
 import re
 import json
 
+
 # Function to establish MySQL connection (with error handling and resource cleanup)
 def connect_to_database():
     try:
@@ -2203,7 +2204,7 @@ def load_women_data(mydb):
     unique_cust_by_crm = unique_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
     conv_cust_by_crm = conv_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
 
-    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0)
+    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
     # st.write(combined_cust_by_crm)
 
     # Perform a left join to identify customers only in dureti_customer
@@ -2222,32 +2223,31 @@ def load_all_women_data(mydb):
     username = st.session_state.get("username", "")
     role = st.session_state.get("role", "")
 
-    crm_user = f"""
-        SELECT dr.crm_id, br.full_name, br.sub_process FROM crm_list br
-        JOIN crm_user dr ON br.employe_id = dr.employe_id 
+    # CRM user query
+    crm_user_query = """
+        SELECT dr.crm_id, br.full_name, br.sub_process 
+        FROM crm_list br
+        JOIN crm_user dr ON br.employe_id = dr.employe_id
         """
-    crm_user_list = pd.DataFrame(fetch_data(crm_user, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
-    dis_br_user = f"""
-        SELECT dr.crm_id, br.full_Name, br.district FROM user_info br
-        JOIN women_product_customer dr ON br.userId = dr.crm_id 
+    crm_user_list = pd.DataFrame(fetch_data(crm_user_query, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
+
+    # Women product customer query
+    women_customer_query = """
+        SELECT dr.crm_id, br.full_Name, br.district 
+        FROM user_info br
+        JOIN women_product_customer dr ON br.userId = dr.crm_id
         """
-    di_br_list = pd.DataFrame(fetch_data(dis_br_user, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
+    women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
 
-    combined_user = pd.concat([crm_user_list, di_br_list], axis=0)
-    
+    # Combine user data
+    combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['crm_id'])
 
-    
+    # Queries for customer data
+    dureti_customer_query = "SELECT * FROM women_product_customer"
+    unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal')"
+    conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal')"
 
-    # # Check if crm_id_result is empty
-    # if not crm_id_result:
-    #     st.warning("No CRM ID found for the current user.")
-    #     return pd.DataFrame(), pd.DataFrame()
-
-    dureti_customer_query = f"SELECT * FROM women_product_customer"
-    unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
-    conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
-
-
+    # Fetching customer data
     dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
                                    columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date'])
 
@@ -2257,31 +2257,38 @@ def load_all_women_data(mydb):
     conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-    # Merge DataFrames on 'Saving Account'
+    # Merging on 'Saving Account'
     unique_by_crm = pd.merge(dureti_customer, unique_customer, on='Saving Account', how='inner')
     conv_by_crm = pd.merge(dureti_customer, conversion_customer, on='Saving Account', how='inner')
 
-    # Select and concatenate the required columns
+    # Select relevant columns
     unique_cust_by_crm = unique_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
     conv_cust_by_crm = conv_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
 
-    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0)
+    # Combine unique and conversion customers
+    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
+
+    # Merge with user data
     combined_cust_by_crm_all = pd.merge(combined_cust_by_crm, combined_user, on='crm_id', how='inner')
 
-    # Perform a left join to identify customers only in dureti_customer
-    merged_df = pd.merge(dureti_customer, combined_cust_by_crm, on= ['wpc_id', 'crm_id','Phone Number', 'Saving Account', 'remark'], how='left', indicator=True)
-    # st.write(merged_df)
+    # Left join to identify customers only in dureti_customer
+    merged_df = pd.merge(dureti_customer, combined_cust_by_crm, 
+                         on=['wpc_id', 'crm_id', 'Phone Number', 'Saving Account', 'remark'], 
+                         how='left', indicator=True)
 
-    # Filter to keep only rows that are in dureti_customer but not in combined_cust_by_crm
+    # Filter to keep rows only in dureti_customer
     crm_only = merged_df[merged_df['_merge'] == 'left_only']
     crm_cust_only = crm_only[['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date']]
+    
+    # Merge CRM-only customers with user data
     crm_cust_only_all = pd.merge(crm_cust_only, combined_user, on='crm_id', how='inner')
 
     return combined_cust_by_crm_all, crm_cust_only_all
 
 
 
-def kiyya_customer(conn, cursor, username, fullName, phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, daily_sales, purpose_of_loan):
+
+def kiyya_customer(conn, cursor, username, fullName, phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan):
     try:
         processed_phone_number = "+251" + phone_number[1:]
         userId  = get_id(conn, cursor, username)
@@ -2290,7 +2297,7 @@ def kiyya_customer(conn, cursor, username, fullName, phone_number, Saving_Accoun
             cursor.execute("""
                 INSERT INTO kiyya_customer(userId, fullName, phone_number, account_number, customer_ident_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, daily_sales, purpose_of_loan)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (userId, fullName, processed_phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, daily_sales, purpose_of_loan))
+            """, (userId, fullName, processed_phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan))
             conn.commit()
             return True
         else:
@@ -2301,61 +2308,38 @@ def kiyya_customer(conn, cursor, username, fullName, phone_number, Saving_Accoun
         st.exception(e)
         return False
 
-def load_kiyya_data(mydb):
+def load_all_kiyya_data(mydb):
     # Access the username and role from session state
     username = st.session_state.get("username", "")
     role = st.session_state.get("role", "")
 
-    if role == 'Admin' or role == 'under_admin': 
-        # Fetch all userIds and districts if the role is Admin or under_admin
-        user_id_query = "SELECT userId, district FROM user_info"
-        user_id_result = fetch_data(user_id_query, mydb)
-    else:
-        # Fetch userId and district based on the username for other roles
-        user_id_query = f"SELECT userId, district FROM user_info WHERE userName = '{username}'"
-        user_id_result = fetch_data(user_id_query, mydb)
+    # CRM user query
+    crm_user_query = """
+        SELECT dr.crm_id, br.full_name, br.sub_process 
+        FROM crm_list br
+        JOIN crm_user dr ON br.employe_id = dr.employe_id
+        """
+    crm_user_list = pd.DataFrame(fetch_data(crm_user_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
 
-    if not user_id_result:
-        st.warning("No user found with the given username.")
-        return pd.DataFrame()  # Return an empty DataFrame if no user is found
+    # Women product customer query
+    women_customer_query = """
+        SELECT dr.userId, br.full_Name, br.district 
+        FROM user_info br
+        JOIN kiyya_customer dr ON br.userId = dr.userId
+        """
+    women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
 
-    # If Admin or under_admin, handle multiple userIds
-    if role == 'Admin' or role == 'under_admin':
-        user_ids = [row[0] for row in user_id_result]  # Extract all userIds
-        district = user_id_result[0][1]  # Assume the district is the same for all rows (adjust if necessary)
-        # Create a string of userIds for the IN clause
-        user_ids_str = "', '".join(user_ids)  # Convert list of userIds into a string format for SQL
-        user_id_condition = f"IN ('{user_ids_str}')"
-    else:
-        user_id = user_id_result[0][0]  # Single userId for other roles
-        district = user_id_result[0][1]
-        user_id_condition = f"= '{user_id}'"
+    # Combine user data
+    combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['userId'])
 
-    # Fetch data from user_info and branch_list tables based on userId(s)
-    query = f"""
-    SELECT ui.userId, ui.userName, ui.district, ui.branch, bl.branch_name
-    FROM user_info ui
-    JOIN branch_list bl ON ui.branch = bl.branch_code
-    WHERE ui.userId {user_id_condition}
-    """
-   
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
+    # Queries for customer data
+    keyya_customer_query = "SELECT * FROM kiyya_customer"
+    unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal')"
+    conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal')"
 
-
-    # df_user_info = pd.DataFrame(fetch_data(f"SELECT * FROM user_info WHERE userId = '{user_id}'", mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role', 'password', 'ccreatedAt'])
-    # Filtered queries for data starting from July 1
-    keyya_customer_query = f"SELECT * FROM kiyya_customer"
-    
-    dureti_customer = pd.DataFrame(fetch_data(keyya_customer_query, mydb), columns=['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
-    
-    # Merge df_user_info with dureti_customer on 'userId' 
-    # merged_df_1 = pd.merge(df_user_info, dureti_customer, on='userId', how='inner')
-
-
-
-
-    unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
-    conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+    # Fetching customer data
+    dureti_customer = pd.DataFrame(fetch_data(keyya_customer_query, mydb), 
+                                   columns=['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
 
     unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
@@ -2371,8 +2355,72 @@ def load_kiyya_data(mydb):
     unique_cust_by_crm = unique_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'Disbursed Date']]
     conv_cust_by_crm = conv_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'Disbursed Date']]
 
-    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0)
-    merged_df_1 = pd.merge(df_user_info, combined_cust_by_crm, on='userId', how='inner')
+    # Combine unique and conversion customers
+    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
+ 
+    
+
+    # Merge with user data
+    combined_cust_by_crm_all = pd.merge(combined_cust_by_crm, combined_user, on='userId', how='inner')
+  
+
+    # Left join to identify customers only in dureti_customer
+    merged_df = pd.merge(dureti_customer, combined_cust_by_crm, 
+                         on=['kiyya_id', 'userId','Phone Number', 'Saving Account'], 
+                         how='left', indicator=True)
+
+    # Filter to keep rows only in dureti_customer
+    crm_only = merged_df[merged_df['_merge'] == 'left_only']
+    crm_cust_only = crm_only[['kiyya_id', 'userId', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']]
+
+    # Merge CRM-only customers with user data
+    crm_cust_only_all = pd.merge(crm_cust_only, combined_user, on='userId', how='inner')
+
+    return combined_cust_by_crm_all, crm_cust_only_all
+
+
+def load_kiyya_data(mydb):
+    # Access the username from session state
+    username = st.session_state.get("username", "")
+    role = st.session_state.get("role", "")
+
+    # Fetch userId based on username
+    if role == "CRM":
+        crm_id_query = f"SELECT crm_id FROM crm_user WHERE username = '{username}'"
+        crm_id_result = fetch_data(crm_id_query, mydb)
+    else:
+        crm_id_query = f"SELECT userId FROM user_info WHERE username = '{username}'"
+        crm_id_result = fetch_data(crm_id_query, mydb)
+
+    # Check if crm_id_result is empty
+    if not crm_id_result:
+        st.warning("No CRM ID found for the current user.")
+        return pd.DataFrame(), pd.DataFrame()
+
+    dureti_customer_query = f"SELECT * FROM kiyya_customer WHERE userId = '{crm_id_result[0][0]}'"
+    unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+    conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+
+
+    dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+                                   columns = ['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
+
+    unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+                                   columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+
+    conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+                                       columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+
+    # Merge DataFrames on 'Saving Account'
+    unique_by_crm = pd.merge(dureti_customer, unique_customer, on='Saving Account', how='inner')
+    conv_by_crm = pd.merge(dureti_customer, conversion_customer, on='Saving Account', how='inner')
+
+    # Select and concatenate the required columns
+    unique_cust_by_crm = unique_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount',  'Disbursed Date']]
+    conv_cust_by_crm = conv_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'Disbursed Date']]
+
+    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
+    # st.write(combined_cust_by_crm)
 
     # Perform a left join to identify customers only in dureti_customer
     merged_df = pd.merge(dureti_customer, combined_cust_by_crm, on= ['kiyya_id', 'userId','Phone Number', 'Saving Account'], how='left', indicator=True)
@@ -2380,11 +2428,149 @@ def load_kiyya_data(mydb):
 
     # Filter to keep only rows that are in dureti_customer but not in combined_cust_by_crm
     crm_only = merged_df[merged_df['_merge'] == 'left_only']
-    crm_cust_only = crm_only[['kiyya_id', 'userId', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']]
-    merged_df_2 = pd.merge(df_user_info, crm_cust_only, on='userId', how='inner')
+    crm_cust_only = crm_only[['kiyya_id', 'userId', 'Full Name', 'Phone Number', 'Saving Account', 'Region', 'Zone/Subcity', 'Woreda', 'Register Date']]
+
+    return combined_cust_by_crm, crm_cust_only
 
 
-    return merged_df_1, merged_df_2
+def load_kiyya_branch_data(mydb):
+    # Access the username from session state
+    username = st.session_state.get("username", "")
+    role = st.session_state.get("role", "")
+    if role == 'District User':
+        # Fetch the user's district
+        user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
+        user_district = fetch_data(user_query, mydb)
+
+        # Check if a district was found for the user
+        if not user_district or len(user_district) == 0:
+            st.warning("No district found for the user.")
+            return pd.DataFrame(), pd.DataFrame()
+
+        # Get the district value from the query result
+        district_value = user_district[0][0]
+
+        # Fetch userIds for the corresponding district
+        crm_id_query = f"SELECT userId FROM user_info WHERE district = '{district_value}'"
+        crm_id_result = fetch_data(crm_id_query, mydb)
+
+        # Check if any userIds were found
+        if not crm_id_result or len(crm_id_result) == 0:
+            st.warning("No user IDs found for the district.")
+            return pd.DataFrame(), pd.DataFrame()
+
+        # Extract the userIds from the result
+        crm_ids = [str(row[0]) for row in crm_id_result]
+
+        # Construct the query for the kiyya_customer table using the userIds
+        crm_id_list = "', '".join(crm_ids)
+        dureti_customer_query = f"SELECT * FROM kiyya_customer WHERE userId IN ('{crm_id_list}')"
+
+        unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+        conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+
+
+        dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+                                    columns = ['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
+
+        unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+
+        conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+
+        # Merge DataFrames on 'Saving Account'
+        unique_by_crm = pd.merge(dureti_customer, unique_customer, on='Saving Account', how='inner')
+        conv_by_crm = pd.merge(dureti_customer, conversion_customer, on='Saving Account', how='inner')
+
+        # Select and concatenate the required columns
+        unique_cust_by_crm = unique_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount',  'Disbursed Date']]
+        conv_cust_by_crm = conv_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'Disbursed Date']]
+
+        combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
+        # st.write(combined_cust_by_crm)
+
+        # Perform a left join to identify customers only in dureti_customer
+        merged_df = pd.merge(dureti_customer, combined_cust_by_crm, on= ['kiyya_id', 'userId','Phone Number', 'Saving Account'], how='left', indicator=True)
+        # st.write(merged_df)
+
+        # Filter to keep only rows that are in dureti_customer but not in combined_cust_by_crm
+        crm_only = merged_df[merged_df['_merge'] == 'left_only']
+        crm_cust_only = crm_only[['kiyya_id', 'userId', 'Full Name', 'Phone Number', 'Saving Account', 'Region', 'Zone/Subcity', 'Woreda', 'Register Date']]
+
+        return combined_cust_by_crm, crm_cust_only
+    else:
+        st.warning("User is not a District User.")
+        return pd.DataFrame(), pd.DataFrame()
+
+def load_formal_branch_data(mydb):
+    # Access the username from session state
+    username = st.session_state.get("username", "")
+    role = st.session_state.get("role", "")
+    if role == 'District User':
+        # Fetch the user's district
+        user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
+        user_district = fetch_data(user_query, mydb)
+
+        # Check if a district was found for the user
+        if not user_district or len(user_district) == 0:
+            st.warning("No district found for the user.")
+            return pd.DataFrame(), pd.DataFrame()
+
+        # Get the district value from the query result
+        district_value = user_district[0][0]
+
+        # Fetch userIds for the corresponding district
+        crm_id_query = f"SELECT userId FROM user_info WHERE district = '{district_value}'"
+        crm_id_result = fetch_data(crm_id_query, mydb)
+
+        # Check if any userIds were found
+        if not crm_id_result or len(crm_id_result) == 0:
+            st.warning("No user IDs found for the district.")
+            return pd.DataFrame(), pd.DataFrame()
+
+        # Extract the userIds from the result
+        crm_ids = [str(row[0]) for row in crm_id_result]
+
+        # Construct the query for the kiyya_customer table using the userIds
+        crm_id_list = "', '".join(crm_ids)
+        dureti_customer_query = f"SELECT * FROM women_product_customer WHERE crm_id IN ('{crm_id_list}')"
+        unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+        conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+
+
+        dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+                                    columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date'])
+
+        unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+
+        conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+
+        # Merge DataFrames on 'Saving Account'
+        unique_by_crm = pd.merge(dureti_customer, unique_customer, on='Saving Account', how='inner')
+        conv_by_crm = pd.merge(dureti_customer, conversion_customer, on='Saving Account', how='inner')
+
+        # Select and concatenate the required columns
+        unique_cust_by_crm = unique_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
+        conv_cust_by_crm = conv_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
+
+        combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
+        # st.write(combined_cust_by_crm)
+
+        # Perform a left join to identify customers only in dureti_customer
+        merged_df = pd.merge(dureti_customer, combined_cust_by_crm, on= ['wpc_id', 'crm_id','Phone Number', 'Saving Account', 'remark'], how='left', indicator=True)
+        # st.write(merged_df)
+
+        # Filter to keep only rows that are in dureti_customer but not in combined_cust_by_crm
+        crm_only = merged_df[merged_df['_merge'] == 'left_only']
+        crm_cust_only = crm_only[['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date']]
+
+        return combined_cust_by_crm, crm_cust_only
+    else:
+        st.warning("User is not a District User.")
+        return pd.DataFrame(), pd.DataFrame()
 
 
 def load_kiyya_report_data(mydb):

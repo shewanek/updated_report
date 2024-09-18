@@ -1,11 +1,12 @@
 import streamlit as st
+import pandas as pd
 from PIL import Image
 from time import sleep  # Assuming dash.py contains your dashboard layout
 from streamlit_extras.metric_cards import style_metric_cards
 from navigation import make_sidebar
 from pages.dureati_reg import registerr
 from pages.kiyya_register import kiyya_register
-from dependence import connect_to_database, load_women_data
+from dependence import connect_to_database, load_women_data, load_kiyya_data
            
 # Main function to handle user sign-up
 def register():
@@ -65,7 +66,7 @@ def register():
         border-radius:6px
         }
         </style>
-        <center> <h3 class = "title_dash"> Kiyya Reporting Portal </h3> </center>
+        <center> <h3 class = "title_dash"> Michu Kiyya Reporting Portal </h3> </center>
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
@@ -89,27 +90,82 @@ def register():
     # st.sidebar.write(f'Welcome, :orange[{full_name}]')
     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
    
-    # back_image = Image.open('pages/kiyya.jpg')
-    # st.sidebar.image(back_image)
-                        
-    make_sidebar()
     st.markdown(custom_cs, unsafe_allow_html=True)
     mydb = connect_to_database()
     if mydb is not None:
-        combined_cust_by_crm, crm_cust_only = load_women_data(mydb)
+        # combined_cust_by_crm, crm_cust_only = load_women_data(mydb)
+        combined_cust_by_crm, crm_cust_only = load_kiyya_data(mydb)
+        f_combined_cust_by_crm, f_crm_cust_only = load_women_data(mydb)
         col4, col5 = st.columns([0.6, 0.4])
         with col4:
             with st.form(key = 'Create_crmdash', clear_on_submit=True):
+                
+            
                 if st.form_submit_button("Kiyya :orange[INFORMAL] Customer Registeration Form"):
                     kiyya_register()
                 if st.form_submit_button("Kiyya :blue[FORMAL] Customer Registeration Form"):
                     registerr()
-                # st.write("")
-                # st.write("")
+
+        # crm_cust_only['wpc_id'].nunique()
+
+        start_dates = []
+        end_dates = []
+        
+
+
+        if f_combined_cust_by_crm is not None and not f_combined_cust_by_crm.empty:
+            start_dates.append(f_combined_cust_by_crm["Disbursed Date"].min())
+            end_dates.append(f_combined_cust_by_crm["Disbursed Date"].max())
+
+        if f_crm_cust_only is not None and not f_crm_cust_only.empty:
+            start_dates.append(f_crm_cust_only["registered_date"].min())
+            end_dates.append(f_crm_cust_only["registered_date"].max())
+
+        if combined_cust_by_crm is not None and not combined_cust_by_crm.empty:
+            start_dates.append(combined_cust_by_crm["Disbursed Date"].min())
+            end_dates.append(combined_cust_by_crm["Disbursed Date"].max())
+
+        if crm_cust_only is not None and not crm_cust_only.empty:
+            # Convert "Register Date" to datetime and handle NaT values
+            crm_cust_only["Register Date"] = pd.to_datetime(crm_cust_only["Register Date"], errors='coerce', unit='s')
+            crm_cust_only["Register Date"] = crm_cust_only["Register Date"].dt.date
+
+            # Filter out NaT values
+            valid_dates = crm_cust_only["Register Date"].dropna()
+            if not valid_dates.empty:
+                min_date = valid_dates.min()
+                max_date = valid_dates.max()
+                start_dates.append(min_date)
+                end_dates.append(max_date)
+
+        if start_dates and end_dates:
+            combined_start_date = min(start_dates)
+            combined_end_date = max(end_dates)
+        else:
+            combined_start_date = None
+            combined_end_date = None
+
+
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            date1 = st.date_input("Start Date", combined_start_date, min_value=combined_start_date, max_value=combined_end_date)
+        with col2:
+            date2 = st.date_input("End Date", combined_end_date, min_value=combined_start_date, max_value=combined_end_date)
+
+        make_sidebar()
+
+        f_combined_cust_by_crm = f_combined_cust_by_crm[(f_combined_cust_by_crm["Disbursed Date"] >= date1) & (f_combined_cust_by_crm["Disbursed Date"] <= date2)]
+        f_crm_cust_only = f_crm_cust_only[(f_crm_cust_only["registered_date"] >= date1) & (f_crm_cust_only["registered_date"] <= date2)]
+
+        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1) & (combined_cust_by_crm["Disbursed Date"] <= date2)]
+
+        crm_cust_only = crm_cust_only[(crm_cust_only["Register Date"] >= date1) & (crm_cust_only["Register Date"] <= date2)]
+
+        total = combined_cust_by_crm['kiyya_id'].nunique() + f_combined_cust_by_crm['wpc_id'].nunique()
             
-            col5.metric(label="**Total Registered Customer**", value=combined_cust_by_crm['wpc_id'].nunique(), delta=" Already Disbursed for")
-            style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
-            # st.markdown('</div>', unsafe_allow_html=True)
+        col5.metric(label="**Total Registered Customer (Informal + Formal)**", value=total, delta=" Already Disbursed for")
+        style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
+        # st.markdown('</div>', unsafe_allow_html=True)
         st.markdown("""
             <style>
                 .stTabs [data-baseweb="tab"] {
@@ -125,24 +181,44 @@ def register():
                 }
             </style>
             """, unsafe_allow_html=True)
-        tab1,= st.tabs(["Kiyya Registered Customer list"])
+        # st.write(merge)
+        tab1, tab2 = st.tabs(["Kiyya Informal Registered Customer list", "Kiyya Formal Registered Customer list"])
         with tab1:
             if (combined_cust_by_crm is not None and not combined_cust_by_crm.empty) or  (crm_cust_only is not None and not crm_cust_only.empty):
-                st.markdown(f'<span style="color: #e38524;">**Registered by You** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+                st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
                 if combined_cust_by_crm is not None and not combined_cust_by_crm.empty:
-                    st.write(combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                    st.write(combined_cust_by_crm.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
                     # df = unique_customer.drop(columns=['uniqueId', 'userName'])
                     # csv = df.to_csv(index=False)
                     # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
                 else:
-                    st.info("You have no registered Kiyya customers whose loan have already been disbursed.")
+                    st.info("You have no registered Kiyya Informal customers whose loan have already been disbursed.")
 
-                st.markdown('<span style="color: #e38524;">**Registered by You but not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+                st.markdown('<span style="color: #e38524;">**Registered Customer but, not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
                 if crm_cust_only is not None and not crm_cust_only.empty:
-                    st.info("NB: This customer is not countable as Kiyya customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
-                    st.write(crm_cust_only.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                    st.info("NB: This customer is not countable as Kiyya Informal customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
+                    st.write(crm_cust_only.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
                 else:
-                    st.info("You have no registered   today.")
+                    st.info("You have no registered today.")
+            else:
+                st.info("You have no registered customers yet.")
+        with tab2:
+            if (f_combined_cust_by_crm is not None and not f_combined_cust_by_crm.empty) or  (f_crm_cust_only is not None and not f_crm_cust_only.empty):
+                st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+                if f_combined_cust_by_crm is not None and not f_combined_cust_by_crm.empty:
+                    st.write(f_combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                    # df = unique_customer.drop(columns=['uniqueId', 'userName'])
+                    # csv = df.to_csv(index=False)
+                    # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
+                else:
+                    st.info("You have no registered Kiyya Formal customers whose loan have already been disbursed.")
+
+                st.markdown('<span style="color: #e38524;">**Registered Customer but, not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+                if f_crm_cust_only is not None and not f_crm_cust_only.empty:
+                    st.info("NB: This customer is not countable as Kiyya Formal customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
+                    st.write(f_crm_cust_only.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                else:
+                    st.info("You have no registered today.")
             else:
                 st.info("You have no registered customers yet.")
         

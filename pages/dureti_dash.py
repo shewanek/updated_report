@@ -2,9 +2,10 @@ import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-from dependence import connect_to_database, load_all_women_data, load_kiyya_data
+from dependence import connect_to_database, load_all_women_data, load_all_kiyya_data
 from navigation import home_sidebar
 from datetime import date
+import pandas as pd
 
 
 def main():
@@ -87,9 +88,14 @@ def main():
 
 
         combined_cust_by_crm, crm_cust_only = load_all_women_data(mydb)
-        merged_df_1, merged_df_2 = load_kiyya_data(mydb)
+        merged_df_1, merged_df_2 = load_all_kiyya_data(mydb)
 
-        crm_cust_only['wpc_id'].nunique()
+        # Combine unique values for filters
+        combined_subprocess = sorted(set(combined_cust_by_crm["Sub Process"].dropna().unique()) | set(crm_cust_only["Sub Process"].dropna().unique()) | set(merged_df_1["Sub Process"].dropna().unique()) | set(merged_df_2["Sub Process"].dropna().unique()))
+        combined_recruiter = sorted(set(combined_cust_by_crm["Recruited by"].dropna().unique()) | set(crm_cust_only["Recruited by"].dropna().unique()) | set(merged_df_1["Recruited by"].dropna().unique()) | set(merged_df_2["Recruited by"].dropna().unique()))
+
+
+        # crm_cust_only['wpc_id'].nunique()
 
         start_dates = []
         end_dates = []
@@ -102,6 +108,23 @@ def main():
         if crm_cust_only is not None and not crm_cust_only.empty:
             start_dates.append(crm_cust_only["registered_date"].min())
             end_dates.append(crm_cust_only["registered_date"].max())
+
+        if merged_df_1 is not None and not merged_df_1.empty:
+            start_dates.append(merged_df_1["Disbursed Date"].min())
+            end_dates.append(merged_df_1["Disbursed Date"].max())
+
+        if merged_df_2 is not None and not merged_df_2.empty:
+            # Convert "Register Date" to datetime and handle NaT values
+            merged_df_2["Register Date"] = pd.to_datetime(merged_df_2["Register Date"], errors='coerce', unit='s')
+            merged_df_2["Register Date"] = merged_df_2["Register Date"].dt.date
+
+            # Filter out NaT values
+            valid_dates = merged_df_2["Register Date"].dropna()
+            if not valid_dates.empty:
+                min_date = valid_dates.min()
+                max_date = valid_dates.max()
+                start_dates.append(min_date)
+                end_dates.append(max_date)
 
         if start_dates and end_dates:
             combined_start_date = min(start_dates)
@@ -119,6 +142,22 @@ def main():
         full_name = st.session_state.get("full_name", "")
         # st.sidebar.write(f'Welcome, :orange[{full_name}]')
         st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
+
+        sub_process = st.sidebar.multiselect("Select Sub Process", options=combined_subprocess)
+        
+        # Filter branches based on selected districts
+        if sub_process:
+            # st.session_state.district=district
+            filtered_by = sorted(set(combined_cust_by_crm[combined_cust_by_crm["Sub Process"].isin(sub_process)]["Recruited by"].dropna().unique()) |
+                                       set(crm_cust_only[crm_cust_only["Sub Process"].isin(sub_process)]["Recruited by"].dropna().unique()) |
+                                       set(merged_df_1[merged_df_1["Sub Process"].isin(sub_process)]["Recruited by"].dropna().unique()) |
+                                       set(merged_df_2[merged_df_2["Sub Process"].isin(sub_process)]["Recruited by"].dropna().unique()))
+                                       
+        else: 
+        
+            filtered_by = combined_recruiter
+
+        Recruiter = st.sidebar.multiselect("Select Recruiter", options=filtered_by)
         
 
         col1, col2 = st.sidebar.columns(2)
@@ -127,11 +166,32 @@ def main():
         with col2:
             date2 = st.date_input("End Date", combined_end_date, min_value=combined_start_date, max_value=combined_end_date)
 
+        # Apply filters to each DataFrame
+        if sub_process:
+            combined_cust_by_crm = combined_cust_by_crm[combined_cust_by_crm["Sub Process"].isin(sub_process)]
+            crm_cust_only = crm_cust_only[crm_cust_only["Sub Process"].isin(sub_process)]
+            merged_df_1 = merged_df_1[merged_df_1["Sub Process"].isin(sub_process)]
+            merged_df_2 = merged_df_2[merged_df_2["Sub Process"].isin(sub_process)]
+            
+        
+        if Recruiter:
+            combined_cust_by_crm = combined_cust_by_crm[combined_cust_by_crm["Recruited by"].isin(Recruiter)]
+            crm_cust_only = crm_cust_only[crm_cust_only["Recruited by"].isin(Recruiter)]
+            merged_df_1 = merged_df_1[merged_df_1["Recruited by"].isin(Recruiter)]
+            merged_df_2 = merged_df_2[merged_df_2["Recruited by"].isin(Recruiter)]
+            
+
 
 
 
         combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1) & (combined_cust_by_crm["Disbursed Date"] <= date2)]
         crm_cust_only = crm_cust_only[(crm_cust_only["registered_date"] >= date1) & (crm_cust_only["registered_date"] <= date2)]
+
+        merged_df_1 = merged_df_1[(merged_df_1["Disbursed Date"] >= date1) & (merged_df_1["Disbursed Date"] <= date2)]
+
+        # Filter merged_df_2 based on date range
+        # merged_df_2 = merged_df_2[(merged_df_2["Register Date"] >= date1_datetime64) & (merged_df_2["Register Date"] <= date2_datetime64)]
+        merged_df_2 = merged_df_2[(merged_df_2["Register Date"] >= date1) & (merged_df_2["Register Date"] <= date2)]
         
 
 
@@ -157,12 +217,7 @@ def main():
          # df_combine
          
 
-        # Get today's date
-        today = date.today()
-        crm_cust_today = crm_cust_only[crm_cust_only['registered_date'] == today]
-
-        # Get the count of unique 'wpc_id' for today
-        total_registered_today = crm_cust_today['wpc_id'].nunique()
+        
 
         # Calculate the total number of registered customers
         total_registered = combined_cust_by_crm['wpc_id'].nunique()
@@ -177,10 +232,10 @@ def main():
         
         col1, col2, col3 = st.columns(3)
         # col2.markdown('<style>div.block-container{padding-top:0.0002rem;}</style>', unsafe_allow_html=True)
-        col1.metric(label="**Total Registered Customer**", value=total_correct, delta="Already Disburesed for")
+        col1.metric(label="**Total Formal Customer**", value=total_registered, delta="Already Disburesed for")
         # Use st.markdown to add custom styling for the delta text
-        col2.metric(label="**Total Registered Customer**", value=total_not_counted, delta="Not yet Disburesed")
-        col3.metric(label="**Total Registered Customer Today**", value=total_registered_today, delta="Not yet Disburesed")
+        col2.metric(label="**Total Infromal Customer**", value=total_by_branch, delta="Already Disburesed for")
+        col3.metric(label="**Total  Infromal + Formal Customer**", value=total_not_counted, delta="Not yet Disburesed")
         # col4.metric(label="**Total Active**", value=df_combine_active.cust_id.nunique(), delta="Customer")
         # # col4.metric(label="***Unrecognized Questions***", value=df_combine[df_combine['intent'] == 'nlu_fallback']['text_id'].nunique(), delta="unrecognized questions")
         # # col5.metric(label="***Michu Channel Joined User***", value=df_combine.groupby('user_id')['ch_id'].nunique().sum(), delta="Michu Channel")
@@ -207,7 +262,7 @@ def main():
                 }
             </style>
             """, unsafe_allow_html=True)
-        tab1, tab2 = st.tabs(["Customer List by District and Head Office", "Customer List by Branch"])
+        tab1, tab2 = st.tabs(["Kiyya Formal Customer List", "Kiyya Informal Customer List"])
         with tab1:
             if (combined_cust_by_crm is not None and not combined_cust_by_crm.empty) or  (crm_cust_only is not None and not crm_cust_only.empty):
                 st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
@@ -217,18 +272,36 @@ def main():
                     # csv = df.to_csv(index=False)
                     # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
                 else:
-                    st.info("There are no registered Kiyya customers whose loan have already been disbursed.")
+                    st.info("There are no registered Kiyya Formal customers whose loan have already been disbursed.")
 
                 st.markdown('<span style="color: #e38524;">**Registered Customer but not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
                 if crm_cust_only is not None and not crm_cust_only.empty:
-                    st.info("NB: This customer is not countable as Kiyya customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
+                    st.info("NB: This customer is not countable as Kiyya Formal customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
                     st.write(crm_cust_only.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
                 else:
                     st.info("You have no registered   today.")
             else:
                 st.info("There is no registered customers yet.")
         with tab2:
-            st.write(merged_df_2.drop(columns=['userId', 'userName', 'kiyya_id', 'branch_code']).reset_index(drop=True).rename(lambda x: x + 1))
+            # st.write(merged_df_2.drop(columns=['userId', 'userName', 'kiyya_id', 'branch_code']).reset_index(drop=True).rename(lambda x: x + 1))
+            if (merged_df_1 is not None and not merged_df_1.empty) or  (merged_df_2 is not None and not merged_df_2.empty):
+                st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
+                if merged_df_1 is not None and not merged_df_1.empty:
+                    st.write(merged_df_1.drop(columns=['userId', 'kiyya_id',]).reset_index(drop=True).rename(lambda x: x + 1))
+                    # df = unique_customer.drop(columns=['uniqueId', 'userName'])
+                    # csv = df.to_csv(index=False)
+                    # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
+                else:
+                    st.info("There are no registered Kiyya Informal customers whose loan have already been disbursed.")
+
+                st.markdown('<span style="color: #e38524;">**Registered Customer but not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
+                if merged_df_2 is not None and not merged_df_2.empty:
+                    st.info("NB: This customer is not countable as Kiyya Informal customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
+                    st.write(merged_df_2.drop(columns=['userId', 'kiyya_id', ]).reset_index(drop=True).rename(lambda x: x + 1))
+                else:
+                    st.info("You have no registered   today.")
+            else:
+                st.info("There is no registered customers yet.")
 
 
 
