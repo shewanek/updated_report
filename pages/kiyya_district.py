@@ -131,6 +131,31 @@ def register():
                 start_dates.append(min_date)
                 end_dates.append(max_date)
 
+        if fb_combined_cust_by_crm is not None and not fb_combined_cust_by_crm.empty:
+            start_dates.append(fb_combined_cust_by_crm["Disbursed Date"].min())
+            end_dates.append(fb_combined_cust_by_crm["Disbursed Date"].max())
+
+        if fb_crm_cust_only is not None and not fb_crm_cust_only.empty:
+            start_dates.append(fb_crm_cust_only["registered_date"].min())
+            end_dates.append(fb_crm_cust_only["registered_date"].max())
+
+        if b_combined_cust_by_crm is not None and not b_combined_cust_by_crm.empty:
+            start_dates.append(b_combined_cust_by_crm["Disbursed Date"].min())
+            end_dates.append(b_combined_cust_by_crm["Disbursed Date"].max())
+
+        if b_crm_cust_only is not None and not b_crm_cust_only.empty:
+            # Convert "Register Date" to datetime and handle NaT values
+            b_crm_cust_only["Register Date"] = pd.to_datetime(b_crm_cust_only["Register Date"], errors='coerce', unit='s')
+            b_crm_cust_only["Register Date"] = b_crm_cust_only["Register Date"].dt.date
+
+            # Filter out NaT values
+            valid_dates = b_crm_cust_only["Register Date"].dropna()
+            if not valid_dates.empty:
+                min_date = valid_dates.min()
+                max_date = valid_dates.max()
+                start_dates.append(min_date)
+                end_dates.append(max_date)
+
         if start_dates and end_dates:
             combined_start_date = min(start_dates)
             combined_end_date = max(end_dates)
@@ -145,13 +170,34 @@ def register():
         with col2:
             date2 = st.date_input("End Date", combined_end_date, min_value=combined_start_date, max_value=combined_end_date)
 
+        
+        date1 = pd.Timestamp(date1)
+        date2 = pd.Timestamp(date2)
 
-        f_combined_cust_by_crm = f_combined_cust_by_crm[(f_combined_cust_by_crm["Disbursed Date"] >= date1) & (f_combined_cust_by_crm["Disbursed Date"] <= date2)]
-        f_crm_cust_only = f_crm_cust_only[(f_crm_cust_only["registered_date"] >= date1) & (f_crm_cust_only["registered_date"] <= date2)]
+        f_combined_cust_by_crm["Disbursed Date"] = pd.to_datetime(f_combined_cust_by_crm["Disbursed Date"]).dt.date
+        f_combined_cust_by_crm = f_combined_cust_by_crm[(f_combined_cust_by_crm["Disbursed Date"] >= date1.date()) & (f_combined_cust_by_crm["Disbursed Date"] <= date2.date())]
 
-        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1) & (combined_cust_by_crm["Disbursed Date"] <= date2)]
+        f_crm_cust_only["registered_date"] = pd.to_datetime(f_crm_cust_only["registered_date"]).dt.date
+        f_crm_cust_only = f_crm_cust_only[(f_crm_cust_only["registered_date"] >= date1.date()) & (f_crm_cust_only["registered_date"] <= date2.date())]
 
-        crm_cust_only = crm_cust_only[(crm_cust_only["Register Date"] >= date1) & (crm_cust_only["Register Date"] <= date2)]
+        combined_cust_by_crm["Disbursed Date"] = pd.to_datetime(combined_cust_by_crm["Disbursed Date"]).dt.date
+        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1.date()) & (combined_cust_by_crm["Disbursed Date"] <= date2.date())]
+
+        crm_cust_only["Register Date"] = pd.to_datetime(crm_cust_only["Register Date"]).dt.date
+        crm_cust_only = crm_cust_only[(crm_cust_only["Register Date"] >= date1.date()) & (crm_cust_only["Register Date"] <= date2.date())]
+       
+
+        fb_combined_cust_by_crm["Disbursed Date"] = pd.to_datetime(fb_combined_cust_by_crm["Disbursed Date"]).dt.date
+        fb_combined_cust_by_crm = fb_combined_cust_by_crm[(fb_combined_cust_by_crm["Disbursed Date"] >= date1.date()) & (fb_combined_cust_by_crm["Disbursed Date"] <= date2.date())]
+
+        fb_crm_cust_only["registered_date"] = pd.to_datetime(fb_crm_cust_only["registered_date"]).dt.date
+        fb_crm_cust_only = fb_crm_cust_only[(fb_crm_cust_only["registered_date"] >= date1.date()) & (fb_crm_cust_only["registered_date"] <= date2.date())]
+
+        b_combined_cust_by_crm["Disbursed Date"] = pd.to_datetime(b_combined_cust_by_crm["Disbursed Date"]).dt.date
+        b_combined_cust_by_crm = b_combined_cust_by_crm[(b_combined_cust_by_crm["Disbursed Date"] >= date1.date()) & (b_combined_cust_by_crm["Disbursed Date"] <= date2.date())]
+
+        b_crm_cust_only["Register Date"] = pd.to_datetime(b_crm_cust_only["Register Date"]).dt.date
+        b_crm_cust_only = b_crm_cust_only[(b_crm_cust_only["Register Date"] >= date1.date()) & (b_crm_cust_only["Register Date"] <= date2.date())]
        
         total = combined_cust_by_crm['kiyya_id'].nunique() + f_combined_cust_by_crm['wpc_id'].nunique()
         unrtotal = crm_cust_only['kiyya_id'].nunique() + f_crm_cust_only['wpc_id'].nunique() + b_crm_cust_only['kiyya_id'].nunique() + fb_crm_cust_only['wpc_id'].nunique()

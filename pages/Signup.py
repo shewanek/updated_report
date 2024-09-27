@@ -82,7 +82,7 @@ def sign_up():
     # st.write(district)
     if role == 'Sales Admin' or role == 'collection_user':
         district_json = json.dumps(district)
-    elif role == 'Admin' or role == 'Data Uploader' or role == 'collection_admin':
+    elif role == 'Admin' or role == 'Data Uploader' or role == 'collection_admin' or role == 'under_admin':
         district_json = 'Head office'
     else:
         district_json = district
@@ -105,7 +105,7 @@ def sign_up():
         
         # Branch options depend on the selected district
         mydb = connect_to_database()
-        if role != 'Admin' and role != 'District User' and role != 'Sales Admin' and role != 'Data Uploader' and role != 'collection_admin' and role != 'collection_user':
+        if role != 'Admin' and role != 'District User' and role != 'Sales Admin' and role != 'Data Uploader' and role != 'collection_admin' and role != 'collection_user' and role != 'under_admin':
             branch_options = ['Select Branch']
             if mydb is not None:
                 try:
@@ -155,7 +155,7 @@ def sign_up():
                     finally:
                         cursor.close()
                         mydb.close()
-        if role == 'Admin' or role == 'Data Uploader' or role == 'collection_admin':
+        if role == 'Admin' or role == 'Data Uploader' or role == 'collection_admin' or role == 'under_admin':
             with col2:
                 st.write('change role')
             with col3:

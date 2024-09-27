@@ -183,15 +183,23 @@ def main():
 
 
 
+        date1 = pd.Timestamp(date1)
+        date2 = pd.Timestamp(date2)
 
-        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1) & (combined_cust_by_crm["Disbursed Date"] <= date2)]
-        crm_cust_only = crm_cust_only[(crm_cust_only["registered_date"] >= date1) & (crm_cust_only["registered_date"] <= date2)]
+        # Ensure both sides of the comparison are dates
+        combined_cust_by_crm["Disbursed Date"] = pd.to_datetime(combined_cust_by_crm["Disbursed Date"]).dt.date
+        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1.date()) & (combined_cust_by_crm["Disbursed Date"] <= date2.date())]
 
-        merged_df_1 = merged_df_1[(merged_df_1["Disbursed Date"] >= date1) & (merged_df_1["Disbursed Date"] <= date2)]
+        crm_cust_only["registered_date"] = pd.to_datetime(crm_cust_only["registered_date"]).dt.date
+        crm_cust_only = crm_cust_only[(crm_cust_only["registered_date"] >= date1.date()) & (crm_cust_only["registered_date"] <= date2.date())]
+
+        merged_df_1["Disbursed Date"] = pd.to_datetime(merged_df_1["Disbursed Date"]).dt.date
+        merged_df_1 = merged_df_1[(merged_df_1["Disbursed Date"] >= date1.date()) & (merged_df_1["Disbursed Date"] <= date2.date())]
 
         # Filter merged_df_2 based on date range
         # merged_df_2 = merged_df_2[(merged_df_2["Register Date"] >= date1_datetime64) & (merged_df_2["Register Date"] <= date2_datetime64)]
-        merged_df_2 = merged_df_2[(merged_df_2["Register Date"] >= date1) & (merged_df_2["Register Date"] <= date2)]
+        merged_df_2["Register Date"] = pd.to_datetime(merged_df_2["Register Date"]).dt.date
+        merged_df_2 = merged_df_2[(merged_df_2["Register Date"] >= date1.date()) & (merged_df_2["Register Date"] <= date2.date())]
         
 
 
@@ -241,12 +249,8 @@ def main():
         # # col5.metric(label="***Michu Channel Joined User***", value=df_combine.groupby('user_id')['ch_id'].nunique().sum(), delta="Michu Channel")
         style_metric_cards(background_color="#e38524", border_left_color="#00adef", border_color="#1f66bd", box_shadow="#f71938")
 
-        # # Display combined data in a table
-        # st.write(":orange[Michu Women Targeted Customer List 👇🏻]")
-        # st.write(df_combine.drop(columns=['customerId', 'userName']).reset_index(drop=True).rename(lambda x: x + 1))
-        # df = df_combine.drop(columns=['customerId', 'userName'])
-        # csv = df.to_csv(index=False)
-        # st.download_button(label=":blue[Download CSV]", data=csv, file_name='Women_Targeted_data.csv', mime='text/csv')
+        combined_cust_by_crm = combined_cust_by_crm.drop_duplicates(subset=['Saving Account'], keep='first')
+        merged_df_1 = merged_df_1.drop_duplicates(subset=['Saving Account'], keep='first')
         st.markdown("""
             <style>
                 .stTabs [data-baseweb="tab"] {
@@ -267,7 +271,7 @@ def main():
             if (combined_cust_by_crm is not None and not combined_cust_by_crm.empty) or  (crm_cust_only is not None and not crm_cust_only.empty):
                 st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
                 if combined_cust_by_crm is not None and not combined_cust_by_crm.empty:
-                    st.write(combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                    st.write(combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1))
                     # df = unique_customer.drop(columns=['uniqueId', 'userName'])
                     # csv = df.to_csv(index=False)
                     # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
@@ -287,7 +291,7 @@ def main():
             if (merged_df_1 is not None and not merged_df_1.empty) or  (merged_df_2 is not None and not merged_df_2.empty):
                 st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
                 if merged_df_1 is not None and not merged_df_1.empty:
-                    st.write(merged_df_1.drop(columns=['userId', 'kiyya_id',]).reset_index(drop=True).rename(lambda x: x + 1))
+                    st.write(merged_df_1.drop(columns=['userId', 'kiyya_id',]).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1))
                     # df = unique_customer.drop(columns=['uniqueId', 'userName'])
                     # csv = df.to_csv(index=False)
                     # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')

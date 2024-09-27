@@ -61,13 +61,13 @@ def load_dataframes(mydb):
 
 def load_unquie(mydb):
     query = """
-    SELECT ui.userId, ui.userName, ui.district, branch_code, bl.branch_name
-    FROM user_info ui
-    JOIN branch_list bl ON ui.branch = bl.branch_code
+    SELECT d.district_name, bl.branch_code, bl.branch_name
+    FROM branch_list bl
+    JOIN district_list d ON bl.dis_Id = d.dis_Id
     """
 
     # Fetch data and create DataFrame
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
+    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['District', 'branch_code', 'Branch'])
     # df_user_info = pd.DataFrame(fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
     unique_customer_query = f"SELECT * FROM unique_intersection WHERE `Disbursed_Date` >= '2024-07-01'"
     df_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), columns=['uniqueId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
@@ -75,7 +75,7 @@ def load_unquie(mydb):
     # Merge the two DataFrames based on 'userId'
     merged_df = pd.merge(df_user_info, df_customer, on='branch_code', how='inner')
     
-    df_combine = merged_df[['uniqueId', 'userName', 'District', 'Branch', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']]
+    df_combine = merged_df[['uniqueId', 'District', 'Branch', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']]
     
     return df_combine
 
@@ -430,10 +430,22 @@ def aggregate_and_insert_actual_data(mydb):
     # Insert aggregated data into the actual table
     cursor = mydb.cursor()
     for index, row in aggregated_df.iterrows():
-        cursor.execute("""
-            INSERT INTO actual (branch_code, unique_actual, account_actual, disbursment_actual, actual_date)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (row['branch_code'], row['unique_actual'], row['account_actual'], row['disbursment_actual'], row['actual_date']))
+        # Check if this branch_code and actual_date already exist in the actual table
+        check_record_query = """
+            SELECT EXISTS (
+                SELECT 1 FROM actual 
+                WHERE branch_code = %s AND actual_date = %s
+            )
+        """
+        cursor.execute(check_record_query, (row['branch_code'], row['actual_date']))
+        record_exists = cursor.fetchone()[0]
+        
+        if not record_exists:
+            # Insert the new record only if it doesn't already exist
+            cursor.execute("""
+                INSERT INTO actual (branch_code, unique_actual, account_actual, disbursment_actual, actual_date)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (row['branch_code'], row['unique_actual'], row['account_actual'], row['disbursment_actual'], row['actual_date']))
     
     mydb.commit()
     cursor.close()
@@ -1532,9 +1544,17 @@ def check_unique_phone(cursor, phone_number):
     # Retrieve phone number from branchcustomer table
     cursor.execute("SELECT phoneNumber FROM branchcustomer WHERE phoneNumber = %s", (processed_phone_number,))
     result3 = cursor.fetchone()
+
+     # Retrieve phone number from kiyya_customer table
+    cursor.execute("SELECT phone_number FROM kiyya_customer WHERE phone_number = %s", (processed_phone_number,))
+    result4 = cursor.fetchone()
+
+     # Retrieve phone number from women_product table
+    cursor.execute("SELECT phone_number FROM women_product_customer WHERE phone_number = %s", (processed_phone_number,))
+    result5 = cursor.fetchone()
     
     # Check if phone number exists in any of the tables
-    return result1 is not None or result2 is not None or result3 is not None
+    return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None
 
 def check_unique_account(cursor, account):
     """
@@ -1573,9 +1593,18 @@ def check_unique_account(cursor, account):
     cursor.execute("SELECT saving_account FROM conversiondata WHERE saving_account = %s", (account,))
     result6 = cursor.fetchone()
 
+    # Retrieve phone number from kiyya_customer table
+    cursor.execute("SELECT account_number FROM kiyya_customer WHERE account_number = %s", (account,))
+    result7 = cursor.fetchone()
+   
+
+    # Retrieve phone number from women_product table
+    cursor.execute("SELECT account_no FROM women_product_customer WHERE account_no = %s", (account,))
+    result8 = cursor.fetchone()
+
     
     # Check if phone number exists in any of the tables
-    return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None or result6 is not None
+    return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None or result6 is not None or result7 is not None or result8 is not None
 
 
 
@@ -2126,6 +2155,19 @@ def get_unquiedkiyyaphone(cursor):
     # st.write(modified_phone)
     return modified_phone
 
+def get_unquiedkiyyaphone(cursor):
+    """
+    Fetches a list of phoneNumber from the MySQL server database.
+
+    Returns:
+        A list of user phoneNumber. kiyya_customer
+    """
+    cursor.execute("SELECT phone_number FROM kiyya_customer")
+    phone = [user[0] for user in cursor.fetchall()]
+    modified_phone = ['0' + p[4:] if len(p) > 4 else '0' for p in phone]
+    # st.write(modified_phone)
+    return modified_phone
+
 
 def check_durationunique_account(cursor, account):
     """
@@ -2140,28 +2182,35 @@ def check_durationunique_account(cursor, account):
     """
     # Retrieve account number from women_product_customer table
     cursor.execute("SELECT account_no FROM women_product_customer WHERE account_no = %s", (account,))
-    result4 = cursor.fetchone()
+    result4 = cursor.fetchone()  # Only fetch one result, no need to fetch all
 
     # Retrieve saving account from unique_intersection table with specific product types
     cursor.execute("""
         SELECT saving_account FROM unique_intersection 
         WHERE saving_account = %s AND (product_type = 'Women Formal' OR product_type = 'Women Informal')
     """, (account,))
-    result5 = cursor.fetchone()
+    result5 = cursor.fetchone()  # Fetch only one result
 
     # Retrieve saving account from conversiondata table with specific product types
     cursor.execute("""
         SELECT saving_account FROM conversiondata 
         WHERE saving_account = %s AND (product_type = 'Women Formal' OR product_type = 'Women Informal')
     """, (account,))
-    result6 = cursor.fetchone()
+    result6 = cursor.fetchone()  # Fetch only one result
 
-    # Retrieve account number from women_product_customer table
+    # Retrieve account number from kiyya_customer table
     cursor.execute("SELECT account_number FROM kiyya_customer WHERE account_number = %s", (account,))
-    result7 = cursor.fetchone()
+    result7 = cursor.fetchone()  # Fetch only one result
+
+    # # Retrieve account number from branch_customer table  
+    # cursor.execute("SELECT Saving_Account FROM branchcustomer WHERE Saving_Account = %s", (account,))
+    # result8 = cursor.fetchone()  # Fetch only one result
 
     # Check if account number exists in any of the tables
     return result4 is not None or result5 is not None or result6 is not None or result7 is not None
+
+
+
 
 
 def load_women_data(mydb):
@@ -2315,32 +2364,33 @@ def load_all_kiyya_data(mydb):
 
     # CRM user query
     crm_user_query = """
-        SELECT dr.crm_id, br.full_name, br.sub_process 
+        SELECT DISTINCT k.userId, br.full_name, br.sub_process 
         FROM crm_list br
         JOIN crm_user dr ON br.employe_id = dr.employe_id
+        JOIN kiyya_customer k ON k.userId = dr.crm_id
         """
     crm_user_list = pd.DataFrame(fetch_data(crm_user_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
 
     # Women product customer query
     women_customer_query = """
-        SELECT dr.userId, br.full_Name, br.district 
-        FROM user_info br
-        JOIN kiyya_customer dr ON br.userId = dr.userId
-        """
+    SELECT DISTINCT dr.userId, br.full_Name, br.district 
+    FROM user_info br
+    JOIN kiyya_customer dr ON br.userId = dr.userId
+    """
     women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
 
     # Combine user data
-    combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['userId'])
+    combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['userId']).reset_index(drop=True).rename(lambda x: x + 1)
+  
 
     # Queries for customer data
-    keyya_customer_query = "SELECT * FROM kiyya_customer"
+    keyya_customer_query = "SELECT * FROM kiyya_customer where userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'"
     unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal')"
     conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal')"
 
     # Fetching customer data
     dureti_customer = pd.DataFrame(fetch_data(keyya_customer_query, mydb), 
                                    columns=['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
-
     unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
@@ -2354,10 +2404,11 @@ def load_all_kiyya_data(mydb):
     # Select and concatenate the required columns
     unique_cust_by_crm = unique_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'Disbursed Date']]
     conv_cust_by_crm = conv_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'Disbursed Date']]
-
+    
     # Combine unique and conversion customers
-    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
- 
+    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1)
+    
+    
     
 
     # Merge with user data

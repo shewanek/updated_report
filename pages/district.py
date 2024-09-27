@@ -112,7 +112,7 @@ def select():
         if st.form_submit_button(':orange[Proceed]'):
             if role == 'Select Role':
                 st.warning('Please select a role.')
-            elif role == 'Admin' or role == 'Data Uploader' or role == 'collection_admin':
+            elif role == 'Admin' or role == 'Data Uploader' or role == 'collection_admin' or role == 'under_admin':
                 st.session_state['selected_role'] = role
                 st.switch_page('pages/Signup.py')
             else:

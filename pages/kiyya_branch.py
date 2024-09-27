@@ -156,13 +156,21 @@ def register():
             date2 = st.date_input("End Date", combined_end_date, min_value=combined_start_date, max_value=combined_end_date)
 
         make_sidebar1()
+        
+        date1 = pd.Timestamp(date1)
+        date2 = pd.Timestamp(date2)
 
-        f_combined_cust_by_crm = f_combined_cust_by_crm[(f_combined_cust_by_crm["Disbursed Date"] >= date1) & (f_combined_cust_by_crm["Disbursed Date"] <= date2)]
-        f_crm_cust_only = f_crm_cust_only[(f_crm_cust_only["registered_date"] >= date1) & (f_crm_cust_only["registered_date"] <= date2)]
+        f_combined_cust_by_crm["Disbursed Date"] = pd.to_datetime(f_combined_cust_by_crm["Disbursed Date"]).dt.date
+        f_combined_cust_by_crm = f_combined_cust_by_crm[(f_combined_cust_by_crm["Disbursed Date"] >= date1.date()) & (f_combined_cust_by_crm["Disbursed Date"] <= date2.date())]
+        
+        f_crm_cust_only["registered_date"] = pd.to_datetime(f_crm_cust_only["registered_date"]).dt.date
+        f_crm_cust_only = f_crm_cust_only[(f_crm_cust_only["registered_date"] >= date1.date()) & (f_crm_cust_only["registered_date"] <= date2.date())]
 
-        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1) & (combined_cust_by_crm["Disbursed Date"] <= date2)]
+        combined_cust_by_crm["Disbursed Date"] = pd.to_datetime(combined_cust_by_crm["Disbursed Date"]).dt.date
+        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1.date()) & (combined_cust_by_crm["Disbursed Date"] <= date2.date())]
 
-        crm_cust_only = crm_cust_only[(crm_cust_only["Register Date"] >= date1) & (crm_cust_only["Register Date"] <= date2)]
+        crm_cust_only["Register Date"] = pd.to_datetime(crm_cust_only["Register Date"]).dt.date
+        crm_cust_only = crm_cust_only[(crm_cust_only["Register Date"] >= date1.date()) & (crm_cust_only["Register Date"] <= date2.date())]
        
         total = combined_cust_by_crm['kiyya_id'].nunique() + f_combined_cust_by_crm['wpc_id'].nunique()
             
@@ -184,6 +192,9 @@ def register():
                 }
             </style>
             """, unsafe_allow_html=True)
+        # Drop duplicates based on 'Saving Account', keeping the first occurrence
+        combined_cust_by_crm = combined_cust_by_crm.drop_duplicates(subset=['Saving Account'], keep='first')
+        f_combined_cust_by_crm = f_combined_cust_by_crm.drop_duplicates(subset=['Saving Account'], keep='first')
         # st.write(merge)
         tab1, tab2 = st.tabs(["Kiyya Informal Registered Customer list", "Kiyya Formal Registered Customer list"])
         with tab1:

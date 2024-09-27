@@ -91,6 +91,7 @@ def main():
     if mydb is not None:
         cursor = mydb.cursor()
         df_combine = load_unquie(mydb)
+        
         # Side bar
         st.sidebar.image("pages/michu.png")
         username = st.session_state.get("username", "")

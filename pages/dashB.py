@@ -153,13 +153,22 @@ def register():
             date2 = st.date_input("End Date", combined_end_date, min_value=combined_start_date, max_value=combined_end_date)
 
         make_sidebar()
+        # Convert date1 and date2 to pd.Timestamp, if they are not already
+        date1 = pd.Timestamp(date1)
+        date2 = pd.Timestamp(date2)
 
-        f_combined_cust_by_crm = f_combined_cust_by_crm[(f_combined_cust_by_crm["Disbursed Date"] >= date1) & (f_combined_cust_by_crm["Disbursed Date"] <= date2)]
-        f_crm_cust_only = f_crm_cust_only[(f_crm_cust_only["registered_date"] >= date1) & (f_crm_cust_only["registered_date"] <= date2)]
+        # Ensure both sides of the comparison are dates
+        f_combined_cust_by_crm["Disbursed Date"] = pd.to_datetime(f_combined_cust_by_crm["Disbursed Date"]).dt.date
+        f_combined_cust_by_crm = f_combined_cust_by_crm[(f_combined_cust_by_crm["Disbursed Date"] >= date1.date()) & (f_combined_cust_by_crm["Disbursed Date"] <= date2.date())]
 
-        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1) & (combined_cust_by_crm["Disbursed Date"] <= date2)]
+        f_crm_cust_only["registered_date"] = pd.to_datetime(f_crm_cust_only["registered_date"]).dt.date
+        f_crm_cust_only = f_crm_cust_only[(f_crm_cust_only["registered_date"] >= date1.date()) & (f_crm_cust_only["registered_date"] <= date2.date())]
 
-        crm_cust_only = crm_cust_only[(crm_cust_only["Register Date"] >= date1) & (crm_cust_only["Register Date"] <= date2)]
+        combined_cust_by_crm["Disbursed Date"] = pd.to_datetime(combined_cust_by_crm["Disbursed Date"]).dt.date
+        combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1.date()) & (combined_cust_by_crm["Disbursed Date"] <= date2.date())]
+
+        crm_cust_only["Register Date"] = pd.to_datetime(crm_cust_only["Register Date"]).dt.date
+        crm_cust_only = crm_cust_only[(crm_cust_only["Register Date"] >= date1.date()) & (crm_cust_only["Register Date"] <= date2.date())]
 
         total = combined_cust_by_crm['kiyya_id'].nunique() + f_combined_cust_by_crm['wpc_id'].nunique()
             
@@ -182,12 +191,19 @@ def register():
             </style>
             """, unsafe_allow_html=True)
         # st.write(merge)
+        # Drop duplicates based on 'Saving Account', keeping the first occurrence
+        combined_cust_by_crm = combined_cust_by_crm.drop_duplicates(subset=['Saving Account'], keep='first')
+        f_combined_cust_by_crm = f_combined_cust_by_crm.drop_duplicates(subset=['Saving Account'], keep='first')
+
+        
         tab1, tab2 = st.tabs(["Kiyya Informal Registered Customer list", "Kiyya Formal Registered Customer list"])
         with tab1:
             if (combined_cust_by_crm is not None and not combined_cust_by_crm.empty) or  (crm_cust_only is not None and not crm_cust_only.empty):
                 st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
                 if combined_cust_by_crm is not None and not combined_cust_by_crm.empty:
-                    st.write(combined_cust_by_crm.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
+                    combined_cust_by_crm = combined_cust_by_crm.drop(columns=['kiyya_id', 'userId']).drop_duplicates().reset_index(drop=True)
+                    combined_cust_by_crm.index = combined_cust_by_crm.index + 1  # Increment index by 1
+                    st.write(combined_cust_by_crm)
                     # df = unique_customer.drop(columns=['uniqueId', 'userName'])
                     # csv = df.to_csv(index=False)
                     # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
@@ -197,7 +213,7 @@ def register():
                 st.markdown('<span style="color: #e38524;">**Registered Customer but, not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
                 if crm_cust_only is not None and not crm_cust_only.empty:
                     st.info("NB: This customer is not countable as Kiyya Informal customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
-                    st.write(crm_cust_only.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
+                    st.write(crm_cust_only.drop(columns=['kiyya_id', 'userId']).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1))
                 else:
                     st.info("You have no registered today.")
             else:
@@ -206,7 +222,7 @@ def register():
             if (f_combined_cust_by_crm is not None and not f_combined_cust_by_crm.empty) or  (f_crm_cust_only is not None and not f_crm_cust_only.empty):
                 st.markdown(f'<span style="color: #e38524;">**Registered Customer** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
                 if f_combined_cust_by_crm is not None and not f_combined_cust_by_crm.empty:
-                    st.write(f_combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                    st.write(f_combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1))
                     # df = unique_customer.drop(columns=['uniqueId', 'userName'])
                     # csv = df.to_csv(index=False)
                     # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
@@ -216,7 +232,7 @@ def register():
                 st.markdown('<span style="color: #e38524;">**Registered Customer but, not yet disbursed.(<span style="color: #00adef;">Live</span>)**</span> 👇🏻', unsafe_allow_html=True)
                 if f_crm_cust_only is not None and not f_crm_cust_only.empty:
                     st.info("NB: This customer is not countable as Kiyya Formal customer until the disbursement is confirmed. Again, it is important to note that if the registered customer account number is incorrect, it is not countable for the registered user.")
-                    st.write(f_crm_cust_only.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
+                    st.write(f_crm_cust_only.drop(columns=['wpc_id', 'crm_id']).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1))
                 else:
                     st.info("You have no registered today.")
             else:

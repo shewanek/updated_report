@@ -35,13 +35,13 @@ def kiyya_register():
         Saving_Account = st.text_input('Saving Account', key=account_key, placeholder='Enter Saving Account').strip()
 
         # Customer Identification Type
-        customer_id_type = st.selectbox("Customer Identification Type", ["Select Id Type", "Kebele ID", "National ID", "Passport", "Driver's License"], key=id_key)
+        customer_id_type = st.selectbox("Customer Identification Type", ["Select Id Type", "Kebele ID", "National ID", "Passport", "Driver's License"], key=id_key).strip()
 
         # Gender
-        gender = st.selectbox("Gender", ["Female", "Male"], key=gender_key)
+        gender = st.selectbox("Gender", ["Female", "Male"], key=gender_key).strip()
 
         # Marital Status
-        marital_status = st.selectbox("Marital Status", ["Select Marital Status", "Unmarried", "Married", "Divorced", "Widowed"], key=marital_key)
+        marital_status = st.selectbox("Marital Status", ["Select Marital Status", "Unmarried", "Married", "Divorced", "Widowed"], key=marital_key).strip()
 
         # Date of Birth
         date_of_birth = st.date_input(
@@ -50,18 +50,17 @@ def kiyya_register():
         min_value=date(1900, 1, 1),  # Earliest date selectable
         max_value=date.today(),  # Latest date selectable
         key=birth_key
-    )
-
+        )
         # Customer Address
-        region = st.selectbox("Region", ["Select region", "Addis Ababa", "Afar", "Amhara", "Benishangul-Gumuz", "Central Ethiopia Regional State", "Dire Dawa","Gambela", "Harari", "Oromia", "Sidama", "Somali", "South Ethiopia Regional State", "South West Ethiopia Peoples", "Tigray"], key=region_key)
+        region = st.selectbox("Region", ["Select region", 'ADDIS_ABABA', 'AFAR', 'AMHARA', 'TIGRAY', 'BENISHANGUL_GUMUZ', 'GAMBELA', 'OROMIA', 'SIDAMA', 'SOMALI', 'SNNP', 'SWEP', 'HARAR', 'DIRE_DAWA'], key=region_key).strip()
         zone_subcity = st.text_input("Zone/Subcity", placeholder="Enter Zone/Subcity", key=zone_key).strip()
         woreda = st.text_input("Woreda", placeholder="Enter Woreda", key=woreda_key).strip()
 
         # Educational Level
-        educational_level = st.selectbox("Educational Level",["Select Educational Level", "Primary", "Diploma", "Bachelors Degree", "Masters Degree", "PHD and above"], key=educational_key)
+        educational_level = st.selectbox("Educational Level",["Select Educational Level", "Primary", "Diploma", "Bachelors Degree", "Masters Degree", "PHD and above"], key=educational_key).strip()
 
         # Economic Sector
-        economic_sector = st.selectbox("Business Sector", ["Select Business Sector", "Agriculture", "Manufacturing", "Domestic Trade Service", "Building and Construction"], key=economic_key)
+        economic_sector = st.selectbox("Business Sector", ["Select Business Sector", "Agriculture", "Manufacturing", "Domestic Trade Service", "Building and Construction"], key=economic_key).strip()
 
         # Line of Business
         line_of_business = st.text_input("Line of Business", placeholder=" Enter Line of Business", key=line_key).strip()
@@ -70,7 +69,7 @@ def kiyya_register():
         initial_working_capital = st.number_input("Initial Working Capital", key = initial_key, value=None, step=1.0, placeholder='Enter Initial Working Capital')
 
         # Source of Initial Capital
-        source_of_initial_capital = st.selectbox("Source of Initial Capital", ["Select Source of Initial Capital", "Family", "Own", "Fund", "Loan"], key=source_key)
+        source_of_initial_capital = st.selectbox("Source of Initial Capital", ["Select Source of Initial Capital", "Family", "Own", "Fund", "Loan"], key=source_key).strip()
 
         # Daily Sales
         monthly_income = st.number_input("Monthly Income", key = daily_key, value=None, step=1.0, placeholder='Enter Monthly Income')
@@ -87,13 +86,14 @@ def kiyya_register():
             if st.form_submit_button(':blue[Register]'):
                 mydb = connect_to_database()
                 if mydb is not None:
-                    cursor = mydb.cursor()
+                    # Using buffered=True to prevent unread result errors
+                    cursor = mydb.cursor(buffered=True)
                     # Validate form inputs
                     if customer_id_type == "Select Id Type":
                         st.error("Please select a valid Customer Identification Type.")
                     elif marital_status == "Select Marital Status":
                         st.error("Please select a valid Marital Status.")
-                    elif region == "Select Region":
+                    elif region == "Select region":
                         st.error("Please select a valid Region.")
                     elif educational_level == "Select Educational Level":
                         st.error("Please select a valid Educational Level.")
