@@ -71,7 +71,7 @@ def upload_to_unique(df, mydb):
                     cursor.execute(query)
                     kiyya_customer_data = cursor.fetchall()
                     kiyya_customer_df = pd.DataFrame(kiyya_customer_data, columns=['Saving_Account', 'userId'])
-                    st.write(kiyya_customer_df)
+                    # st.write(kiyya_customer_df)
 
             # Fetch women_product_customer data for formal_accounts in a similar way
             if formal_accounts:
@@ -96,13 +96,13 @@ def upload_to_unique(df, mydb):
                     cursor.execute(query)
                     women_customer_data = cursor.fetchall()
                     women_customer_df = pd.DataFrame(women_customer_data, columns=['Saving_Account', 'userId'])
-                    st.write(women_customer_df)
+                    # st.write(women_customer_df)
 
             # Fetch branchcustomer data
             cursor.execute("SELECT Saving_Account, userId FROM branchcustomer")
             branchcustomer_data = cursor.fetchall()
             branchcustomer_df = pd.DataFrame(branchcustomer_data, columns=['Saving_Account', 'userId'])
-            st.write(branchcustomer_df)
+            # st.write(branchcustomer_df)
             # Fetch all user_info data
             cursor.execute("SELECT userId, branch FROM user_info")
             user_info_data = cursor.fetchall()
@@ -116,7 +116,7 @@ def upload_to_unique(df, mydb):
         # Concatenate customer data in reverse order to prioritize kiyya_customer and women_customer
         combined_customer_df = pd.concat([branchcustomer_df, women_customer_df, kiyya_customer_df], ignore_index=True)
         combined_customer_df = combined_customer_df.drop_duplicates(subset=['Saving_Account'], keep='last')
-        st.write(combined_customer_df)
+        # st.write(combined_customer_df)
 
         # # Close cursor after data fetching
         # cursor.close()

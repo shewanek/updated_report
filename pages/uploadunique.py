@@ -77,7 +77,7 @@ def upload_to_unique(df, mydb):
                     cursor.execute(query)
                     kiyya_customer_data = cursor.fetchall()
                     kiyya_customer_df = pd.DataFrame(kiyya_customer_data, columns=['Saving_Account', 'userId'])
-                    st.write(kiyya_customer_df)
+                    # st.write(kiyya_customer_df)
 
             if formal_accounts:
                 formal_accounts_tuple = tuple(formal_accounts)
@@ -101,7 +101,7 @@ def upload_to_unique(df, mydb):
                     cursor.execute(query)
                     women_customer_data = cursor.fetchall()
                     women_customer_df = pd.DataFrame(women_customer_data, columns=['Saving_Account', 'userId'])
-                    st.write(women_customer_df)
+                    # st.write(women_customer_df)
 
             # Fetch branchcustomer data
             cursor.execute("SELECT Saving_Account, userId FROM branchcustomer")
