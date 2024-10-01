@@ -10,16 +10,16 @@ import json
 def connect_to_database():
     try:
         mydb = mysql.connector.connect(
-            # host="63.34.199.220",
-            # port="3306",
-            # user="sane",
-            # password="sanemysql!2244",
-            # database="michu_dashBoard"
-            host="localhost",
+            host="63.34.199.220",
             port="3306",
-            user="root",
-            password="SH36essti",
-            database="michuDashBoard" 
+            user="sane",
+            password="sanemysql!2244",
+            database="michu_dashBoard"
+            # host="localhost",
+            # port="3306",
+            # user="root",
+            # password="SH36essti",
+            # database="michuDashBoard" 
         )
         print("Connected to MySQL database successfully.")
         return mydb
