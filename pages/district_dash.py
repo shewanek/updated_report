@@ -84,55 +84,59 @@ def register():
     with st.form(key = 'Create_dis_dash', clear_on_submit=True):
         col1, col2 = st.columns([0.7, 0.5])
         with col1:
-            # if st.form_submit_button("Michu Women Targeted, Registered Report"):
+            # # if st.form_submit_button("Michu Women Targeted, Registered Report"):
+            # #     sleep(0.5)
+            # #     st.switch_page('pages/district_duretidash.py')
+            # # st.write("")
+            # # st.write("")
+            # if st.form_submit_button("Michu new customer  Dashboard"):
             #     sleep(0.5)
-            #     st.switch_page('pages/district_duretidash.py')
+            #     st.switch_page('pages/district_uniquedash.py')
             # st.write("")
             # st.write("")
-            if st.form_submit_button("Michu new customer  Dashboard"):
-                sleep(0.5)
-                st.switch_page('pages/district_uniquedash.py')
-            st.write("")
-            st.write("")
-            # if st.form_submit_button("Michu Conversion Dashboard"):
-            #     sleep(0.5)
-            #     st.switch_page('pages/district_conversiondash.py')
-            # st.write("")
-            # st.write("")
+            # # if st.form_submit_button("Michu Conversion Dashboard"):
+            # #     sleep(0.5)
+            # #     st.switch_page('pages/district_conversiondash.py')
+            # # st.write("")
+            # # st.write("")
             if st.form_submit_button("Michu Kiyya Product Report"):
                 sleep(0.5)
                 st.switch_page('pages/kiyya_district.py')
         with col2:
-            if st.form_submit_button("Michu Customers Detail Report"):
-                sleep(0.5)
-                st.switch_page('pages/district_data.py')
-            st.write("")
-            st.write("")
-
-            if st.form_submit_button("Target Performance Report"):
-                sleep(0.5)
-                st.switch_page('pages/Actual_vs_Target.py')
-
-    # with st.form(key = 'Create report', clear_on_submit=True):
-    #     col1, col2, col3 = st.columns([0.2, 0.6, 0.2])
-    #     with col2:
-    #         st.markdown('<div class="centered-form">', unsafe_allow_html=True)
-    #         if st.form_submit_button("Michu Report (Veiw Data)"):
+            st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
+            #  if st.form_submit_button("Target Performance Kiyya Report"):
+            #     sleep(0.5)
+            #     st.switch_page('pages/kiyya_actual_vs_target.py')
+    #         if st.form_submit_button("Michu Customers Detail Report"):
     #             sleep(0.5)
     #             st.switch_page('pages/district_data.py')
-    
-    # with st.form(key = 'actual report', clear_on_submit=True):
-    #     col1, col2, col3 = st.columns([0.2, 0.6, 0.2])
-    #     with col2:
-    #         st.markdown('<div class="centered-form">', unsafe_allow_html=True)
-    #         if st.form_submit_button("Actual vs Targeted Report"):
+    #         st.write("")
+    #         st.write("")
+
+    #         if st.form_submit_button("Target Performance Report"):
     #             sleep(0.5)
     #             st.switch_page('pages/Actual_vs_Target.py')
+
+    # # with st.form(key = 'Create report', clear_on_submit=True):
+    # #     col1, col2, col3 = st.columns([0.2, 0.6, 0.2])
+    # #     with col2:
+    # #         st.markdown('<div class="centered-form">', unsafe_allow_html=True)
+    # #         if st.form_submit_button("Michu Report (Veiw Data)"):
+    # #             sleep(0.5)
+    # #             st.switch_page('pages/district_data.py')
+    
+    # # with st.form(key = 'actual report', clear_on_submit=True):
+    # #     col1, col2, col3 = st.columns([0.2, 0.6, 0.2])
+    # #     with col2:
+    # #         st.markdown('<div class="centered-form">', unsafe_allow_html=True)
+    # #         if st.form_submit_button("Actual vs Targeted Report"):
+    # #             sleep(0.5)
+    # #             st.switch_page('pages/Actual_vs_Target.py')
         
-        # with col3:
-        #     if st.form_submit_button("LogOut"):
-        #         sleep(0.5)
-        #         st.switch_page('main.py')
+    #     # with col3:
+    #     #     if st.form_submit_button("LogOut"):
+    #     #         sleep(0.5)
+    #     #         st.switch_page('main.py')
         
 
 if __name__ == '__main__':

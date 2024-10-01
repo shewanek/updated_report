@@ -199,47 +199,54 @@ def register():
         b_crm_cust_only["Register Date"] = pd.to_datetime(b_crm_cust_only["Register Date"]).dt.date
         b_crm_cust_only = b_crm_cust_only[(b_crm_cust_only["Register Date"] >= date1.date()) & (b_crm_cust_only["Register Date"] <= date2.date())]
        
-        total = combined_cust_by_crm['kiyya_id'].nunique() + f_combined_cust_by_crm['wpc_id'].nunique()
-        unrtotal = crm_cust_only['kiyya_id'].nunique() + f_crm_cust_only['wpc_id'].nunique() + b_crm_cust_only['kiyya_id'].nunique() + fb_crm_cust_only['wpc_id'].nunique()
+        total_d_in = combined_cust_by_crm['kiyya_id'].nunique()
+        total_d_f = f_combined_cust_by_crm['wpc_id'].nunique()
+        unrtotal_d = crm_cust_only['kiyya_id'].nunique() + f_crm_cust_only['wpc_id'].nunique()
 
-        b_total = b_combined_cust_by_crm['kiyya_id'].nunique() + fb_combined_cust_by_crm['wpc_id'].nunique()
+        untotal_b = b_crm_cust_only['kiyya_id'].nunique() + fb_crm_cust_only['wpc_id'].nunique()
+        b_total_in = b_combined_cust_by_crm['kiyya_id'].nunique()
+        b_total_f = fb_combined_cust_by_crm['wpc_id'].nunique()
 
-
-
-        col1, col2, col3 = st.columns(3)
-        col1.metric(label="**Total Registered by district**", value=total, delta=" Already Disbursed for")
-        col2.metric(label="**Total Registered by Branch**", value=b_total, delta=" Already Disbursed for")
-        col3.metric(label="**Total Registered Customer (Informal + formal)**", value=unrtotal, delta=" Not Yet Disbursed for")
-        style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
-
-        
-        with st.form(key = 'Create_crmdash', clear_on_submit=True):
-            col4, col5 = st.columns([0.5, 0.5])
-            with col4:
-                if st.form_submit_button("Kiyya :orange[INFORMAL] Registeration Form"):
-                    kiyya_register()
-            with col5:
-                if st.form_submit_button("Kiyya :blue[FORMAL] Registeration Form"):
-                    registerr()
-            
-    
         st.markdown("""
-            <style>
-                .stTabs [data-baseweb="tab"] {
-                    margin-top: -0.9rem;
-                    margin-right: 13rem; /* Adjust the value to increase or decrease space between tabs */
-                    background-color: black;
-                    color: white; /* Optional: Change text color */
-                    padding: 0.5rem 1rem; /* Add some padding for better appearance */
-                    border-bottom: 2px solid #00adef;
-                }
-                .stTabs [data-baseweb="tab"].active {
-                border-bottom-color: cyan !important;
-                }
-            </style>
-            """, unsafe_allow_html=True)
-        tab3, tab4 = st.tabs(["Registered Customer by District", "Registered Customer by Branch"])
-        with tab3:
+                <style>
+                    .stTabs [data-baseweb="tab"] {
+                        margin-top: -0.9rem;
+                        margin-right: 13rem; /* Adjust the value to increase or decrease space between tabs */
+                        background-color: black;
+                        color: white; /* Optional: Change text color */
+                        padding: 0.5rem 1rem; /* Add some padding for better appearance */
+                        border-bottom: 2px solid #00adef;
+                    }
+                    .stTabs [data-baseweb="tab"].active {
+                    border-bottom-color: cyan !important;
+                    }
+                </style>
+                """, unsafe_allow_html=True)
+        tab11, tab12 = st.tabs(["Registered Customer by District", "Registered Customer by Branch"])
+        with tab11:
+            col1, col2, col3 = st.columns(3)
+            col1.metric(label="**Total Infromal Customer**", value=total_d_in, delta=" Already Disbursed for")
+            col2.metric(label="**Total Formal Customer**", value=total_d_f, delta=" Already Disbursed for")
+            col3.metric(label="**Total Registered Customer (Informal + formal)**", value=unrtotal_d, delta=" Not Yet Disbursed for")
+            style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
+
+            
+            with st.form(key = 'Create_crmdash', clear_on_submit=True):
+                col4, col5 = st.columns([0.5, 0.5])
+                with col4:
+                    if st.form_submit_button("Kiyya :orange[INFORMAL] Registeration Form"):
+                        kiyya_register()
+                with col5:
+                    if st.form_submit_button("Kiyya :blue[FORMAL] Registeration Form"):
+                        registerr()
+                
+        
+           
+            combined_cust_by_crm = combined_cust_by_crm.drop_duplicates(subset=['Saving Account'], keep='first')
+            f_combined_cust_by_crm = f_combined_cust_by_crm.drop_duplicates(subset=['Saving Account'], keep='first')
+            
+            
+            
             tab1, tab2 = st.tabs(["Kiyya Informal Customer List", "Kiyya Formal Customer List"])
             with tab1:
                 if (combined_cust_by_crm is not None and not combined_cust_by_crm.empty) or  (crm_cust_only is not None and not crm_cust_only.empty):
@@ -277,7 +284,16 @@ def register():
                         st.info("You have no registered Kiyya Formal Customer today.")
                 else:
                     st.info("You have no registered Kiyya Formal customers yet.")
-        with tab4:
+        with tab12:
+            col1, col2, col3 = st.columns(3)
+            col1.metric(label="**Total Infromal Customer**", value=b_total_in, delta=" Already Disbursed for")
+            col2.metric(label="**Total Formal Customer**", value=b_total_f, delta=" Already Disbursed for")
+            col3.metric(label="**Total Registered Customer (Informal + formal)**", value=untotal_b, delta=" Not Yet Disbursed for")
+            style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
+
+            b_combined_cust_by_crm = b_combined_cust_by_crm.drop_duplicates(subset=['Saving Account'], keep='first')
+            fb_combined_cust_by_crm = fb_combined_cust_by_crm.drop_duplicates(subset=['Saving Account'], keep='first')
+
             tab1, tab2 = st.tabs(["Kiyya Informal Customer List", "Kiyya Formal Customer List"])
             with tab1:
                 if (b_combined_cust_by_crm is not None and not b_combined_cust_by_crm.empty) or  (b_crm_cust_only is not None and not b_crm_cust_only.empty):

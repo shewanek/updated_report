@@ -61,7 +61,7 @@ def main():
         border-radius:6px
         }
         </style>
-        <center> <h4 class = "title_dash"> Michu Kiyya Customers Detail Report (<span style="color: #00adef; font-size: 20px;">Year-To-Date</span>)</h4> </center>
+        <center> <h4 class = "title_dash"> Michu Kiyya Customers Detail Report </h4> </center>
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
@@ -237,7 +237,8 @@ def main():
         total_not_counted = total_notcounted + total_not_counted_bybr
 
         
-        
+        # tab11, tab12 = st.tabs(["Aggregate Report", "Report per Recruiter"])
+        # with tab12:
         col1, col2, col3 = st.columns(3)
         # col2.markdown('<style>div.block-container{padding-top:0.0002rem;}</style>', unsafe_allow_html=True)
         col1.metric(label="**Total Formal Customer**", value=total_registered, delta="Already Disburesed for")

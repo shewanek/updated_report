@@ -10,16 +10,16 @@ import json
 def connect_to_database():
     try:
         mydb = mysql.connector.connect(
-            host="63.34.199.220",
-            port="3306",
-            user="sane",
-            password="sanemysql!2244",
-            database="michu_dashBoard"
-            # host="localhost",
+            # host="63.34.199.220",
             # port="3306",
-            # user="root",
-            # password="SH36essti",
-            # database="michuDashBoard" 
+            # user="sane",
+            # password="sanemysql!2244",
+            # database="michu_dashBoard"
+            host="localhost",
+            port="3306",
+            user="root",
+            password="SH36essti",
+            database="michuDashBoard" 
         )
         print("Connected to MySQL database successfully.")
         return mydb
@@ -2231,7 +2231,7 @@ def load_women_data(mydb):
         st.warning("No CRM ID found for the current user.")
         return pd.DataFrame(), pd.DataFrame()
 
-    dureti_customer_query = f"SELECT * FROM women_product_customer WHERE crm_id = '{crm_id_result[0][0]}'"
+    dureti_customer_query = f"SELECT * FROM women_product_customer WHERE crm_id = '{crm_id_result[0][0]}'and `registered_date` >= '2024-10-01'"
     unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
     conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
 
@@ -2292,7 +2292,7 @@ def load_all_women_data(mydb):
     combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['crm_id'])
 
     # Queries for customer data
-    dureti_customer_query = "SELECT * FROM women_product_customer"
+    dureti_customer_query = "SELECT * FROM women_product_customer WHERE `registered_date` >= '2024-10-01'"
     unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal')"
     conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal')"
 
@@ -2384,7 +2384,7 @@ def load_all_kiyya_data(mydb):
   
 
     # Queries for customer data
-    keyya_customer_query = "SELECT * FROM kiyya_customer where userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59'"
+    keyya_customer_query = "SELECT * FROM kiyya_customer where userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59' and `registered_date` >= '2024-10-01'"
     unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal')"
     conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal')"
 
@@ -2448,7 +2448,7 @@ def load_kiyya_data(mydb):
         st.warning("No CRM ID found for the current user.")
         return pd.DataFrame(), pd.DataFrame()
 
-    dureti_customer_query = f"SELECT * FROM kiyya_customer WHERE userId = '{crm_id_result[0][0]}'"
+    dureti_customer_query = f"SELECT * FROM kiyya_customer WHERE userId = '{crm_id_result[0][0]}' and `registered_date` >= '2024-10-01'"
     unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
     conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
 
@@ -2515,7 +2515,7 @@ def load_kiyya_branch_data(mydb):
 
         # Construct the query for the kiyya_customer table using the userIds
         crm_id_list = "', '".join(crm_ids)
-        dureti_customer_query = f"SELECT * FROM kiyya_customer WHERE userId IN ('{crm_id_list}')"
+        dureti_customer_query = f"SELECT * FROM kiyya_customer WHERE userId IN ('{crm_id_list}') and `registered_date` >= '2024-10-01'"
 
         unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
         conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
@@ -2585,7 +2585,7 @@ def load_formal_branch_data(mydb):
 
         # Construct the query for the kiyya_customer table using the userIds
         crm_id_list = "', '".join(crm_ids)
-        dureti_customer_query = f"SELECT * FROM women_product_customer WHERE crm_id IN ('{crm_id_list}')"
+        dureti_customer_query = f"SELECT * FROM women_product_customer WHERE crm_id IN ('{crm_id_list}') and `registered_date` >= '2024-10-01'"
         unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
         conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
 
