@@ -2899,6 +2899,16 @@ def load_kiyya_actual_vs_targetdata(mydb):
         # Merge DataFrames on 'Saving Account'
         unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
         # st.write(unique_conversation)
+        bf_kiyya = "select saving_account from michu_dashBoard.misseddata"
+        bf_kiyya_customer = pd.DataFrame(fetch_data(bf_kiyya, mydb), columns=['Saving Account'])
+        
+        unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
+
+        # Filter rows where bf_kiyya_customer doesn't have a match in unique_conversation
+        unique_not_in_bf_kiyya = unique_conversation[unique_conversation['_merge'] == 'left_only']
+
+        # Drop the _merge column (optional)
+        unique_conversation = unique_not_in_bf_kiyya.drop(columns=['_merge'])
         infrmal_formal = pd.concat([informal_customer, formal_customer], axis=0).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1)
         # st.write(infrmal_formal)
         informal_formal_code = infrmal_formal.merge(combined_user, on='user_Id', how='inner')
@@ -2908,11 +2918,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
         full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left')
         # st.write(full_disb)
 
-        # # Merge full_disb and combined_user based on branch_code
-        # merged_df = pd.merge(full_disb, combined_user[['user_Id', 'branch_code']], 
-        #                     on='branch_code', 
-        #                     how='left', 
-        #                     suffixes=('', '_combined'))
+        
         
         # st.write(merged_df)
         # Replace null values in user_Id of full_disb with user_Id from combined_user when branch_code matches
