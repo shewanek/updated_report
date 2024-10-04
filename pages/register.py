@@ -94,9 +94,9 @@ def register():
             # #     st.switch_page('pages/duretiregister.py')
             # # st.write("")
             # # st.write("")
-            # if st.form_submit_button("Michu New/Unique Customer Registration Form"):
-            #     sleep(0.5)
-            #     st.switch_page('pages/unique_register.py')
+            if st.form_submit_button("Michu New/Unique Customer Registration Form"):
+                sleep(0.5)
+                st.switch_page('pages/unique_register.py')
             # # st.write("")
             # # st.write("")
             # # # if st.form_submit_button("Michu Collection & Conversion Report Form "):

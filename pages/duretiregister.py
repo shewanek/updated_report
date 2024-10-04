@@ -100,28 +100,57 @@ def register():
                 mydb = connect_to_database()
                 if mydb is not None:
                     cursor = mydb.cursor()
+                    
+                    # Validate inputs and close resources early if invalid
                     if not validate_full_name(name):
                         st.warning('Error, Please enter valid name (First name and father name)') 
+                        cursor.close()
+                        mydb.close()
+                    
                     elif product_type == 'Select Product':
                         st.warning('Please select a Product.')
+                        cursor.close()
+                        mydb.close()
+                    
                     elif not validate_phone(phone_nmuber):
                         st.warning('Error, Please enter a valid phone number (use this format 09... or 07...)')
+                        cursor.close()
+                        mydb.close()
+                    
                     elif not validate_saving_account(Saving_Account):
                         st.warning('Error, The saving account is not correct please try again')
+                        cursor.close()
+                        mydb.close()
+                    
                     elif phone_nmuber in get_duretiphone(cursor):
-                        st.warning('Error, The phone number already exist, please enter correct phone number(new)')
+                        st.warning('Error, The phone number already exists, please enter a correct phone number (new)')
+                        cursor.close()
+                        mydb.close()
+                    
                     elif Saving_Account in get_duretiacount(cursor):
-                        st.warning('Error, The saving account already exist, please enter correct account (new)')
+                        st.warning('Error, The saving account already exists, please enter a correct account (new)')
+                        cursor.close()
+                        mydb.close()
+                    
                     elif not Region.strip():
                         st.warning('Error, Please enter the region')
+                        cursor.close()
+                        mydb.close()
+                    
                     elif not Woreda.strip():
                         st.warning('Error, Please enter Zone/sub city/ Woreda')
+                        cursor.close()
+                        mydb.close()
                     
+                    # If all validations pass, insert the customer
                     else:
                         if insert_customer(mydb, cursor, username, name, product_type, phone_nmuber, Saving_Account, Region, Woreda):
-                            st.success(f" {name} has been successfully registered!")
+                            st.success(f"{name} has been successfully registered!")
+                    
+                    # Close resources after successful registration
                     cursor.close()
                     mydb.close()
+
        
         # with col3:
         #     if st.form_submit_button("LogOut"):

@@ -97,7 +97,9 @@ def register():
     if mydb is not None:
         # combined_cust_by_crm, crm_cust_only = load_women_data(mydb)
         combined_cust_by_crm, crm_cust_only = load_kiyya_data(mydb)
+        
         f_combined_cust_by_crm, f_crm_cust_only = load_women_data(mydb)
+        # st.write(f_crm_cust_only)
         b_combined_cust_by_crm, b_crm_cust_only = load_kiyya_branch_data(mydb)
         fb_combined_cust_by_crm, fb_crm_cust_only= load_formal_branch_data(mydb)
 
@@ -314,7 +316,7 @@ def register():
                     st.info("No branch has registered Kiyya Informal customers yet.")
 
             with tab2:
-                if (fb_combined_cust_by_crm is not None and not fb_combined_cust_by_crm.empty) or  (f_crm_cust_only is not None and not f_crm_cust_only.empty):
+                if (fb_combined_cust_by_crm is not None and not fb_combined_cust_by_crm.empty) or  (fb_crm_cust_only is not None and not fb_crm_cust_only.empty):
                     st.markdown(f'<span style="color: #e38524;">**Registered by You** (<span style="color: #00adef;">whose loan has already been disbursed </span>)</span> 👇🏻', unsafe_allow_html=True)
                     if fb_combined_cust_by_crm is not None and not fb_combined_cust_by_crm.empty:
                         st.write(fb_combined_cust_by_crm.drop(columns=['wpc_id', 'crm_id']).reset_index(drop=True).rename(lambda x: x + 1))
