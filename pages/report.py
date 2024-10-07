@@ -128,18 +128,20 @@ def register():
                 sleep(0.5)
                 st.switch_page('pages/dureti_dash.py')
         with col5:
+            
+            # if st.form_submit_button("Michu Customers Detail Report"):
+            #     sleep(0.5)
+            #     st.switch_page('pages/getdata.py')
+            
+            if st.form_submit_button("Target Performance Report"):
+                sleep(0.5)
+                st.switch_page('pages/Actual_vs_Target.py')
+            st.write("")
+            st.write("")
             # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
             if st.form_submit_button("Target Performance Kiyya Report"):
                 sleep(0.5)
                 st.switch_page('pages/kiyya_actual_vs_target.py')
-            # if st.form_submit_button("Michu Customers Detail Report"):
-            #     sleep(0.5)
-            #     st.switch_page('pages/getdata.py')
-            st.write("")
-            st.write("")
-            if st.form_submit_button("Target Performance Report"):
-                sleep(0.5)
-                st.switch_page('pages/Actual_vs_Target.py')
         st.markdown('</div>', unsafe_allow_html=True)
     
 

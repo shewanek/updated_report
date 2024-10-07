@@ -11,6 +11,54 @@ sys.path.append('DASHBOARD')  # Assuming 'DASHBOARD' is the parent directory con
 from sign_in import sign_up
 
 
+# Helper function to set session state
+def set_session_state(username, password, role, full_name):
+    st.session_state.logged_in = True
+    st.session_state['username'] = username
+    st.session_state['password'] = password
+    st.session_state['role'] = role
+    st.session_state['full_name'] = full_name
+
+# Helper function to display welcome message in the sidebar
+def display_sidebar_welcome(full_name):
+    st.sidebar.subheader(f'Welcome, {full_name}')
+
+# Helper function to redirect based on role
+def role_redirect(role):
+    sleep(0.5)
+    if role == 'Admin':
+        st.switch_page("pages/dashboard.py")
+    elif role == 'Branch User':
+        st.switch_page("pages/register.py")
+    elif role == 'District User':
+        st.switch_page("pages/district_dash.py")
+    elif role == 'Sales Admin':
+        st.switch_page("pages/sales_dash.py")
+    elif role == 'Data Uploader':
+        st.switch_page("pages/UploadData.py")
+    elif role == 'collection_admin':
+        st.switch_page("pages/collection_dash.py")
+    elif role == 'collection_user':
+        st.switch_page("pages/collection_userdash.py")
+    elif role == 'under_admin':
+        st.switch_page("pages/report.py")
+    else:
+        st.warning("No Role given for this User")
+
+# Helper function to redirect based on CRM role
+def crm_role_redirect(role):
+    sleep(0.5)
+    if role == 'CRM':
+        st.switch_page("pages/dashB.py")
+    elif role == 'report':
+        st.switch_page("pages/kiyyaa_Report.py")
+    else:
+        st.warning("No Role given for this User")
+
+# # Function to sign up a new user
+# def sign_up():
+#     st.switch_page("sign_in.py")
+
 # Main function to handle user login
 def main():
     st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide")
@@ -98,100 +146,67 @@ def main():
         # Display the rotating message
         st.sidebar.markdown('Welcome to <span style="color: #e38524;">MICHU</span> Reporting Portal<span style="color: #00adef; font-size: 20px;">!</span>', unsafe_allow_html=True)
 
-        col1,col2 = st.columns([0.4,0.6])
+        col1, col2 = st.columns([0.4, 0.6])
 
-       
         with col1:
+            # Log In button
             if st.form_submit_button('Log In'):
-                mydb = connect_to_database()
-                if mydb is not None:
-                    cursor = mydb.cursor()
-                    if not username.strip():
-                        st.error('Please enter your username')
-                    elif username in get_usernames(cursor):
-                        stored_password = get_password_by_username(cursor, username)
-                        if not password.strip():
-                            st.error('Please enter your Password')
-                        elif stored_password and verify_password(password, stored_password):
-                            role = get_role_by_username(cursor, username)
-                            full_name = get_fullname_by_username(cursor, username)
-                            st.session_state.logged_in = True
-                            st.session_state['username'] = username 
-                            st.session_state['password'] = password
-                            st.session_state['role'] = role
+                mydb = None
+                try:
+                    mydb = connect_to_database()  # Connect to the database
+                    if mydb is not None:
+                        cursor = mydb.cursor()
 
-                            st.session_state['full_name'] = full_name
-                            # st.success(f'Welcome back, {full_name}!')
-                            st.sidebar.subheader(f'Welcome, {full_name}')
-                            # return username  # Return authenticated username
-                            if role == 'Admin':
-                                sleep(0.5)
-                                st.switch_page("pages/dashboard.py")
-                            elif role == 'Branch User':
-                                sleep(0.5)
-                                st.switch_page("pages/register.py")
-                            elif role == 'District User':
-                                sleep(0.5)
-                                st.switch_page("pages/district_dash.py")
-                            elif role == 'Sales Admin':
-                                sleep(0.5)
-                                st.switch_page("pages/sales_dash.py")
-                            elif role == 'Data Uploader':
-                                sleep(0.5)
-                                st.switch_page("pages/UploadData.py")
-                            elif role == 'collection_admin':
-                                sleep(0.5)
-                                st.switch_page('pages/collection_dash.py')
-                            elif role == 'collection_user':
-                                sleep(0.5)
-                                st.switch_page('pages/collection_userdash.py')
-                            elif role == 'under_admin':
-                                sleep(0.5)
-                                st.switch_page('pages/report.py')
-                                
+                        # Username validation
+                        if not username.strip():
+                            st.error('Please enter your username')
+                        elif username in get_usernames(cursor):
+                            stored_password = get_password_by_username(cursor, username)
+
+                            # Password validation
+                            if not password.strip():
+                                st.error('Please enter your Password')
+                            elif stored_password and verify_password(password, stored_password):
+                                role = get_role_by_username(cursor, username)
+                                full_name = get_fullname_by_username(cursor, username)
+                                set_session_state(username, password, role, full_name)
+                                display_sidebar_welcome(full_name)
+
+                                # Role-based redirection
+                                role_redirect(role)
+                                st.balloons()
+
                             else:
-                                st.warning("No Role given for this User")
-                            st.balloons()
+                                st.error('Incorrect Password. Please try again.')
 
-                        else:
-                            st.error('Incorrect Password. Please try again.')
-                    elif username in get_crmusernames(cursor):
-                        stored_password = get_crmpassword_by_username(cursor, username)
-                        if not password.strip():
-                            st.error('Please enter your Password')
-                        elif stored_password and verify_password(password, stored_password):
-                            role = get_role_by_crmusername(cursor, username)
-                            full_name = get_fullname_by_crmusername(cursor, username)
-                            st.session_state.logged_in = True
-                            st.session_state['username'] = username 
-                            st.session_state['password'] = password
-                            st.session_state['role'] = role
+                        elif username in get_crmusernames(cursor):
+                            stored_password = get_crmpassword_by_username(cursor, username)
 
-                            st.session_state['full_name'] = full_name
-                            # st.success(f'Welcome back, {full_name}!')
-                            st.sidebar.subheader(f'Welcome, {full_name}')
-                            # return username  # Return authenticated username
-                            if role == 'CRM':
-                                sleep(0.5)
-                                st.switch_page("pages/dashB.py")
+                            # Password validation for CRM users
+                            if not password.strip():
+                                st.error('Please enter your Password')
+                            elif stored_password and verify_password(password, stored_password):
+                                role = get_role_by_crmusername(cursor, username)
+                                full_name = get_fullname_by_crmusername(cursor, username)
+                                set_session_state(username, password, role, full_name)
+                                display_sidebar_welcome(full_name)
 
-                            elif role == 'report':
-                                sleep(0.5)
-                                st.switch_page("pages/kiyyaa_Report.py")
-                                
+                                # Role-based redirection for CRM users
+                                crm_role_redirect(role)
+                                st.balloons()
+
                             else:
-                                st.warning("No Role given for this User")
-                            st.balloons()
-
+                                st.error('Incorrect Password. Please try again.')
                         else:
-                            st.error('Incorrect Password. Please try again.')
-                    else:
-                        st.warning('Username not found. Please contact Admin if you are a new user.')
-            
-        # with  col2:
-        col3, col4, col5 = st.columns([0.4,0.3, 0.3])
+                            st.warning('Username not found. Please contact Admin if you are a new user.')
+                finally:
+                    # Ensure the database connection and cursor are closed
+                    if mydb:
+                        cursor.close()
+                        mydb.close()
+
+        col3, col4, col5 = st.columns([0.4, 0.3, 0.3])
         with col3:
-            st.write("")
             st.write("Don't have an account?")
         with col4:
             if st.form_submit_button('Sign Up'):

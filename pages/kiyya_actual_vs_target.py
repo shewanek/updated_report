@@ -1,14 +1,11 @@
 import streamlit as st
-from streamlit_extras.metric_cards import style_metric_cards
-from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 from dependence import connect_to_database, load_kiyya_actual_vs_targetdata
 from navigation import make_sidebar1, home_sidebar
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime
-import decimal
 import numpy as np
+import decimal
 
 
 
@@ -66,7 +63,7 @@ def main():
         border-radius:6px
         }
         </style>
-        <center> <h3 class = "title_dash"> Target Performance Report </h3> </center>
+        <center> <h3 class = "title_dash"> Kiyya Target Performance Report </h3> </center>
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
@@ -89,6 +86,7 @@ def main():
 
     # Fetch data from different tables
     # Database connection and data fetching (with error handling)
+    
     mydb = connect_to_database()
     if mydb is not None:
         cursor = mydb.cursor()
@@ -245,75 +243,12 @@ def main():
 
             # Drop duplicate target_Id and actual_Id
             with tab1:
+                col11, col12 = st.columns([0.4,0.6])
+                with col11:
 
-                # Drop duplicates based on unique identifiers
-                df_target_unique = df_merged.drop_duplicates(subset='target_id')
-                df_actual_unique = df_merged.drop_duplicates(subset='Saving Account')
-
-                # Group by userId and aggregate target/actual data
-                target_grouped = df_target_unique.groupby('branch_code').agg({
-                    'Target Customer': 'sum'  # Sum of target customers
-                }).sum()
-
-                actual_grouped = df_actual_unique.groupby('branch_code').agg({
-                    'Saving Account': 'count'  # Count of saving accounts for actual
-                }).sum()
-
-                # Aggregate the data to get total values
-                totals = {
-                    'Target Customer': target_grouped['Target Customer'],
-                    'Actual Customer': actual_grouped['Saving Account']  # Renamed Saving Account to Actual Customer
-                }
-
-                # Create the bar chart
-                fig = go.Figure()
-
-                # Add bar for Target Customer (Target)
-                def format_num(num):
-                    return f"{num:,.0f}"
-
-                fig.add_trace(go.Bar(
-                    x=['Target Customer'],  # Target Customer for Target
-                    y=[totals['Target Customer']],
-                    name='Target',
-                    marker_color='#00adef',
-                    text=[format_num(totals['Target Customer'])],
-                    textposition='outside'
-                ))
-
-                # Add bar for Actual Customer (Actual)
-                fig.add_trace(go.Bar(
-                    x=['Actual Customer'],  # Changed label to Actual Customer
-                    y=[totals['Actual Customer']],
-                    name='Actual',
-                    marker_color='#e38524',
-                    text=[format_num(totals['Actual Customer'])],
-                    textposition='outside'
-                ))
-
-                # Update layout for better visualization
-                fig.update_layout(
-                    title='Target Customer vs Actual Customer',
-                    xaxis=dict(title='Metrics'),
-                    yaxis=dict(
-                        title='Count',
-                        titlefont=dict(color='black'),
-                        tickfont=dict(color='black'),
-                    ),
-                    barmode='group',  # Group the bars side by side
-                    bargap=0.2,  # Gap between bars of adjacent location coordinates
-                    bargroupgap=0.1,  # Gap between bars of the same location coordinate
-                    margin=dict(t=80)
-                )
-
-                # Display the chart in Streamlit
-                st.plotly_chart(fig, use_container_width=True)
-
-
-                col1, col2 = st.columns([0.1, 0.9])
-                with col2:
-                    df_target_unique = df_merged.drop_duplicates(subset='target_id')
-                    df_actual_unique = df_merged.drop_duplicates(subset='Saving Account')
+                    # Drop duplicates based on unique identifiers
+                    df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
+                    df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
 
                     # Group by userId and aggregate target/actual data
                     target_grouped = df_target_unique.groupby('branch_code').agg({
@@ -327,62 +262,145 @@ def main():
                     # Aggregate the data to get total values
                     totals = {
                         'Target Customer': target_grouped['Target Customer'],
-                        'Actual Customer': actual_grouped['Saving Account'],  # Renamed Saving Account to Actual Customer
-                        'Percentage(%)': (actual_grouped['Saving Account'] / target_grouped['Target Customer'] * 100) if target_grouped['Target Customer'] != 0 else 0
+                        'Actual Customer': actual_grouped['Saving Account']  # Renamed Saving Account to Actual Customer
                     }
 
-                    # Create a DataFrame for display with Target, Actual, and Metrics (Kiyya Customer)
-                    final_df = pd.DataFrame({
-                        'Target': [totals['Target Customer']],
-                        'Actual': [totals['Actual Customer']],
-                        'Percentage(%)': [totals['Percentage(%)']],
-                        'Metric': ['Kiyya Customer']
-                    })
+                    # Create the bar chart
+                    fig = go.Figure()
 
-                    # Round the 'Target', 'Actual', and 'Percentage(%)' columns
-                    final_df['Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
-                    final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
-                    final_df['Percentage(%)'] = final_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+                    # Add bar for Target Customer (Target)
+                    def format_num(num):
+                        return f"{num:,.0f}"
 
-                    # Reset the index and rename it to start from 1
-                    grouped_df_reset = final_df.reset_index(drop=True)
-                    grouped_df_reset.index = grouped_df_reset.index + 1
+                    fig.add_trace(go.Bar(
+                        x=['Target Customer'],  # Target Customer for Target
+                        y=[totals['Target Customer']],
+                        name='Target',
+                        marker_color='#00adef',
+                        text=[format_num(totals['Target Customer'])],
+                        textposition='outside'
+                    ))
 
-                    # Apply styling
-                    def highlight_columns(s):
-                        colors = []
-                        for val in s:
-                            if isinstance(val, str) and '%' in val:
-                                percentage_value = float(val.strip('%'))
-                                if percentage_value < 50:
-                                    colors.append('background-color: #800020')  # dark color for values below 50%
-                                elif 50 <= percentage_value < 75:
-                                    colors.append('background-color: #FF0000')
-                                elif 75 <= percentage_value < 100:
-                                    colors.append('background-color: #e38524')
-                                elif 100 <= percentage_value < 120:
-                                    colors.append('background-color: #3CB371')
+                    # Add bar for Actual Customer (Actual)
+                    fig.add_trace(go.Bar(
+                        x=['Actual Customer'],  # Changed label to Actual Customer
+                        y=[totals['Actual Customer']],
+                        name='Actual',
+                        marker_color='#e38524',
+                        text=[format_num(totals['Actual Customer'])],
+                        textposition='outside'
+                    ))
+
+                    # Update layout for better visualization
+                    fig.update_layout(
+                        title='Target Customer vs Actual Customer',
+                        xaxis=dict(title='Metrics'),
+                        yaxis=dict(
+                            title='Count',
+                            titlefont=dict(color='black'),
+                            tickfont=dict(color='black'),
+                        ),
+                        barmode='group',  # Group the bars side by side
+                        bargap=0.2,  # Gap between bars of adjacent location coordinates
+                        bargroupgap=0.1,  # Gap between bars of the same location coordinate
+                        margin=dict(t=80)
+                    )
+
+                    # Display the chart in Streamlit
+                    st.plotly_chart(fig, use_container_width=True)
+
+                with col12:
+                    col1, col2 = st.columns([0.1, 0.9])
+                    with col2:
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        # Define the function to convert decimal.Decimal to float
+                        def convert_to_float(value):
+                            if isinstance(value, decimal.Decimal):
+                                return float(value)
+                            return value
+                        df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
+                        df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
+
+                        # Group by userId and aggregate target/actual data
+                        target_grouped = df_target_unique.groupby('branch_code').agg({
+                            'Target Customer': 'sum'  # Sum of target customers
+                        }).sum()
+
+                        actual_grouped = df_actual_unique.groupby('branch_code').agg({
+                            'Saving Account': 'count'  # Count of saving accounts for actual
+                        }).sum()
+
+                        target_grouped = convert_to_float(target_grouped)
+                        actual_grouped = convert_to_float(actual_grouped)
+
+                        # Aggregate the data to get total values
+                        totals = {
+                            'Target Customer': target_grouped['Target Customer'],
+                            'Actual Customer': actual_grouped['Saving Account'],  # Renamed Saving Account to Actual Customer
+                            'Percentage(%)': (actual_grouped['Saving Account'] / target_grouped['Target Customer'] * 100) if target_grouped['Target Customer'] != 0 else 0
+                        }
+
+                        # Create a DataFrame for display with Target, Actual, and Metrics (Kiyya Customer)
+                        final_df = pd.DataFrame({
+                            'Target': [totals['Target Customer']if totals['Target Customer'] is not None else 0],
+                            'Actual': [totals['Actual Customer']if totals['Actual Customer'] is not None else 0],
+                            'Percentage(%)': [totals['Percentage(%)']],
+                            'Metric': ['Kiyya Customer']
+                        })
+
+                        # Round the 'Target', 'Actual', and 'Percentage(%)' columns
+                        final_df.loc[:,'Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
+                        final_df.loc[:,'Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
+                        final_df.loc[:,'Percentage(%)'] = final_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+
+                        # Reset the index and rename it to start from 1
+                        grouped_df_reset = final_df.reset_index(drop=True)
+                        grouped_df_reset.index = grouped_df_reset.index + 1
+
+                        # Apply styling
+                        def highlight_columns(s):
+                            colors = []
+                            for val in s:
+                                if isinstance(val, str) and '%' in val:
+                                    percentage_value = float(val.strip('%'))
+                                    if percentage_value < 50:
+                                        colors.append('background-color: #800020')  # dark color for values below 50%
+                                    elif 50 <= percentage_value < 75:
+                                        colors.append('background-color: #FF0000')
+                                    elif 75 <= percentage_value < 100:
+                                        colors.append('background-color: #e38524')
+                                    elif 100 <= percentage_value < 120:
+                                        colors.append('background-color: #3CB371')
+                                    else:
+                                        colors.append('background-color: #00adef')  # blue color for values 50% and above
                                 else:
-                                    colors.append('background-color: #00adef')  # blue color for values 50% and above
-                            else:
-                                colors.append('')  # no color for other values
-                        return colors
+                                    colors.append('')  # no color for other values
+                            return colors
 
-                    styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
-                                                    .set_properties(**{
-                                                        'text-align': 'center',
-                                                        'font-size': '20px'
-                                                    }) \
-                                                    .set_table_styles([
-                                                        dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('color', 'white'), ('font-size', '25px'), ('font-weight', 'bold')])
-                                                    ])
+                        styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
+                                                        .set_properties(**{
+                                                            'text-align': 'center',
+                                                            'font-size': '20px'
+                                                        }) \
+                                                        .set_table_styles([
+                                                            dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('color', 'white'), ('font-size', '25px'), ('font-weight', 'bold')])
+                                                        ])
 
-                    # Convert styled DataFrame to HTML
-                    styled_html = styled_df.to_html()
+                        # Convert styled DataFrame to HTML
+                        styled_html = styled_df.to_html()
 
-                    # Display the result with custom CSS in Streamlit
-                    st.write(":orange[Target vs Actual Kiyya Customer Data] 👇🏻")
-                    st.markdown(styled_html, unsafe_allow_html=True)
+                        # Display the result with custom CSS in Streamlit
+                        # st.write(":orange[Target vs Actual Kiyya Customer Data] 👇🏻")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.markdown(styled_html, unsafe_allow_html=True)
 
 
 
@@ -397,30 +415,44 @@ def main():
                     col1, col2 = st.columns([0.1, 0.9])
                     with col2:
                         # Drop duplicates based on unique identifiers for target and actual data
-                        df_target_unique = df_merged.drop_duplicates(subset='target_id')
-                        df_actual_unique = df_merged.drop_duplicates(subset='Saving Account')
+                        df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
+                        df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
 
-                        # Ensure all numerical values are converted to floats
-                        df_target_unique.loc[:,'Target Customer'] = df_target_unique['Target Customer'].astype(float)
-                        df_actual_unique.loc[:,'Actual Customer'] = df_actual_unique['Saving Account'].astype(float)
+                        # Function to clean and convert to numeric
+                        def clean_and_convert(column):
+                            # Remove any leading/trailing spaces and convert lists to strings
+                            column = column.apply(lambda x: x.strip() if isinstance(x, str) else x)
+                            # Convert to string, remove commas, and convert to numeric
+                            return pd.to_numeric(column.astype(str).str.replace(',', '').str.replace('[', '').str.replace(']', ''), errors='coerce').fillna(0)
+
+                        # Clean and convert 'Target Customer' and 'Actual Customer'
+                        df_target_unique['Target Customer'] = clean_and_convert(df_target_unique['Target Customer'])
 
                         # Group and aggregate the data for each metric using the "Sub Process" column
                         target_grouped = df_target_unique.groupby(['Sub Process_y']).agg(
                             {'Target Customer': 'sum'}).reset_index()
 
+                        # For actual data, count the occurrences of 'Saving Account' (as it's a string)
                         actual_grouped = df_actual_unique.groupby(['Sub Process_y']).agg(
-                            {'Actual Customer': 'count'}).reset_index()
+                            {'Saving Account': 'count'}).reset_index()
+
+                        # Rename 'Saving Account' to 'Actual Customer' for clarity
+                        actual_grouped.rename(columns={'Saving Account': 'Actual Customer'}, inplace=True)
+
+                        # Ensure 'Actual Customer' is of int type (for counting)
+                        actual_grouped['Actual Customer'] = actual_grouped['Actual Customer'].astype(int)
 
                         # Merge the target and actual data on 'Sub Process' to align them
                         grouped_df = target_grouped.merge(actual_grouped, on=['Sub Process_y'], how='left')
-                        # Rename 'Sub Process_y' to 'Sub Process'
                         grouped_df.rename(columns={'Sub Process_y': 'Sub Process'}, inplace=True)
 
+                        # Replace NaN with 0 in the merged DataFrame
+                        grouped_df.fillna(0, inplace=True)
 
                         # Calculate 'Percentage(%)'
                         grouped_df['Percentage(%)'] = grouped_df.apply(
                             lambda row: (
-                                np.nan if row['Actual Customer'] == 0 and row['Target Customer'] == 0
+                                0 if row['Actual Customer'] == 0 and row['Target Customer'] == 0
                                 else np.inf if row['Target Customer'] == 0 and row['Actual Customer'] != 0
                                 else (row['Actual Customer'] / row['Target Customer']) * 100
                             ),
@@ -428,7 +460,7 @@ def main():
                         )
 
                         # Format 'Percentage(%)' with a percentage sign
-                        grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%" if x is not np.nan else "N/A")
+                        grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%" if np.isfinite(x) else 'Inf%')
 
                         # Calculate totals for 'Target Customer' and 'Actual Customer'
                         total_target = grouped_df['Target Customer'].sum()
@@ -446,9 +478,9 @@ def main():
                         # Append the summary row to the grouped DataFrame
                         grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
 
-                        # Formatting the Target and Actual columns
-                        grouped_df['Target Customer'] = grouped_df['Target Customer'].map(lambda x: f"{x:,.0f}")
-                        grouped_df['Actual Customer'] = grouped_df['Actual Customer'].map(lambda x: f"{x:,.0f}")
+                        # Format the 'Target Customer' and 'Actual Customer' columns with commas
+                        grouped_df['Target Customer'] = grouped_df['Target Customer'].map(lambda x: f"{int(x):,}" if isinstance(x, (int, float)) else x)
+                        grouped_df['Actual Customer'] = grouped_df['Actual Customer'].map(lambda x: f"{int(x):,}" if isinstance(x, (int, float)) else x)
 
                         # Reset index for better display
                         grouped_df_reset = grouped_df.reset_index(drop=True)
@@ -462,15 +494,15 @@ def main():
                                     if percentage_value < 50:
                                         colors.append('background-color: #800020')  # dark color for values below 50%
                                     elif 50 <= percentage_value < 75:
-                                        colors.append('background-color: #FF0000')
+                                        colors.append('background-color: #FF0000')  # red for 50% to 75%
                                     elif 75 <= percentage_value < 100:
-                                        colors.append('background-color: #e38524')
+                                        colors.append('background-color: #e38524')  # orange for 75% to 100%
                                     elif 100 <= percentage_value < 120:
-                                        colors.append('background-color: #3CB371')
+                                        colors.append('background-color: #3CB371')  # green for 100% to 120%
                                     elif percentage_value >= 120:
-                                        colors.append('background-color: #00adef')  # blue color for values 50% and above
+                                        colors.append('background-color: #00adef')  # blue for values >= 120%
                                     else:
-                                        colors.append('') 
+                                        colors.append('')
                                 else:
                                     colors.append('')  # no color for other values
                             return colors
@@ -486,127 +518,15 @@ def main():
                         ]
 
                         # Center-align data and apply styling
-                        styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-                                                        .apply(highlight_total_row, axis=1)\
-                                                        .set_table_styles(header_styles)\
+                        styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
+                                                        .apply(highlight_total_row, axis=1) \
+                                                        .set_table_styles(header_styles) \
                                                         .set_properties(**{'text-align': 'center'})
 
                         # Display the result
                         st.write(":orange[ Target vs Actual Customer ] 👇🏻")
                         st.write(styled_df)
-    #                     # -- per Sub Process --
-    #                     # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
-    #                     df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-    #                     df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
-
-    #                     # Ensure all numerical values are converted to floats
-    #                     df_target_unique.loc[:,'Target Unique Customer'] = df_target_unique['Target Unique Customer'].astype(float)
-    #                     df_actual_unique.loc[:,'Actual Unique Customer'] = df_actual_unique['Actual Unique Customer'].astype(float)
-
-    #                     # Group and aggregate the data for each metric using unique IDs
-    #                     target_grouped = df_target_unique.groupby(['District']).agg(
-    #                         {'Target Unique Customer': 'sum'}).reset_index()
-    #                     actual_grouped = df_actual_unique.groupby(['District']).agg(
-    #                         {'Actual Unique Customer': 'sum'}).reset_index()
-
-    #                     # Merge the target and actual data on 'District' and 'Branch' to align them
-    #                     grouped_df = target_grouped.merge(actual_grouped, on=['District'], how='left')
-
-    #                     # # Calculate 'Percentage(%)'
-    #                     # grouped_df['Percentage(%)'] = (grouped_df['Actual Unique Customer'] / grouped_df['Target Unique Customer']) * 100
-    #                     # Calculate Percentage(%)
-    #                     grouped_df['Percentage(%)'] = grouped_df.apply(
-    #                         lambda row: (
-    #                             np.nan if row['Actual Unique Customer'] == 0 and row['Target Unique Customer'] == 0
-    #                             else np.inf if row['Target Unique Customer'] == 0 and row['Actual Unique Customer'] != 0
-    #                             else (row['Actual Unique Customer'] / row['Target Unique Customer']) * 100
-    #                         ),
-    #                         axis=1
-    #                     )
-
-    #                     # # Calculate 'Percentage(%)' and handle division by zero
-    #                     # grouped_df['Percentage(%)'] = grouped_df.apply(lambda row: (row['Actual Unique Customer'] / row['Target Unique Customer'] * 100) if row['Target Unique Customer'] != 0 else 0, axis=1)
-
-
-    #                     # Format 'Percentage(%)' with a percentage sign
-    #                     grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
-
-    #                     # Calculate the totals for 'Target Unique Customer' and 'Actual Unique Customer'
-    #                     total_target_unique = grouped_df['Target Unique Customer'].sum()
-    #                     total_actual_unique = grouped_df['Actual Unique Customer'].sum()
-    #                     total_percentage = (total_actual_unique / total_target_unique) * 100 if total_target_unique != 0 else 0
-                        
-    #                     # # Handle division by zero
-    #                     # if total_target_unique == 'nan':
-    #                     #     total_percentage = 0
-    #                     # else:
-    #                     #     total_percentage = (total_actual_unique / total_target_unique) * 100
-
-    #                     # Create a summary row
-    #                     summary_row = pd.DataFrame([{
-    #                         'District': 'Total',
-    #                         'Target Unique Customer': total_target_unique,
-    #                         'Actual Unique Customer': total_actual_unique,
-    #                         'Percentage(%)': f"{total_percentage:.2f}%"
-    #                     }])
-
-                        
-
-    #                     # Append the summary row to the grouped DataFrame
-    #                     grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
-    #                     grouped_df['Target Unique Customer'] = grouped_df['Target Unique Customer'].map(lambda x: f"{x:,.0f}")
-    #                     grouped_df['Actual Unique Customer'] = grouped_df['Actual Unique Customer'].map(lambda x: f"{x:,.0f}")
-
-    #                     # Reset the index and rename it to start from 1
-
-    #                     # Drop rows where 'Percentage(%)' is 'nan%'
-    #                     filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
-                        
-    #                     grouped_df_reset = filtered_df.reset_index(drop=True)
-    #                     grouped_df_reset.index = grouped_df_reset.index + 1
-    #                     # st.markdown("""
-    #                     # <style>
-    #                     #     [data-testid="stElementToolbar"] {
-    #                     #     display: none;
-    #                     #     }
-    #                     # </style>
-    #                     # """, unsafe_allow_html=True)
-
-    #                     # Apply styling
-    #                     def highlight_columns(s):
-    #                         colors = []
-    #                         for val in s:
-    #                             if isinstance(val, str) and '%' in val:
-    #                                 percentage_value = float(val.strip('%'))
-    #                                 if percentage_value < 50:
-    #                                     colors.append('background-color: #800020')  # dark color for values below 50%
-    #                                 elif 50 <= percentage_value < 75:
-    #                                     colors.append('background-color: #FF0000')
-    #                                 elif 75 <= percentage_value < 100:
-    #                                     colors.append('background-color: #e38524')
-    #                                 elif 100 <= percentage_value < 120:
-    #                                     colors.append('background-color: #3CB371')
-    #                                 elif percentage_value >= 120:
-    #                                     colors.append('background-color: #00adef')  # blue color for values 50% and above
-    #                                 else:
-    #                                     colors.append('') 
-    #                             else:
-    #                                 colors.append('')  # no color for other values
-    #                         return colors
-
-    #                     # Define function to highlight the Total row
-    #                     def highlight_total_row(s):
-    #                         is_total = s['District'] == 'Total'
-    #                         return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
-
-    #                     # Center-align data and apply styling
-    #                     styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-    #                                                     .apply(highlight_total_row, axis=1)\
-    #                                                     .set_properties(**{'text-align': 'center'})
-
-    #                     # Display the result
-    #                     st.write(":blue[Unique Customer] 👇🏻")
-    #                     st.write(styled_df)
+    #                     
 
                   
 
@@ -616,35 +536,45 @@ def main():
                     # -- per Recruiter --
                     with col2:
                         # Drop duplicates based on unique identifiers for target and actual data
-                        df_target_unique = df_merged.drop_duplicates(subset='target_id')
-                        df_actual_unique = df_merged.drop_duplicates(subset='Saving Account')
+                        df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
+                        df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
 
-                        # Ensure all numerical values are converted to floats
-                        df_target_unique.loc[:,'Target Customer'] = df_target_unique['Target Customer'].astype(float)
-                        df_actual_unique.loc[:,'Actual Customer'] = df_actual_unique['Saving Account'].astype(float)
+                        # Remove commas in 'Target Customer', convert to float, and handle NaNs properly
+                        df_target_unique['Target Customer'] = pd.to_numeric(
+                            df_target_unique['Target Customer'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
 
-                        # Group and aggregate the data for each metric using the "Sub Process" column
+                        # Group and aggregate the data for each metric using the "Sub Process" and "Recruited by" columns
                         target_grouped = df_target_unique.groupby(['Sub Process_y', 'Recruited by_y']).agg(
                             {'Target Customer': 'sum'}).reset_index()
 
+                        # Count the occurrences of 'Saving Account' for actual data, since it's a string
                         actual_grouped = df_actual_unique.groupby(['Sub Process_y', 'Recruited by_y']).agg(
-                            {'Actual Customer': 'count'}).reset_index()
+                            {'Saving Account': 'count'}).reset_index()
 
-                        # Merge the target and actual data on 'Sub Process' to align them
+                        # Rename 'Saving Account' to 'Actual Customer' for clarity
+                        actual_grouped.rename(columns={'Saving Account': 'Actual Customer'}, inplace=True)
+
+                        # Merge the target and actual data on 'Sub Process' and 'Recruited by'
                         grouped_df = target_grouped.merge(actual_grouped, on=['Sub Process_y', 'Recruited by_y'], how='left')
 
-                        # Calculate 'Percentage(%)'
+                        # Rename the columns for consistency
+                        grouped_df.rename(columns={'Sub Process_y': 'Sub Process', 'Recruited by_y': 'Recruited by'}, inplace=True)
+
+                        # Replace NaN with 0 in the merged DataFrame
+                        grouped_df.fillna(0, inplace=True)
+
+                        # Calculate 'Percentage(%)' for each row
                         grouped_df['Percentage(%)'] = grouped_df.apply(
                             lambda row: (
-                                np.nan if row['Actual Customer'] == 0 and row['Target Customer'] == 0
+                                0 if row['Actual Customer'] == 0 and row['Target Customer'] == 0
                                 else np.inf if row['Target Customer'] == 0 and row['Actual Customer'] != 0
                                 else (row['Actual Customer'] / row['Target Customer']) * 100
                             ),
                             axis=1
                         )
 
-                        # Format 'Percentage(%)' with a percentage sign
-                        grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%" if x is not np.nan else "N/A")
+                        # Format 'Percentage(%)' with a percentage sign and two decimal places
+                        grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%" if np.isfinite(x) else 'Inf%')
 
                         # Calculate totals for 'Target Customer' and 'Actual Customer'
                         total_target = grouped_df['Target Customer'].sum()
@@ -653,8 +583,8 @@ def main():
 
                         # Create a summary row
                         summary_row = pd.DataFrame([{
-                            'Sub Process_y': 'Total',
-                            'Recruited by_y': '',
+                            'Sub Process': 'Total',
+                            'Recruited by': '',
                             'Target Customer': total_target,
                             'Actual Customer': total_actual,
                             'Percentage(%)': f"{total_percentage:.2f}%"
@@ -663,13 +593,14 @@ def main():
                         # Append the summary row to the grouped DataFrame
                         grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
 
-                        # Formatting the Target and Actual columns
+                        # Format the 'Target Customer' and 'Actual Customer' columns for better readability
                         grouped_df['Target Customer'] = grouped_df['Target Customer'].map(lambda x: f"{x:,.0f}")
                         grouped_df['Actual Customer'] = grouped_df['Actual Customer'].map(lambda x: f"{x:,.0f}")
 
                         # Reset index for better display
                         grouped_df_reset = grouped_df.reset_index(drop=True)
 
+                        # Define the function to highlight percentage columns based on conditions
                         def highlight_columns(s):
                             colors = []
                             for val in s:
@@ -684,140 +615,28 @@ def main():
                                     elif 100 <= percentage_value < 120:
                                         colors.append('background-color: #3CB371')
                                     elif percentage_value >= 120:
-                                        colors.append('background-color: #00adef')  # blue color for values 50% and above
+                                        colors.append('background-color: #00adef')  # blue color for values >= 120%
                                     else:
-                                        colors.append('') 
+                                        colors.append('')
                                 else:
                                     colors.append('')  # no color for other values
                             return colors
 
+                        # Define the function to highlight the 'Total' row
                         def highlight_total_row(s):
-                            is_total = s['Sub Process_y'] == 'Total'
+                            is_total = s['Sub Process'] == 'Total'
                             return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
 
                         # Center-align data and apply styling
-                        styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-                                                            .apply(highlight_total_row, axis=1)\
-                                                            .set_properties(**{'text-align': 'center'})
+                        styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
+                                                        .apply(highlight_total_row, axis=1) \
+                                                        .set_properties(**{'text-align': 'center'})
 
                         # Display the result
                         st.write(":blue[Target vs Actual Customer] 👇🏻")
                         st.write(styled_df)
                         
 
-    #                     # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
-    #                     df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-    #                     df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
-
-    #                     # Ensure all numerical values are converted to floats
-    #                     df_target_unique.loc[:,'Target Unique Customer'] = df_target_unique['Target Unique Customer'].astype(float)
-    #                     df_actual_unique.loc[:,'Actual Unique Customer'] = df_actual_unique['Actual Unique Customer'].astype(float)
-
-    #                     # Group and aggregate the data for each metric using unique IDs
-    #                     target_grouped = df_target_unique.groupby(['District', 'Branch']).agg(
-    #                         {'Target Unique Customer': 'sum'}).reset_index()
-    #                     actual_grouped = df_actual_unique.groupby(['District', 'Branch']).agg(
-    #                         {'Actual Unique Customer': 'sum'}).reset_index()
-
-    #                     # Merge the target and actual data on 'District' and 'Branch' to align them
-    #                     grouped_df = target_grouped.merge(actual_grouped, on=['District', 'Branch'], how='left')
-
-    #                     # # Calculate 'Percentage(%)'
-    #                     # grouped_df['Percentage(%)'] = (grouped_df['Actual Unique Customer'] / grouped_df['Target Unique Customer']) * 100
-    #                     # Calculate Percentage(%)
-    #                     grouped_df['Percentage(%)'] = grouped_df.apply(
-    #                         lambda row: (
-    #                             np.nan if row['Actual Unique Customer'] == 0 and row['Target Unique Customer'] == 0
-    #                             else np.inf if row['Target Unique Customer'] == 0 and row['Actual Unique Customer'] != 0
-    #                             else (row['Actual Unique Customer'] / row['Target Unique Customer']) * 100
-    #                         ),
-    #                         axis=1
-    #                     )
-
-    #                     # # Calculate 'Percentage(%)' and handle division by zero
-    #                     # grouped_df['Percentage(%)'] = grouped_df.apply(lambda row: (row['Actual Unique Customer'] / row['Target Unique Customer'] * 100) if row['Target Unique Customer'] != 0 else 0, axis=1)
-
-
-    #                     # Format 'Percentage(%)' with a percentage sign
-    #                     grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
-
-    #                     # Calculate the totals for 'Target Unique Customer' and 'Actual Unique Customer'
-    #                     total_target_unique = grouped_df['Target Unique Customer'].sum()
-    #                     total_actual_unique = grouped_df['Actual Unique Customer'].sum()
-    #                     total_percentage = (total_actual_unique / total_target_unique) * 100 if total_target_unique != 0 else 0
-                        
-    #                     # # Handle division by zero
-    #                     # if total_target_unique == 'nan':
-    #                     #     total_percentage = 0
-    #                     # else:
-    #                     #     total_percentage = (total_actual_unique / total_target_unique) * 100
-
-    #                     # Create a summary row
-    #                     summary_row = pd.DataFrame([{
-    #                         'District': 'Total',
-    #                         'Branch': '',
-    #                         'Target Unique Customer': total_target_unique,
-    #                         'Actual Unique Customer': total_actual_unique,
-    #                         'Percentage(%)': f"{total_percentage:.2f}%"
-    #                     }])
-
-                        
-
-    #                     # Append the summary row to the grouped DataFrame
-    #                     grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
-    #                     grouped_df['Target Unique Customer'] = grouped_df['Target Unique Customer'].map(lambda x: f"{x:.0f}")
-    #                     grouped_df['Actual Unique Customer'] = grouped_df['Actual Unique Customer'].map(lambda x: f"{x:.0f}")
-
-    #                     # Reset the index and rename it to start from 1
-
-    #                     # Drop rows where 'Percentage(%)' is 'nan%'
-    #                     filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
-                        
-    #                     grouped_df_reset = filtered_df.reset_index(drop=True)
-    #                     grouped_df_reset.index = grouped_df_reset.index + 1
-    #                     # st.markdown("""
-    #                     # <style>
-    #                     #     [data-testid="stElementToolbar"] {
-    #                     #     display: none;
-    #                     #     }
-    #                     # </style>
-    #                     # """, unsafe_allow_html=True)
-
-    #                     # Apply styling
-    #                     def highlight_columns(s):
-    #                         colors = []
-    #                         for val in s:
-    #                             if isinstance(val, str) and '%' in val:
-    #                                 percentage_value = float(val.strip('%'))
-    #                                 if percentage_value < 50:
-    #                                     colors.append('background-color: #800020')  # dark color for values below 50%
-    #                                 elif 50 <= percentage_value < 75:
-    #                                     colors.append('background-color: #FF0000')
-    #                                 elif 75 <= percentage_value < 100:
-    #                                     colors.append('background-color: #e38524')
-    #                                 elif 100 <= percentage_value < 120:
-    #                                     colors.append('background-color: #3CB371')
-    #                                 elif percentage_value >= 120:
-    #                                     colors.append('background-color: #00adef')  # blue color for values 50% and above
-    #                                 else:
-    #                                     colors.append('') 
-    #                             else:
-    #                                 colors.append('')  # no color for other values
-    #                         return colors
-
-    #                     # Define function to highlight the Total row
-    #                     def highlight_total_row(s):
-    #                         is_total = s['District'] == 'Total'
-    #                         return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
-
-    #                     # Center-align data and apply styling
-    #                     styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-    #                                                     .apply(highlight_total_row, axis=1)\
-    #                                                     .set_properties(**{'text-align': 'center'})
-
-    #                     # Display the result
-    #                     st.write(":orange[Unique Customer]  👇🏻")
-    #                     st.write(styled_df)
 
 
 
@@ -827,7 +646,267 @@ def main():
                     
     #     # -- for role District User --
 
-    #     if role == 'District User':
+        if role == 'District User':
+            tab1, tab2 = st.tabs(["📈 Aggregate Report", "🗃 Report per Recruiter"])
+
+            # Drop duplicate target_Id and actual_Id
+            with tab1:
+                col11, col12 = st.columns([0.4,0.6])
+                with col11:
+
+                    # Drop duplicates based on unique identifiers
+                    df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
+                    df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
+
+                    # Group by userId and aggregate target/actual data
+                    target_grouped = df_target_unique.groupby('branch_code').agg({
+                        'Target Customer': 'sum'  # Sum of target customers
+                    }).sum()
+
+                    actual_grouped = df_actual_unique.groupby('branch_code').agg({
+                        'Saving Account': 'count'  # Count of saving accounts for actual
+                    }).sum()
+
+                    # Aggregate the data to get total values
+                    totals = {
+                        'Target Customer': target_grouped['Target Customer'],
+                        'Actual Customer': actual_grouped['Saving Account']  # Renamed Saving Account to Actual Customer
+                    }
+
+                    # Create the bar chart
+                    fig = go.Figure()
+
+                    # Add bar for Target Customer (Target)
+                    def format_num(num):
+                        return f"{num:,.0f}"
+
+                    fig.add_trace(go.Bar(
+                        x=['Target Customer'],  # Target Customer for Target
+                        y=[totals['Target Customer']],
+                        name='Target',
+                        marker_color='#00adef',
+                        text=[format_num(totals['Target Customer'])],
+                        textposition='outside'
+                    ))
+
+                    # Add bar for Actual Customer (Actual)
+                    fig.add_trace(go.Bar(
+                        x=['Actual Customer'],  # Changed label to Actual Customer
+                        y=[totals['Actual Customer']],
+                        name='Actual',
+                        marker_color='#e38524',
+                        text=[format_num(totals['Actual Customer'])],
+                        textposition='outside'
+                    ))
+
+                    # Update layout for better visualization
+                    fig.update_layout(
+                        title='Target Customer vs Actual Customer',
+                        xaxis=dict(title='Metrics'),
+                        yaxis=dict(
+                            title='Count',
+                            titlefont=dict(color='black'),
+                            tickfont=dict(color='black'),
+                        ),
+                        barmode='group',  # Group the bars side by side
+                        bargap=0.2,  # Gap between bars of adjacent location coordinates
+                        bargroupgap=0.1,  # Gap between bars of the same location coordinate
+                        margin=dict(t=80)
+                    )
+
+                    # Display the chart in Streamlit
+                    st.plotly_chart(fig, use_container_width=True)
+
+                with col12:
+                    col1, col2 = st.columns([0.1, 0.9])
+                    with col2:
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
+                        df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
+
+                        # Group by userId and aggregate target/actual data
+                        target_grouped = df_target_unique.groupby('branch_code').agg({
+                            'Target Customer': 'sum'  # Sum of target customers
+                        }).sum()
+
+                        actual_grouped = df_actual_unique.groupby('branch_code').agg({
+                            'Saving Account': 'count'  # Count of saving accounts for actual
+                        }).sum()
+
+                        # Aggregate the data to get total values
+                        totals = {
+                            'Target Customer': target_grouped['Target Customer'],
+                            'Actual Customer': actual_grouped['Saving Account'],  # Renamed Saving Account to Actual Customer
+                            'Percentage(%)': (actual_grouped['Saving Account'] / target_grouped['Target Customer'] * 100) if target_grouped['Target Customer'] != 0 else 0
+                        }
+
+                        # Create a DataFrame for display with Target, Actual, and Metrics (Kiyya Customer)
+                        final_df = pd.DataFrame({
+                            'Target': [totals['Target Customer']if totals['Target Customer'] is not None else 0],
+                            'Actual': [totals['Actual Customer']if totals['Actual Customer'] is not None else 0],
+                            'Percentage(%)': [totals['Percentage(%)']],
+                            'Metric': ['Kiyya Customer']
+                        })
+
+                        # Round the 'Target', 'Actual', and 'Percentage(%)' columns
+                        final_df.loc[:,'Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
+                        final_df.loc[:,'Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
+                        final_df.loc[:,'Percentage(%)'] = final_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+
+                        # Reset the index and rename it to start from 1
+                        grouped_df_reset = final_df.reset_index(drop=True)
+                        grouped_df_reset.index = grouped_df_reset.index + 1
+
+                        # Apply styling
+                        def highlight_columns(s):
+                            colors = []
+                            for val in s:
+                                if isinstance(val, str) and '%' in val:
+                                    percentage_value = float(val.strip('%'))
+                                    if percentage_value < 50:
+                                        colors.append('background-color: #800020')  # dark color for values below 50%
+                                    elif 50 <= percentage_value < 75:
+                                        colors.append('background-color: #FF0000')
+                                    elif 75 <= percentage_value < 100:
+                                        colors.append('background-color: #e38524')
+                                    elif 100 <= percentage_value < 120:
+                                        colors.append('background-color: #3CB371')
+                                    else:
+                                        colors.append('background-color: #00adef')  # blue color for values 50% and above
+                                else:
+                                    colors.append('')  # no color for other values
+                            return colors
+
+                        styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
+                                                        .set_properties(**{
+                                                            'text-align': 'center',
+                                                            'font-size': '20px'
+                                                        }) \
+                                                        .set_table_styles([
+                                                            dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('color', 'white'), ('font-size', '25px'), ('font-weight', 'bold')])
+                                                        ])
+
+                        # Convert styled DataFrame to HTML
+                        styled_html = styled_df.to_html()
+
+                        # Display the result with custom CSS in Streamlit
+                        # st.write(":orange[Target vs Actual Kiyya Customer Data] 👇🏻")
+                        st.write(" ")
+                        st.write(" ")
+                        st.write(" ")
+                        st.markdown(styled_html, unsafe_allow_html=True)
+            with tab2:
+                col1, col2 = st.columns([0.1, 0.9])
+                # -- per Recruiter --
+                with col2:
+                    # Drop duplicates based on unique identifiers for target and actual data
+                    df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
+                    df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
+
+                    # Function to clean and convert columns to numeric
+                    def clean_and_convert(column):
+                        # Remove any unwanted characters and convert to numeric
+                        column = column.astype(str).str.replace(',', '', regex=False).str.strip()  # Remove commas and strip whitespace
+                        return pd.to_numeric(column, errors='coerce').fillna(0)  # Convert to numeric, coercing errors to NaN and filling NaN with 0
+
+                    # Clean and convert 'Target Customer' and 'Actual Customer'
+                    df_target_unique['Target Customer'] = clean_and_convert(df_target_unique['Target Customer'])
+                    df_actual_unique['Actual Customer'] = df_actual_unique['Saving Account'].str.strip().astype(str)  # Ensure strings are clean
+                    df_actual_unique['Actual Customer'] = pd.to_numeric(df_actual_unique['Actual Customer'].str.replace(',', '', regex=False), errors='coerce').fillna(0).astype(int)
+
+                    # Group and aggregate the data for each metric using the "Sub Process" column
+                    target_grouped = df_target_unique.groupby(['Sub Process_y', 'Recruited by_y']).agg(
+                        {'Target Customer': 'sum'}).reset_index()
+
+                    actual_grouped = df_actual_unique.groupby(['Sub Process_y', 'Recruited by_y']).agg(
+                        {'Actual Customer': 'count'}).reset_index()
+
+                    # Merge the target and actual data on 'Sub Process' to align them
+                    grouped_df = target_grouped.merge(actual_grouped, on=['Sub Process_y', 'Recruited by_y'], how='left')
+                    grouped_df.rename(columns={'Sub Process_y': 'Sub Process', 'Recruited by_y': 'Recruited by'}, inplace=True)
+
+                    # Replace NaN with 0 in the merged DataFrame
+                    grouped_df.fillna(0, inplace=True)
+
+                    # Calculate 'Percentage(%)'
+                    grouped_df['Percentage(%)'] = grouped_df.apply(
+                        lambda row: (
+                            0 if row['Actual Customer'] == 0 and row['Target Customer'] == 0
+                            else np.inf if row['Target Customer'] == 0 and row['Actual Customer'] != 0
+                            else (row['Actual Customer'] / row['Target Customer']) * 100
+                        ),
+                        axis=1
+                    )
+
+                    # Format 'Percentage(%)' with a percentage sign
+                    grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%" if np.isfinite(x) else 'Inf%')
+
+                    # Calculate totals for 'Target Customer' and 'Actual Customer'
+                    total_target = grouped_df['Target Customer'].sum()
+                    total_actual = grouped_df['Actual Customer'].sum()
+                    total_percentage = (total_actual / total_target) * 100 if total_target != 0 else 0
+
+                    # Create a summary row
+                    summary_row = pd.DataFrame([{
+                        'Sub Process': 'Total',
+                        'Recruited by': '',
+                        'Target Customer': total_target,
+                        'Actual Customer': total_actual,
+                        'Percentage(%)': f"{total_percentage:.2f}%"
+                    }])
+
+                    # Append the summary row to the grouped DataFrame
+                    grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
+
+                    # Formatting the Target and Actual columns
+                    grouped_df['Target Customer'] = grouped_df['Target Customer'].map(lambda x: f"{x:,.0f}")
+                    grouped_df['Actual Customer'] = grouped_df['Actual Customer'].map(lambda x: f"{x:,.0f}")
+
+                    # Reset index for better display
+                    grouped_df_reset = grouped_df.reset_index(drop=True)
+
+                    # Highlight percentage columns based on specific conditions
+                    def highlight_columns(s):
+                        colors = []
+                        for val in s:
+                            if isinstance(val, str) and '%' in val:
+                                percentage_value = float(val.strip('%'))
+                                if percentage_value < 50:
+                                    colors.append('background-color: #800020')  # dark color for values below 50%
+                                elif 50 <= percentage_value < 75:
+                                    colors.append('background-color: #FF0000')  # red for 50% to 75%
+                                elif 75 <= percentage_value < 100:
+                                    colors.append('background-color: #e38524')  # orange for 75% to 100%
+                                elif 100 <= percentage_value < 120:
+                                    colors.append('background-color: #3CB371')  # green for 100% to 120%
+                                elif percentage_value >= 120:
+                                    colors.append('background-color: #00adef')  # blue for values >= 120%
+                                else:
+                                    colors.append('')
+                            else:
+                                colors.append('')  # no color for other values
+                        return colors
+
+                    # Highlight the 'Total' row
+                    def highlight_total_row(s):
+                        is_total = s['Sub Process'] == 'Total'
+                        return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
+
+                    # Center-align data and apply styling
+                    styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
+                                                    .apply(highlight_total_row, axis=1) \
+                                                    .set_properties(**{'text-align': 'center'})
+
+                    # Display the result
+                    st.write(":blue[Target vs Actual Customer] 👇🏻")
+                    st.write(styled_df)
+                        
     #         tab1, tab2 = st.tabs(["📈 Aggregate Report", "🗃 Report per Branch"])
     #         with tab1:
     #             df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
@@ -1176,7 +1255,157 @@ def main():
 
            
 
-    #     if role == 'Branch User':
+        if role == 'Branch User':
+            col11, col12 = st.columns([0.4, 0.6])
+            with col11:
+
+                # Drop duplicates based on unique identifiers
+                df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
+                df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
+
+                # Group by userId and aggregate target/actual data
+                target_grouped = df_target_unique.groupby('branch_code').agg({
+                    'Target Customer': 'sum'  # Sum of target customers
+                }).sum()
+
+                actual_grouped = df_actual_unique.groupby('branch_code').agg({
+                    'Saving Account': 'count'  # Count of saving accounts for actual
+                }).sum()
+
+                # Aggregate the data to get total values
+                totals = {
+                    'Target Customer': target_grouped['Target Customer'],
+                    'Actual Customer': actual_grouped['Saving Account']  # Renamed Saving Account to Actual Customer
+                }
+
+                # Create the bar chart
+                fig = go.Figure()
+
+                # Add bar for Target Customer (Target)
+                def format_num(num):
+                    return f"{num:,.0f}"
+
+                fig.add_trace(go.Bar(
+                    x=['Target Customer'],  # Target Customer for Target
+                    y=[totals['Target Customer']],
+                    name='Target',
+                    marker_color='#00adef',
+                    text=[format_num(totals['Target Customer'])],
+                    textposition='outside'
+                ))
+
+                # Add bar for Actual Customer (Actual)
+                fig.add_trace(go.Bar(
+                    x=['Actual Customer'],  # Changed label to Actual Customer
+                    y=[totals['Actual Customer']],
+                    name='Actual',
+                    marker_color='#e38524',
+                    text=[format_num(totals['Actual Customer'])],
+                    textposition='outside'
+                ))
+
+                # Update layout for better visualization
+                fig.update_layout(
+                    title='Target Customer vs Actual Customer',
+                    xaxis=dict(title='Metrics'),
+                    yaxis=dict(
+                        title='Count',
+                        titlefont=dict(color='black'),
+                        tickfont=dict(color='black'),
+                    ),
+                    barmode='group',  # Group the bars side by side
+                    bargap=0.2,  # Gap between bars of adjacent location coordinates
+                    bargroupgap=0.1,  # Gap between bars of the same location coordinate
+                    margin=dict(t=80)
+                )
+
+                # Display the chart in Streamlit
+                st.plotly_chart(fig, use_container_width=True)
+
+            with col12:
+                col1, col2 = st.columns([0.1, 0.9])
+                with col2:
+                    st.write(" ")
+                    st.write(" ")
+                    st.write(" ")
+                    st.write(" ")
+                    st.write(" ")
+                    st.write(" ")
+                    st.write(" ")
+                    df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
+                    df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
+
+                    # Group by userId and aggregate target/actual data
+                    target_grouped = df_target_unique.groupby('branch_code').agg({
+                        'Target Customer': 'sum'  # Sum of target customers
+                    }).sum()
+
+                    actual_grouped = df_actual_unique.groupby('branch_code').agg({
+                        'Saving Account': 'count'  # Count of saving accounts for actual
+                    }).sum()
+
+                    # Aggregate the data to get total values
+                    totals = {
+                        'Target Customer': target_grouped['Target Customer'],
+                        'Actual Customer': actual_grouped['Saving Account'],  # Renamed Saving Account to Actual Customer
+                        'Percentage(%)': (actual_grouped['Saving Account'] / target_grouped['Target Customer'] * 100) if target_grouped['Target Customer'] != 0 else 0
+                    }
+
+                    # Create a DataFrame for display with Target, Actual, and Metrics (Kiyya Customer)
+                    final_df = pd.DataFrame({
+                        'Target': [totals['Target Customer']if totals['Target Customer'] is not None else 0],
+                        'Actual': [totals['Actual Customer']if totals['Actual Customer'] is not None else 0],
+                        'Percentage(%)': [totals['Percentage(%)']],
+                        'Metric': ['Kiyya Customer']
+                    })
+
+                    # Round the 'Target', 'Actual', and 'Percentage(%)' columns
+                    final_df.loc[:,'Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
+                    final_df.loc[:,'Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
+                    final_df.loc[:,'Percentage(%)'] = final_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+
+                    # Reset the index and rename it to start from 1
+                    grouped_df_reset = final_df.reset_index(drop=True)
+                    grouped_df_reset.index = grouped_df_reset.index + 1
+
+                    # Apply styling
+                    def highlight_columns(s):
+                        colors = []
+                        for val in s:
+                            if isinstance(val, str) and '%' in val:
+                                percentage_value = float(val.strip('%'))
+                                if percentage_value < 50:
+                                    colors.append('background-color: #800020')  # dark color for values below 50%
+                                elif 50 <= percentage_value < 75:
+                                    colors.append('background-color: #FF0000')
+                                elif 75 <= percentage_value < 100:
+                                    colors.append('background-color: #e38524')
+                                elif 100 <= percentage_value < 120:
+                                    colors.append('background-color: #3CB371')
+                                else:
+                                    colors.append('background-color: #00adef')  # blue color for values 50% and above
+                            else:
+                                colors.append('')  # no color for other values
+                        return colors
+
+                    styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
+                                                    .set_properties(**{
+                                                        'text-align': 'center',
+                                                        'font-size': '20px'
+                                                    }) \
+                                                    .set_table_styles([
+                                                        dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('color', 'white'), ('font-size', '25px'), ('font-weight', 'bold')])
+                                                    ])
+
+                    # Convert styled DataFrame to HTML
+                    styled_html = styled_df.to_html()
+
+                    # Display the result with custom CSS in Streamlit
+                    # st.write(":orange[Target vs Actual Kiyya Customer Data] 👇🏻")
+                    st.write(" ")
+                    st.write(" ")
+                    st.write(" ")
+                    st.markdown(styled_html, unsafe_allow_html=True)
     #         df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
     #         df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 

@@ -5,32 +5,84 @@ import hashlib
 import re
 import json
 import numpy as np
+from mysql.connector import pooling
+# from dotenv import load_dotenv
 
-
+# load_dotenv()
+# import os
 # Function to establish MySQL connection (with error handling and resource cleanup)
+
+
+# Create a connection pool globally
+dbconfig = {
+    "host": "63.34.199.220",
+    "port": "3306",
+    "user": "sane",
+    "password": "sanemysql!2244",
+    "database": "michu_dashBoard"
+}
+
+# Initialize the connection pool
+pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
+                                                  pool_size=30,
+                                                  pool_reset_session=True,
+                                                  **dbconfig)
+
 def connect_to_database():
     try:
-        mydb = mysql.connector.connect(
-            host="63.34.199.220",
-            port="3306",
-            user="sane",
-            password="sanemysql!2244",
-            database="michu_dashBoard"
-            # host="localhost",
-            # port="3306",
-            # user="root",
-            # password="SH36essti",
-            # database="michuDashBoard" 
-        )
-        print("Connected to MySQL database successfully.")
-        return mydb
+        # Get a connection from the pool
+        return pool.get_connection()  # Get a connection from the pool
     except mysql.connector.Error as err:
         print("Error connecting to database:", err)
-        st.error("An error occurred while connecting to the database. Please check your connection details.")
+        st.error("An error occurred while connecting to the database.")
         return None  # Indicate failure
+
+
+# def fetch_data(query, mydb):  # Get a connection from the pool
+#     cursor = None
+
+#     if mydb is not None:
+#         try:
+#             cursor = mydb.cursor()  # Create cursor
+#             cursor.execute(query)  # Execute query
+#             data = cursor.fetchall()  # Fetch all data
+#             return data
+#         except mysql.connector.Error as err:
+#             st.error(f"An error occurred while fetching data: {err}")
+#             return []
+#         finally:
+#             if cursor is not None:
+#                 cursor.close()  # Ensure cursor is closed
+#             mydb.close()  # Return the connection back to the pool
+#     else:
+#         return []
+
+
+
+# def connect_to_database():
+#     try:
+#         mydb = mysql.connector.connect(
+#             host="63.34.199.220",
+#             port="3306",
+#             user="sane",
+#             password="sanemysql!2244",
+#             database="michu_dashBoard"
+#             # host="localhost",
+#             # port="3306",
+#             # user="root",
+#             # password="SH36essti",
+#             # database="michuDashBoard"  
+#         )
+#         print("Connected to MySQL database successfully.")
+#         return mydb
+#     except mysql.connector.Error as err:
+#         print("Error connecting to database:", err)
+#         st.error("An error occurred while connecting to the database. Please check your connection details.")
+#         return None  # Indicate failure
 
 def fetch_data(query, mydb):
     if mydb is not None:
+        
         cursor = mydb.cursor()
         cursor.execute(query)
         data = cursor.fetchall()
@@ -38,6 +90,7 @@ def fetch_data(query, mydb):
         return data
     else:
         return []
+    
 
 def load_dataframes(mydb):
     dureti_customer_query = f"SELECT * FROM duretCustomer WHERE `Register_Date` >= '2024-07-01'"
@@ -2899,7 +2952,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
         # Merge DataFrames on 'Saving Account'
         unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
         # st.write(unique_conversation)
-        bf_kiyya = "select saving_account from michu_dashBoard.misseddata"
+        bf_kiyya = "select saving_account from misseddata"
         bf_kiyya_customer = pd.DataFrame(fetch_data(bf_kiyya, mydb), columns=['Saving Account'])
         
         unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
@@ -2940,6 +2993,131 @@ def load_kiyya_actual_vs_targetdata(mydb):
         
         df_target = pd.DataFrame(
             fetch_data(f"SELECT target_id, user_id, target_amount, catagory, registered_date FROM kiyya_target", mydb),
+            columns=['target_id', 'branch_code', 'Target Customer', 'Catagory', 'registered_date']
+        )
+        # st.write(df_target)
+
+        return  full_disberment_user, df_target
+    
+
+    elif role == "District User":
+        # Fetch branch and district for the given username
+        user_id_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
+        user_id_result = fetch_data(user_id_query, mydb)
+        if not user_id_result:
+            st.warning("No user found with the given username.")
+            return pd.DataFrame()  # Return an empty DataFrame if no user is found
+
+        # district = user_id_result[0][0]  # Assuming district is the first element in the first row of the result
+        district = user_id_result[0][0]
+
+        # Fetch branch and district for the given username
+        user_branch_code_query = f"SELECT branch FROM user_info where district = '{district}'"
+        branch_code_result = fetch_data(user_branch_code_query, mydb)
+
+        # Ensure that the result is a list or tuple of branch codes
+        branch_codes = [row[0] for row in branch_code_result]  # Access the first item in each tuple
+
+        # Join branch codes into a comma-separated string for the IN clause
+        branch_codes_str = ', '.join(f"'{code}'" for code in branch_codes)
+
+        # CRM user query with the correct IN clause
+        crm_user_query = f"""
+            SELECT DISTINCT dr.crm_id, br.full_name, br.sub_process, br.employe_id 
+            FROM crm_list br
+            LEFT JOIN crm_user dr ON br.employe_id = dr.employe_id
+            WHERE br.employe_id IN ({branch_codes_str})
+        """
+
+        crm_user_list = pd.DataFrame(fetch_data(crm_user_query, mydb), columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code'])
+
+        # Women product customer query
+        women_customer_query = f"""
+        SELECT DISTINCT br.userId, br.full_Name, br.district, br.branch 
+        FROM user_info br
+        Where br.district = '{district}'
+        """
+        women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code'])
+
+        # Combine user data
+        combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['branch_code']).reset_index(drop=True).rename(lambda x: x + 1)
+    
+        # st.write(combined_user)
+        # Queries for customer data
+        in_customer_query = "SELECT kiyya_id, userId, fullName, phone_number, account_number, registered_date FROM kiyya_customer where userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59' and `registered_date` >= '2024-10-01'"
+        # Queries for customer data
+        formal_customer_query = "SELECT wpc_id, crm_id, full_name, phone_number, account_no, registered_date FROM women_product_customer WHERE `registered_date` >= '2024-10-01'"
+
+        unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date >= '2024-10-01'AND saving_account NOT IN (SELECT saving_account FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date < '2024-10-01')"
+        conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date >= '2024-10-01' AND saving_account NOT IN (SELECT saving_account FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date < '2024-10-01')"
+
+        # Fetching customer data for informal customers
+        informal_customer = pd.DataFrame(fetch_data(in_customer_query, mydb), 
+                                        columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
+
+        # Add product_type column as 'Informal' for informal_customer
+        informal_customer['product_type'] = 'Women Informal'
+
+
+        # Convert 'Register Date' to match the format of formal_customer ('YYYY-MM-DD')
+        informal_customer['Register Date'] = pd.to_datetime(informal_customer['Register Date']).dt.strftime('%Y-%m-%d')
+
+        # Fetching customer data for formal customers
+        formal_customer = pd.DataFrame(fetch_data(formal_customer_query, mydb), 
+                                    columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
+
+        # Add product_type column as 'Formal' for formal_customer
+        formal_customer['product_type'] = 'Women Formal'
+        unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+
+        conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+        
+        # Merge DataFrames on 'Saving Account'
+        unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
+        # st.write(unique_conversation)
+        bf_kiyya = "select saving_account from misseddata"
+        bf_kiyya_customer = pd.DataFrame(fetch_data(bf_kiyya, mydb), columns=['Saving Account'])
+        
+        unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
+
+        # Filter rows where bf_kiyya_customer doesn't have a match in unique_conversation
+        unique_not_in_bf_kiyya = unique_conversation[unique_conversation['_merge'] == 'left_only']
+
+        # Drop the _merge column (optional)
+        unique_conversation = unique_not_in_bf_kiyya.drop(columns=['_merge'])
+        infrmal_formal = pd.concat([informal_customer, formal_customer], axis=0).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1)
+        # st.write(infrmal_formal)
+        informal_formal_code = infrmal_formal.merge(combined_user, on='user_Id', how='inner')
+        # st.write(informal_formal_code)
+        # disbersed_by_recurate = pd.merge(infrmal_formal, unique_conversation, on='Saving Account', how='inner')
+        # st.write(disbersed_by_recurate)
+        full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left')
+        # st.write(full_disb)
+
+        
+        
+        # st.write(merged_df)
+        # Replace null values in user_Id of full_disb with user_Id from combined_user when branch_code matches
+        full_disb['branch_code_y'] = np.where(
+            full_disb['branch_code_y'].isnull(),    # Check if user_Id is null
+            full_disb['branch_code_x'],    # Replace with user_Id_combined if condition is met
+            full_disb['branch_code_y']              # Keep the original user_Id otherwise
+        )
+        # st.write(full_disb)
+
+        # Drop the extra combined columns that were added during the merge
+        full_disberment_user = pd.merge(full_disb, combined_user, left_on='branch_code_y', right_on='branch_code', how='outer')
+        # st.write(full_disberment_user)
+        full_disberment_user.drop_duplicates(subset=['branch_code'])
+        # st.write(full_disberment_user)
+
+    
+
+        
+        df_target = pd.DataFrame(
+            fetch_data(f"SELECT target_id, user_id, target_amount, catagory, registered_date FROM kiyya_target WHERE user_id IN ({branch_codes_str})", mydb),
             columns=['target_id', 'branch_code', 'Target Customer', 'Catagory', 'registered_date']
         )
         # st.write(df_target)
@@ -3012,49 +3190,139 @@ def load_kiyya_actual_vs_targetdata(mydb):
         return act_dis_branch, df_actual, df_target
 
     elif role == "Branch User":
-        # Fetch branch and district for the given username
-        
-        user_id_query = f"SELECT branch, district FROM user_info WHERE userName = '{username}'"
-        user_id_result = fetch_data(user_id_query, mydb)
+       
+        # Women product customer query
+        women_customer_query = f"""
+            SELECT DISTINCT br.userId, br.full_Name, br.district, br.branch 
+            FROM user_info br
+            WHERE br.userName = '{username}'
+        """
+        # Fetching the result
+        result = fetch_data(women_customer_query, mydb)
+        # st.write(result)
 
-        if not user_id_result:
-            st.warning("No user found with the given username.")
-            return pd.DataFrame()  # Return an empty DataFrame if no user is found
+        # Check if a result was returned before accessing it
+        if result:
+            user_id = result[0][0]  # Accessing the first result's 'userId'
+            branch_code = result[0][3]
 
-        branch = user_id_result[0][0]  # Assuming branch is the first element in the first row of the result
-        district = user_id_result[0][1]
+            # Query for customer data directly using user_id
+            in_customer_query = f"""
+                SELECT kiyya_id, userId, fullName, phone_number, account_number, registered_date
+                FROM kiyya_customer
+                WHERE userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59' 
+                AND registered_date >= '2024-10-01'
+                AND userId = '{user_id}'
+            """
 
-        # Fetch branch code and branch name
-        branch_code_query = f"SELECT branch_code, branch_name FROM branch_list WHERE branch_code = '{branch}'"
-        branch_code_result = fetch_data(branch_code_query, mydb)
+            # Queries for customer data
+            formal_customer_query = f"""
+                SELECT wpc_id, crm_id, full_name, phone_number, account_no, registered_date 
+                FROM women_product_customer 
+                WHERE registered_date >= '2024-10-01' AND crm_id = '{user_id}'
+            """
 
-        if not branch_code_result:
-            st.warning("No branch found with the given branch name.")
-            return pd.DataFrame()  # Return an empty DataFrame if no branch is found
+            unique_customer_query = f"""
+                SELECT * 
+                FROM unique_intersection 
+                WHERE product_type IN ('Women Informal', 'Women Formal') 
+                AND disbursed_date >= '2024-10-01'
+                AND saving_account NOT IN (
+                    SELECT saving_account 
+                    FROM unique_intersection 
+                    WHERE product_type IN ('Women Informal', 'Women Formal') 
+                    AND disbursed_date < '2024-10-01'
+                ) 
+                AND branch_code = '{branch_code}'
+            """
 
-        branch_code = branch_code_result[0][0]
+            conversion_customer_query = f"""
+                SELECT * 
+                FROM conversiondata 
+                WHERE product_type IN ('Women Informal', 'Women Formal') 
+                AND disbursed_date >= '2024-10-01' 
+                AND saving_account NOT IN (
+                    SELECT saving_account 
+                    FROM conversiondata 
+                    WHERE product_type IN ('Women Informal', 'Women Formal') 
+                    AND disbursed_date < '2024-10-01'
+                ) 
+                AND branch_code = '{branch_code}'
+            """
 
-        # Create DataFrames from the fetched data
-        actul_dis = pd.DataFrame(user_id_result, columns=['Branch Code', 'District'])
-        actual_branch = pd.DataFrame(branch_code_result, columns=['Branch Code', 'Branch'])
+            combined_user = pd.DataFrame(result, columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code'])
+            # Fetching customer data for informal customers
+            # st.write(combined_user)
+            informal_customer = pd.DataFrame(fetch_data(in_customer_query, mydb), 
+                                            columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
 
-        # Merge DataFrames based on 'branch'
-        act_dis_branch = pd.merge(actul_dis, actual_branch, on='Branch Code', how='inner')
+            # Add product_type column as 'Informal' for informal_customer
+            informal_customer['product_type'] = 'Women Informal'
 
-        # Fetch actual data
-        df_actual = pd.DataFrame(
-            fetch_data(f"SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date FROM actual WHERE branch_code = '{branch_code}'", mydb),
-            columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
-        )
 
-        # Fetch target data
-        df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target WHERE branch_code = '{branch_code}'", mydb),
-            columns=['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
-        )
+            # Convert 'Register Date' to match the format of formal_customer ('YYYY-MM-DD')
+            informal_customer['Register Date'] = pd.to_datetime(informal_customer['Register Date']).dt.strftime('%Y-%m-%d')
 
-        
-        return act_dis_branch, df_actual, df_target
+            # Fetching customer data for formal customers
+            formal_customer = pd.DataFrame(fetch_data(formal_customer_query, mydb), 
+                                        columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
+
+            # Add product_type column as 'Formal' for formal_customer
+            formal_customer['product_type'] = 'Women Formal'
+            unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+                                        columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+
+            conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+                                            columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+            
+            # Merge DataFrames on 'Saving Account'
+            unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
+            # st.write(unique_conversation)
+            bf_kiyya = "select saving_account from misseddata"
+            bf_kiyya_customer = pd.DataFrame(fetch_data(bf_kiyya, mydb), columns=['Saving Account'])
+            
+            unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
+
+            # Filter rows where bf_kiyya_customer doesn't have a match in unique_conversation
+            unique_not_in_bf_kiyya = unique_conversation[unique_conversation['_merge'] == 'left_only']
+
+            # Drop the _merge column (optional)
+            unique_conversation = unique_not_in_bf_kiyya.drop(columns=['_merge'])
+            infrmal_formal = pd.concat([informal_customer, formal_customer], axis=0).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1)
+            # st.write(infrmal_formal)
+            informal_formal_code = infrmal_formal.merge(combined_user, on='user_Id', how='inner')
+            # st.write(informal_formal_code)
+            # disbersed_by_recurate = pd.merge(infrmal_formal, unique_conversation, on='Saving Account', how='inner')
+            # st.write(disbersed_by_recurate)
+            full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left')
+            # st.write(full_disb)
+
+            
+            
+            # st.write(merged_df)
+            # Replace null values in user_Id of full_disb with user_Id from combined_user when branch_code matches
+            full_disb['branch_code_y'] = np.where(
+                full_disb['branch_code_y'].isnull(),    # Check if user_Id is null
+                full_disb['branch_code_x'],    # Replace with user_Id_combined if condition is met
+                full_disb['branch_code_y']              # Keep the original user_Id otherwise
+            )
+            # st.write(full_disb)
+
+            # Drop the extra combined columns that were added during the merge
+            full_disberment_user = pd.merge(full_disb, combined_user, left_on='branch_code_y', right_on='branch_code', how='outer')
+            # st.write(full_disberment_user)
+            full_disberment_user.drop_duplicates(subset=['branch_code'])
+            # st.write(full_disberment_user)
+
+            # Fetch target data based on branch code
+            df_target = pd.DataFrame(
+                fetch_data(f"SELECT target_id, user_id, target_amount, catagory, registered_date FROM kiyya_target WHERE user_id = '{branch_code}'", mydb),
+                columns=['target_id', 'branch_code', 'Target Customer', 'Category', 'registered_date']
+            )
+            # st.write(df_target)
+
+            # Return the final merged dataframes
+            return full_disberment_user, df_target
 
 
     else:

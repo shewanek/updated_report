@@ -92,9 +92,9 @@ def main():
     mydb = connect_to_database()
     if mydb is not None:
         cursor = mydb.cursor()
-        df_combine = load_salesduretidata(mydb)
+        # df_combine = load_salesduretidata(mydb)
         df_unique, unique_by_self, registed_by_branch, df_all_uniq = load_salesuniquedata(mydb)
-        df_conversion = load_salesconversiondata(mydb)
+        # df_conversion = load_salesconversiondata(mydb)
 
         df_combine_closed, df_combine_active, df_combine_arrears = load_customer_detail(mydb)
         
