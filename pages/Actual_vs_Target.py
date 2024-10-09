@@ -111,7 +111,7 @@ def main():
 
         # Display the filtered DataFrames
         # dis_branch, df_actual, df_target
-        merged_acttarg = pd.merge(df_actual, df_target, on='Branch Code', how='inner')
+        merged_acttarg = pd.merge(df_actual, df_target, on='Branch Code', how='outer')
         df_merged =  pd.merge(dis_branch, merged_acttarg, on='Branch Code', how='inner')
         # df_merged
 

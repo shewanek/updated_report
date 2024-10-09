@@ -13,72 +13,55 @@ from mysql.connector import pooling
 # Function to establish MySQL connection (with error handling and resource cleanup)
 
 
-# Create a connection pool globally
-dbconfig = {
-    "host": "63.34.199.220",
-    "port": "3306",
-    "user": "sane",
-    "password": "sanemysql!2244",
-    "database": "michu_dashBoard"
-}
 
-# Initialize the connection pool
-pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
-                                                  pool_size=30,
-                                                  pool_reset_session=True,
-                                                  **dbconfig)
+
 
 def connect_to_database():
     try:
-        # Get a connection from the pool
-        return pool.get_connection()  # Get a connection from the pool
+        mydb = mysql.connector.connect(
+            # host="63.34.199.220",
+            # port="3306",
+            # user="sane",
+            # password="sanemysql!2244",
+            # database="michu_dashBoard"
+            host="localhost",
+            port="3306",
+            user="root",
+            password="SH36essti",
+            database="michudashboard"
+        )
+        print("Connected to MySQL database successfully.")
+        return mydb
     except mysql.connector.Error as err:
         print("Error connecting to database:", err)
-        st.error("An error occurred while connecting to the database.")
+        st.error("An error occurred while connecting to the database. Please check your connection details.")
         return None  # Indicate failure
-
-
-# def fetch_data(query, mydb):  # Get a connection from the pool
-#     cursor = None
-
-#     if mydb is not None:
-#         try:
-#             cursor = mydb.cursor()  # Create cursor
-#             cursor.execute(query)  # Execute query
-#             data = cursor.fetchall()  # Fetch all data
-#             return data
-#         except mysql.connector.Error as err:
-#             st.error(f"An error occurred while fetching data: {err}")
-#             return []
-#         finally:
-#             if cursor is not None:
-#                 cursor.close()  # Ensure cursor is closed
-#             mydb.close()  # Return the connection back to the pool
-#     else:
-#         return []
-
-
-
+    
+# # Function to connect to the database and store the connection in session state
 # def connect_to_database():
-#     try:
-#         mydb = mysql.connector.connect(
-#             host="63.34.199.220",
-#             port="3306",
-#             user="sane",
-#             password="sanemysql!2244",
-#             database="michu_dashBoard"
-#             # host="localhost",
-#             # port="3306",
-#             # user="root",
-#             # password="SH36essti",
-#             # database="michuDashBoard"  
-#         )
-#         print("Connected to MySQL database successfully.")
-#         return mydb
-#     except mysql.connector.Error as err:
-#         print("Error connecting to database:", err)
-#         st.error("An error occurred while connecting to the database. Please check your connection details.")
-#         return None  # Indicate failure
+#     if 'db_connection' not in st.session_state:
+#         try:
+#             # Create a new connection
+#             mydb = mysql.connector.connect(
+#                 # host="63.34.199.220",
+#                 # port="3306",
+#                 # user="sane",
+#                 # password="sanemysql!2244",
+#                 # database="michu_dashBoard"
+
+#                 host="localhost",
+#                 port="3306",
+#                 user="root",
+#                 password="SH36essti",
+#                 database="michudashboard"  
+#             )
+#             print("Connected to MySQL database successfully.")
+#             # Store the connection in session state
+#             st.session_state['db_connection'] = mydb
+#         except mysql.connector.Error as err:
+#             print("Error connecting to database:", err)
+#             st.error("An error occurred while connecting to the database.")
+#             st.session_state['db_connection'] = None
 
 def fetch_data(query, mydb):
     if mydb is not None:
@@ -90,7 +73,27 @@ def fetch_data(query, mydb):
         return data
     else:
         return []
+# # Function to fetch data using the persistent connection
+# def fetch_data(query):
+#     # Retrieve the connection from session state
+#     mydb = st.session_state.get('db_connection')
+
+#     if mydb is not None:
+#         try:
+#             cursor = mydb.cursor()
+#             cursor.execute(query)
+#             data = cursor.fetchall()
+#             cursor.close()  # Close cursor after fetching data
+#             return data
+#         except mysql.connector.Error as err:
+#             st.error(f"An error occurred while fetching data: {err}")
+#             return []
+#     else:
+#         st.error("No database connection available.")
+#         return []
     
+
+
 
 def load_dataframes(mydb):
     dureti_customer_query = f"SELECT * FROM duretCustomer WHERE `Register_Date` >= '2024-07-01'"
@@ -582,7 +585,7 @@ def load_actual_vs_targetdata(mydb):
         )      
         # Fetch target data
         df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target WHERE branch_code IN ({branch_codes_str})", mydb),
+            fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target", mydb),
             columns=['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
         )
 
@@ -2898,7 +2901,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
     # st.write(username)
 
     if role == "Admin" or role == 'under_admin':
-
+        
         # CRM user query
         crm_user_query = """
             SELECT DISTINCT dr.crm_id, br.full_name, br.sub_process, br.employe_id 
@@ -2954,7 +2957,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
         # st.write(unique_conversation)
         bf_kiyya = "select saving_account from misseddata"
         bf_kiyya_customer = pd.DataFrame(fetch_data(bf_kiyya, mydb), columns=['Saving Account'])
-        
+        # st.write(bf_kiyya_customer[['Saving Account']])
         unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
 
         # Filter rows where bf_kiyya_customer doesn't have a match in unique_conversation
@@ -2962,13 +2965,14 @@ def load_kiyya_actual_vs_targetdata(mydb):
 
         # Drop the _merge column (optional)
         unique_conversation = unique_not_in_bf_kiyya.drop(columns=['_merge'])
+        # st.write(unique_conversation)
         infrmal_formal = pd.concat([informal_customer, formal_customer], axis=0).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1)
-        # st.write(infrmal_formal)
+        # st.write(combined_user)
         informal_formal_code = infrmal_formal.merge(combined_user, on='user_Id', how='inner')
         # st.write(informal_formal_code)
         # disbersed_by_recurate = pd.merge(infrmal_formal, unique_conversation, on='Saving Account', how='inner')
         # st.write(disbersed_by_recurate)
-        full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left')
+        full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left').drop_duplicates(subset=['Saving Account'], keep='first')
         # st.write(full_disb)
 
         

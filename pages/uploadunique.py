@@ -109,7 +109,7 @@ def upload_to_unique(df, mydb):
             branchcustomer_df = pd.DataFrame(branchcustomer_data, columns=['Saving_Account', 'userId'])
 
             # Fetch all user_info data
-            cursor.execute("SELECT userId, branch FROM user_info")
+            cursor.execute("SELECT userId, branch FROM user_info where branch like 'ET%'")
             user_info_data = cursor.fetchall()
             user_info_df = pd.DataFrame(user_info_data, columns=['userId', 'branch_code'])
 
