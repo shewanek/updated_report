@@ -13,66 +13,107 @@ from mysql.connector import pooling
 # Function to establish MySQL connection (with error handling and resource cleanup)
 
 
-
-
-
 def connect_to_database():
     try:
         mydb = mysql.connector.connect(
-            # host="63.34.199.220",
-            # port="3306",
-            # user="sane",
-            # password="sanemysql!2244",
-            # database="michu_dashBoard"
-            host="localhost",
+            host="63.34.199.220",
             port="3306",
-            user="root",
-            password="SH36essti",
-            database="michudashboard"
+            user="sane",
+            password="sanemysql!2244",
+            database="michu_dashBoard"
         )
         print("Connected to MySQL database successfully.")
+        print("---------------connection----------")
         return mydb
     except mysql.connector.Error as err:
         print("Error connecting to database:", err)
         st.error("An error occurred while connecting to the database. Please check your connection details.")
         return None  # Indicate failure
-    
-# # Function to connect to the database and store the connection in session state
-# def connect_to_database():
-#     if 'db_connection' not in st.session_state:
-#         try:
-#             # Create a new connection
-#             mydb = mysql.connector.connect(
-#                 # host="63.34.199.220",
-#                 # port="3306",
-#                 # user="sane",
-#                 # password="sanemysql!2244",
-#                 # database="michu_dashBoard"
 
-#                 host="localhost",
-#                 port="3306",
-#                 user="root",
-#                 password="SH36essti",
-#                 database="michudashboard"  
-#             )
-#             print("Connected to MySQL database successfully.")
-#             # Store the connection in session state
-#             st.session_state['db_connection'] = mydb
-#         except mysql.connector.Error as err:
-#             print("Error connecting to database:", err)
-#             st.error("An error occurred while connecting to the database.")
-#             st.session_state['db_connection'] = None
+
+# Close the MySQL connection
+def close_connection(mydb):
+    if mydb and mydb.is_connected():
+        mydb.close()
+        print("MySQL connection is closed.")
+        print("-----------co     --------------")
 
 def fetch_data(query, mydb):
+    mydb = connect_to_database()
     if mydb is not None:
+
+        try:
+            cursor = mydb.cursor()
+            cursor.execute(query)
+            result = cursor.fetchall()
+            return result
+        except mysql.connector.Error as err:
+            print(f"Error executing query: {err}")
+            st.error("An error occurred while fetching data from the database.")
+            return None
+        finally:
+            if mydb.is_connected():
+                cursor.close()  # Close the cursor after the query
+                close_connection(mydb)  # Ensure the connection is closed
+
+
+# def connect_to_database():
+#     try:
+#         mydb = mysql.connector.connect(
+#             # host="63.34.199.220",
+#             # port="3306",
+#             # user="sane",
+#             # password="sanemysql!2244",
+#             # database="michu_dashBoard"
+#             host="localhost",
+#             port="3306",
+#             user="root",
+#             password="SH36essti",
+#             database="michudashboard"
+#         )
+#         print("Connected to MySQL database successfully.")
+#         return mydb
+#     except mysql.connector.Error as err:
+#         print("Error connecting to database:", err)
+#         st.error("An error occurred while connecting to the database. Please check your connection details.")
+#         return None  # Indicate failure
+    
+# # # Function to connect to the database and store the connection in session state
+# # def connect_to_database():
+# #     if 'db_connection' not in st.session_state:
+# #         try:
+# #             # Create a new connection
+# #             mydb = mysql.connector.connect(
+# #                 # host="63.34.199.220",
+# #                 # port="3306",
+# #                 # user="sane",
+# #                 # password="sanemysql!2244",
+# #                 # database="michu_dashBoard"
+
+# #                 host="localhost",
+# #                 port="3306",
+# #                 user="root",
+# #                 password="SH36essti",
+# #                 database="michudashboard"  
+# #             )
+# #             print("Connected to MySQL database successfully.")
+# #             # Store the connection in session state
+# #             st.session_state['db_connection'] = mydb
+# #         except mysql.connector.Error as err:
+# #             print("Error connecting to database:", err)
+# #             st.error("An error occurred while connecting to the database.")
+# #             st.session_state['db_connection'] = None
+
+# def fetch_data(query, mydb):
+#     if mydb is not None:
         
-        cursor = mydb.cursor()
-        cursor.execute(query)
-        data = cursor.fetchall()
-        cursor.close()  # Close cursor after fetching data
-        return data
-    else:
-        return []
+#         cursor = mydb.cursor()
+#         cursor.execute(query)
+#         data = cursor.fetchall()
+#         cursor.close()  # Close cursor after fetching data
+#         return data
+#     else:
+#         return []
 # # Function to fetch data using the persistent connection
 # def fetch_data(query):
 #     # Retrieve the connection from session state

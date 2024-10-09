@@ -114,15 +114,15 @@ def register():
         # st.write("")
         col4, col5 = st.columns([0.7, 0.4])
         with col4:
-            # if st.form_submit_button("Michu new customer  Dashboard"):
+            if st.form_submit_button("Michu new customer  Dashboard"):
+                sleep(0.5)
+                st.switch_page('pages/unique_dash.py')
+            # if st.form_submit_button("Michu Customers Detail Report"):
             #     sleep(0.5)
-            #     st.switch_page('pages/unique_dash.py')
-            # # if st.form_submit_button("Michu Customers Detail Report"):
-            # #     sleep(0.5)
-            # #     st.switch_page('pages/getdata.py')
+            #     st.switch_page('pages/getdata.py')
 
-            # st.write("")
-            # st.write("")
+            st.write("")
+            st.write("")
            
             if st.form_submit_button("Michu Kiyya Product Dashboard"):
                 sleep(0.5)
@@ -131,13 +131,13 @@ def register():
             
         
             
-            # # st.write("")
-            # # st.write("")
-            # if st.form_submit_button("Target Performance Report"):
-            #     sleep(0.5)
-            #     st.switch_page('pages/Actual_vs_Target.py')
             # st.write("")
             # st.write("")
+            if st.form_submit_button("Target Performance Report"):
+                sleep(0.5)
+                st.switch_page('pages/Actual_vs_Target.py')
+            st.write("")
+            st.write("")
             
 
             # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
