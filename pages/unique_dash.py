@@ -2,7 +2,6 @@ import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-import pandas as pd
 import plotly.express as px
 from dependence import connect_to_database, load_unquie
 from navigation import home_sidebar

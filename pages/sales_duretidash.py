@@ -4,7 +4,7 @@ from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 import plotly.express as px
 from dependence import connect_to_database, load_salesduretidata
-from navigation import make_sidebar1, login_bar
+from navigation import make_sidebar1
 
 # Function to establish MySQL connection
 # @st.cache_resource

@@ -1,7 +1,6 @@
 import streamlit as st
 from PIL import Image
-from time import sleep  # Assuming dash.py contains your dashboard layout
-from navigation import login_bar
+from time import sleep  
 from navigation import make_sidebar
 from dependence import connect_to_database, load_targetdata, load_uniqactualdata, load_convactualdata
 

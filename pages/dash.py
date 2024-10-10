@@ -4,14 +4,8 @@ from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 from dependence import connect_to_database, load_dataframes
 from navigation import home_sidebar
-import pandas as pd
-from streamlit_option_menu import option_menu
-import mysql.connector
 import plotly.express as px
-import time
-import streamlit_authenticator as stauth
-import hashlib
-import os
+
 
 # Function to establish MySQL connection
 # @st.cache_resource

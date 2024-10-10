@@ -1,11 +1,9 @@
-
-
 import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 import plotly.express as px
-from dependence import connect_to_database, load_dataframes, load_districtconversiondata
+from dependence import connect_to_database, load_districtconversiondata
 from navigation import make_sidebar1
 
 def main():

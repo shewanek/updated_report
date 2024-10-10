@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 from dependence import connect_to_database
 from pathlib import Path
-import numpy as np
-import re
 from navigation import make_sidebar1
 
 # Check if all branches exist in the branch_list table

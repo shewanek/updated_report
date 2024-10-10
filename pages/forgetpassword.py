@@ -1,6 +1,5 @@
 import streamlit as st
 from dependence import connect_to_database, insert_resetpuser, validate_full_name, validate_email, has_user_sent_request_today
-from PIL import Image
 from time import sleep
 
 

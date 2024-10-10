@@ -3,7 +3,6 @@ from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 import plotly.express as px
-import pandas as pd
 from dependence import connect_to_database, load_districtuniquedata
 from navigation import make_sidebar1
 

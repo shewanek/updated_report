@@ -1,15 +1,7 @@
 import streamlit as st
-import pandas as pd
-from streamlit_option_menu import option_menu
-import mysql.connector
-import plotly.express as px
-import time
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-import streamlit_authenticator as stauth
-import hashlib
-import os
 from dependence import connect_to_database, load_branchdata, load_customer_detail
 from navigation import make_sidebar1
 

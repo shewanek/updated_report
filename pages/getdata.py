@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-from dependence import connect_to_database, load_convertion, load_unquiecustomer, load_customer_detail
+from dependence import connect_to_database, load_unquiecustomer, load_customer_detail
 from navigation import home_sidebar
 
 

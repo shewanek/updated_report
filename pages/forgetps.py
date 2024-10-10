@@ -2,8 +2,6 @@ import streamlit as st
 from dependence import connect_to_database, get_usernames, get_crmusernames
 from PIL import Image
 from time import sleep
-from navigation import login_bar
-from navigation import make_sidebar
 from pages.forgetpassword import registertion
            
 # Main function to handle user sign-up

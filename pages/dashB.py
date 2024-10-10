@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from PIL import Image
-from time import sleep  # Assuming dash.py contains your dashboard layout
 from streamlit_extras.metric_cards import style_metric_cards
 from navigation import make_sidebar
 from pages.dureati_reg import registerr

@@ -16,10 +16,10 @@ from mysql.connector import pooling
 def connect_to_database():
     try:
         mydb = mysql.connector.connect(
-            host="63.34.199.220",
+            host="10.101.200.141",
             port="3306",
             user="sane",
-            password="sanemysql!2244",
+            password="Sanemichu!4422",
             database="michu_dashBoard"
         )
         print("Connected to MySQL database successfully.")
@@ -57,85 +57,8 @@ def fetch_data(query, mydb):
                 close_connection(mydb)  # Ensure the connection is closed
 
 
-# def connect_to_database():
-#     try:
-#         mydb = mysql.connector.connect(
-#             # host="63.34.199.220",
-#             # port="3306",
-#             # user="sane",
-#             # password="sanemysql!2244",
-#             # database="michu_dashBoard"
-#             host="localhost",
-#             port="3306",
-#             user="root",
-#             password="SH36essti",
-#             database="michudashboard"
-#         )
-#         print("Connected to MySQL database successfully.")
-#         return mydb
-#     except mysql.connector.Error as err:
-#         print("Error connecting to database:", err)
-#         st.error("An error occurred while connecting to the database. Please check your connection details.")
-#         return None  # Indicate failure
-    
-# # # Function to connect to the database and store the connection in session state
-# # def connect_to_database():
-# #     if 'db_connection' not in st.session_state:
-# #         try:
-# #             # Create a new connection
-# #             mydb = mysql.connector.connect(
-# #                 # host="63.34.199.220",
-# #                 # port="3306",
-# #                 # user="sane",
-# #                 # password="sanemysql!2244",
-# #                 # database="michu_dashBoard"
 
-# #                 host="localhost",
-# #                 port="3306",
-# #                 user="root",
-# #                 password="SH36essti",
-# #                 database="michudashboard"  
-# #             )
-# #             print("Connected to MySQL database successfully.")
-# #             # Store the connection in session state
-# #             st.session_state['db_connection'] = mydb
-# #         except mysql.connector.Error as err:
-# #             print("Error connecting to database:", err)
-# #             st.error("An error occurred while connecting to the database.")
-# #             st.session_state['db_connection'] = None
-
-# def fetch_data(query, mydb):
-#     if mydb is not None:
-        
-#         cursor = mydb.cursor()
-#         cursor.execute(query)
-#         data = cursor.fetchall()
-#         cursor.close()  # Close cursor after fetching data
-#         return data
-#     else:
-#         return []
-# # Function to fetch data using the persistent connection
-# def fetch_data(query):
-#     # Retrieve the connection from session state
-#     mydb = st.session_state.get('db_connection')
-
-#     if mydb is not None:
-#         try:
-#             cursor = mydb.cursor()
-#             cursor.execute(query)
-#             data = cursor.fetchall()
-#             cursor.close()  # Close cursor after fetching data
-#             return data
-#         except mysql.connector.Error as err:
-#             st.error(f"An error occurred while fetching data: {err}")
-#             return []
-#     else:
-#         st.error("No database connection available.")
-#         return []
-    
-
-
-
+# @st.cache_data
 def load_dataframes(mydb):
     dureti_customer_query = f"SELECT * FROM duretCustomer WHERE `Register_Date` >= '2024-07-01'"
     # Fetch data with JOIN to get branch name from branch_list table
@@ -549,7 +472,7 @@ def aggregate_and_insert_actual_data(mydb):
     cursor.close()
 
 
-
+# @st.cache_data
 def load_actual_vs_targetdata(mydb):
     # Access the username from session state
     username = st.session_state.get("username", "")

@@ -122,7 +122,7 @@ def main():
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
     # login_bar()
-    # role = st.session_state.get('selected_role', 'Select Role')
+    role = st.session_state.get('selected_role', 'Select Role')
     with st.form(key='login', clear_on_submit= True):
         st.subheader('Login Here')
         # Custom CSS to change the border color when the input field is focused
@@ -146,7 +146,7 @@ def main():
         # Display the rotating message
         st.sidebar.markdown('Welcome to <span style="color: #e38524;">MICHU</span> Reporting Portal<span style="color: #00adef; font-size: 20px;">!</span>', unsafe_allow_html=True)
 
-        col1, col2 = st.columns([0.4, 0.6])
+        col1, col2 = st.columns([0.9, 0.1])
 
         with col1:
             # Log In button
@@ -156,7 +156,7 @@ def main():
                     mydb = connect_to_database()  # Connect to the database
                     if mydb is not None:
                         cursor = mydb.cursor()
-
+ 
                         # Username validation
                         if not username.strip():
                             st.error('Please enter your username')
@@ -173,6 +173,7 @@ def main():
                                 display_sidebar_welcome(full_name)
 
                                 # Role-based redirection
+                                
                                 role_redirect(role)
                                 st.balloons()
 

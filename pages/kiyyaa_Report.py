@@ -1,10 +1,7 @@
 import streamlit as st
-from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-from dependence import connect_to_database, load_kiyya_report_data, load_kiyya_data
-from navigation import home_sidebar
-from datetime import date
+from dependence import connect_to_database, load_kiyya_report_data
 
 
 def main():

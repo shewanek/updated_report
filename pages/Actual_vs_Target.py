@@ -1,28 +1,22 @@
 import streamlit as st
-from streamlit_extras.metric_cards import style_metric_cards
+# from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 from dependence import connect_to_database, load_actual_vs_targetdata
 from navigation import make_sidebar1, home_sidebar
 import pandas as pd
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
-import datetime as dt 
-import matplotlib.dates as mdates
-import plotly.express as px
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+from datetime import datetime
 import decimal
 import numpy as np
-import calendar
 
 
 
 
-
+# @st.cache_data
 def main():
     # Set page configuration, menu, and minimize top padding
-    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
+    # st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
     custom_cs = """
     <style>
         div.block-container {
@@ -97,6 +91,7 @@ def main():
     # Database connection and data fetching (with error handling)
     mydb = connect_to_database()
     if mydb is not None:
+
         cursor = mydb.cursor()
         dis_branch, df_actual, df_target = load_actual_vs_targetdata(mydb)
         # Get the maximum date of the current month

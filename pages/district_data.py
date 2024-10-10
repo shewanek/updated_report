@@ -4,14 +4,6 @@ from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 from dependence import connect_to_database, load_districtduretidata, load_districtuniquedata, load_districtconversiondata, load_customer_detail
 from navigation import make_sidebar1
-import pandas as pd
-from streamlit_option_menu import option_menu
-import mysql.connector
-import plotly.express as px
-import time
-import streamlit_authenticator as stauth
-import hashlib
-import os
 
 
 def main():

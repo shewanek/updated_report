@@ -3,8 +3,8 @@ from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 import plotly.express as px
-from dependence import connect_to_database, load_dataframes, load_districtduretidata
-from navigation import make_sidebar1, login_bar
+from dependence import connect_to_database, load_districtduretidata
+from navigation import make_sidebar1
 
 # Function to establish MySQL connection
 # @st.cache_resource

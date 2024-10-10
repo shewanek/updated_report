@@ -1,7 +1,6 @@
 import streamlit as st
-from dependence import connect_to_database, validate_phone, unique_customer, branchCustomer, validate_full_name, get_unquiephone, get_unquieaccount, validate_saving_account, get_conversionphone, get_conversionaccount, check_unique_phone, check_unique_account
+from dependence import connect_to_database, validate_phone, branchCustomer, validate_full_name, get_unquiephone, get_unquieaccount, validate_saving_account, get_conversionphone, get_conversionaccount, check_unique_phone, check_unique_account
 from PIL import Image
-import re
 from navigation import login_bar
 from navigation import make_sidebar1
            
