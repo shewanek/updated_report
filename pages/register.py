@@ -3,6 +3,9 @@ from PIL import Image
 from time import sleep  # Assuming dash.py contains your dashboard layout
 from navigation import login_bar
 from navigation import make_sidebar
+from pages.kiyya_register import kiyya_register
+from pages.dureati_reg import registerr
+from pages.unique_register import unique_register
 # from pages.dureati_reg import registerr
 
 
@@ -49,7 +52,7 @@ def register():
     </style>
     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-    image = Image.open('pages/michu.png')
+    # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1,0.9])
     with col1:
@@ -69,7 +72,7 @@ def register():
         st.markdown(html_title, unsafe_allow_html=True)
     # Side bar
     st.sidebar.image("pages/michu.png")
-    username = st.session_state.get("username", "")
+    # username = st.session_state.get("username", "")
     full_name = st.session_state.get("full_name", "")
     # st.sidebar.write(f'Welcome, :orange[{full_name}]')
     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
@@ -87,52 +90,50 @@ def register():
         st.markdown('<h5><span style="color: #00adef;">Form </span> 👇🏻</h5>', unsafe_allow_html=True)
         with st.form(key = 'forms', clear_on_submit=True):
         
-        
-            # # st.markdown('<div class="centered-form">', unsafe_allow_html=True)
-            # # if st.form_submit_button("Michu Women Targeted Registration Form"):
-            # #     sleep(0.5)
-            # #     st.switch_page('pages/duretiregister.py')
-            # # st.write("")
-            # # st.write("")
             if st.form_submit_button("Michu New/Unique Customer Registration Form"):
-                sleep(0.5)
-                st.switch_page('pages/unique_register.py')
+                unique_register()
             # # st.write("")
             # # st.write("")
             # # # if st.form_submit_button("Michu Collection & Conversion Report Form "):
             # # #     sleep(0.5)
             # # #     st.switch_page('pages/conversionregister.py')
             # # # st.markdown('</div>', unsafe_allow_html=True)
-            # # if st.form_submit_button("Michu Customers Detail Report"):
-            # #     sleep(0.5)
-            # #     st.switch_page('pages/branch_dash.py')
-            if st.form_submit_button("Michu Kiyya Product Report"):
-                # registerr()
-                sleep(0.5)
-                st.switch_page('pages/kiyya_branch.py')
+            # if st.form_submit_button("Michu Kiyya Product Report"):
+            #     # registerr()
+            #     sleep(0.5)
+            #     st.switch_page('pages/kiyya_branch.py')
+            st.write("")
+            if st.form_submit_button("Kiyya :orange[INFORMAL] Customer Registeration Form"):
+                kiyya_register()
+            st.write("")
+            if st.form_submit_button("Kiyya :blue[FORMAL] Customer Registeration Form"):
+                registerr()
             
     # with col2:
         
-    #     # # st.subheader(":orange[Report]") 
-    #     # st.write(" ")
-    #     # st.write(" ")
-    #     # # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
-    #     # st.markdown('<h5><span style="color: #e38524;">Report </span> 👇🏻</h5>', unsafe_allow_html=True)
-    #     # with st.form(key = 'reports', clear_on_submit=True):
-    #     #     if st.form_submit_button("Target Performance Kiyya Report"):
-    #     #         sleep(0.5)
-    #     #         st.switch_page('pages/kiyya_actual_vs_target.py')
-        
-    #         # # st.markdown('<div class="centered-form">', unsafe_allow_html=True)
-    #         # if st.form_submit_button("Michu Customers Detail Report"):
-    #         #     sleep(0.5)
-    #         #     st.switch_page('pages/branch_dash.py')
-    #         # # # st.write("")
-    #         # # # st.write("")
-    #         # if st.form_submit_button("Target Performance Report"):
-    #         #     sleep(0.5)
-    #         #     st.switch_page('pages/Actual_vs_Target.py')
-    #         # # st.markdown('</div>', unsafe_allow_html=True)
+    #     # st.subheader(":orange[Report]") 
+    #     st.write(" ")
+    #     st.write(" ")
+    #     # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
+    #     st.markdown('<h5><span style="color: #e38524;">Report </span> 👇🏻</h5>', unsafe_allow_html=True)
+    #     with st.form(key = 'reports', clear_on_submit=True):
+    #         # st.markdown('<div class="centered-form">', unsafe_allow_html=True)
+    #         if st.form_submit_button("Michu Customers Detail Report"):
+    #             sleep(0.5)
+    #             st.switch_page('pages/branch_dash.py')
+    #         st.write("")
+    #         if st.form_submit_button("Target Performance Report"):
+    #             sleep(0.5)
+    #             st.switch_page('pages/Actual_vs_Target.py')
+
+    #         st.write("")
+    #         if st.form_submit_button("Target Performance Kiyya Report"):
+    #             sleep(0.5)
+    #             st.switch_page('pages/kiyya_actual_vs_target.py')
+    #         # # st.write("")
+    #         # # st.write("")
+            
+            # st.markdown('</div>', unsafe_allow_html=True)
             
     
    

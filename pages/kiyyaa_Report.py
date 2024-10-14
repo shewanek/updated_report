@@ -159,15 +159,16 @@ def main():
                 }
             </style>
             """, unsafe_allow_html=True)
+        st.write("Wait till ")
         
-        if merged_df is not None and not merged_df.empty:
-            st.markdown(f'<span style="color: #e38524;">**Registered Customer**👇🏻', unsafe_allow_html=True)
-            st.write(merged_df.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
-            # df = unique_customer.drop(columns=['uniqueId', 'userName'])
-            # csv = df.to_csv(index=False)
-            # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
-        else:
-            st.info("There is no registered customers yet.")
+        # if merged_df is not None and not merged_df.empty:
+        #     st.markdown(f'<span style="color: #e38524;">**Registered Customer**👇🏻', unsafe_allow_html=True)
+        #     st.write(merged_df.drop(columns=['kiyya_id', 'userId']).reset_index(drop=True).rename(lambda x: x + 1))
+        #     # df = unique_customer.drop(columns=['uniqueId', 'userName'])
+        #     # csv = df.to_csv(index=False)
+        #     # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
+        # else:
+        #     st.info("There is no registered customers yet.")
 
 
 

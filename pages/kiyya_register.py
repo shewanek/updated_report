@@ -1,12 +1,12 @@
 import streamlit as st
 from datetime import date
-from dependence import connect_to_database, validate_phone, validate_full_name, get_unquiedureatphone, validate_saving_account, check_durationunique_account, kiyya_customer, get_unquiedkiyyaphone
+from dependence import validate_phone, validate_full_name, get_unquiedureatphone, validate_saving_account, check_durationunique_account, kiyya_customer, get_unquiedkiyyaphone
            
 # Main function to handle user sign-up
-@st.dialog("Add Customer")
+@st.dialog("Add Kiyya Informal Customer")
 def kiyya_register():
     username = st.session_state.get("username", "")
-    full_name = st.session_state.get("full_name", "")
+    # full_name = st.session_state.get("full_name", "")
 
     with st.form(key='customer_form', clear_on_submit= True):
         name_key = 'name_input'
@@ -26,7 +26,7 @@ def kiyya_register():
         source_key = 'source_input'
         daily_key = 'daily_input'
         purpose_key = 'purpose_input'
-        recu_key = 'recu_input'
+        # recu_key = 'recu_input'
 
 
 
@@ -84,55 +84,50 @@ def kiyya_register():
 
         with col1:
             if st.form_submit_button(':blue[Register]'):
-                mydb = connect_to_database()
-                if mydb is not None:
-                    # Using buffered=True to prevent unread result errors
-                    cursor = mydb.cursor(buffered=True)
-                    # Validate form inputs
-                    if customer_id_type == "Select Id Type":
-                        st.error("Please select a valid Customer Identification Type.")
-                    elif marital_status == "Select Marital Status":
-                        st.error("Please select a valid Marital Status.")
-                    elif region == "Select region":
-                        st.error("Please select a valid Region.")
-                    elif educational_level == "Select Educational Level":
-                        st.error("Please select a valid Educational Level.")
-                    elif economic_sector == "Select Business Sector":
-                        st.error("Please select a valid Business Sector.")
-                    elif source_of_initial_capital == "Select Source of Initial Capital":
-                        st.error("Please select a valid Source of Initial Capital.")
-                    # Check if the user has entered a value for Daily Sales
-                    elif initial_working_capital is None or initial_working_capital == 0.00:
-                        st.error("Please enter a valid initial working capital amount.")
-                    elif monthly_income is None or monthly_income == 0.00:
-                        st.error("Please enter a valid Daily Sales amount.")
-                    # Check if the date is selected (mandatory check)
-                    elif not date_of_birth:
-                        st.error("Please select your Date of Birth.")
+                # Validate form inputs
+                if customer_id_type == "Select Id Type":
+                    st.error("Please select a valid Customer Identification Type.")
+                elif marital_status == "Select Marital Status":
+                    st.error("Please select a valid Marital Status.")
+                elif region == "Select region":
+                    st.error("Please select a valid Region.")
+                elif educational_level == "Select Educational Level":
+                    st.error("Please select a valid Educational Level.")
+                elif economic_sector == "Select Business Sector":
+                    st.error("Please select a valid Business Sector.")
+                elif source_of_initial_capital == "Select Source of Initial Capital":
+                    st.error("Please select a valid Source of Initial Capital.")
+                # Check if the user has entered a value for Daily Sales
+                elif initial_working_capital is None or initial_working_capital == 0.00:
+                    st.error("Please enter a valid initial working capital amount.")
+                elif monthly_income is None or monthly_income == 0.00:
+                    st.error("Please enter a valid Daily Sales amount.")
+                # Check if the date is selected (mandatory check)
+                elif not date_of_birth:
+                    st.error("Please select your Date of Birth.")
 
-                    elif not validate_full_name(name):
-                        st.error('Please enter valid name (First name and father name)') 
-                    elif not validate_phone(phone_nmuber):
-                        st.error('Please enter a valid phone number (use this format 09... or 07...)')
-                    elif phone_nmuber in get_unquiedureatphone(cursor):
-                        st.error('The phone number already exist, please enter correct phone number(new)')
-                    elif phone_nmuber in get_unquiedkiyyaphone(cursor):
-                        st.error('The phone number already exist, please enter correct phone number(new)')
-                    elif not validate_saving_account(Saving_Account):
-                        st.error('The saving account is not correct please try again')
-                    elif check_durationunique_account(cursor, Saving_Account):
-                        st.error('The saving account is already exist, indicating that the customer has already used the product (it is not new or unique).')
-                    elif not region or not zone_subcity or not woreda or not educational_level or not economic_sector or not line_of_business or not purpose_of_loan:
-                        st.error("All fields are required. Please fill in all the fields.")
+                elif not validate_full_name(name):
+                    st.error('Please enter valid name (First name and father name)') 
+                elif not validate_phone(phone_nmuber):
+                    st.error('Please enter a valid phone number (use this format 09... or 07...)')
+                elif not validate_saving_account(Saving_Account):
+                    st.error('The saving account is not correct please try again')
+                elif phone_nmuber in get_unquiedureatphone():
+                    st.error('The phone number already exist, please enter correct phone number(new)')
+                elif phone_nmuber in get_unquiedkiyyaphone():
+                    st.error('The phone number already exist, please enter correct phone number(new)')
+                elif check_durationunique_account(Saving_Account):
+                    st.error('The saving account is already exist, indicating that the customer has already used the product (it is not new or unique).')
+                elif not region or not zone_subcity or not woreda or not educational_level or not economic_sector or not line_of_business or not purpose_of_loan:
+                    st.error("All fields are required. Please fill in all the fields.")
 
+                else:
+                    
+                    if kiyya_customer(username, name, phone_nmuber, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan):
+                        st.success(f" {name} has been successfully registered!")
                     else:
-                        
-                        if kiyya_customer(mydb, cursor, username, name, phone_nmuber, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan):
-                            st.success(f" {name} has been successfully registered!")
-                        else:
-                            st.error("Error, the entered data is not registered; please contact the administrator.")
-                    cursor.close()
-                    mydb.close()
+                        st.error("Error, the entered data is not registered; please contact the administrator.")
+                   
        
         # with col3:
         #     if st.form_submit_button("LogOut"):

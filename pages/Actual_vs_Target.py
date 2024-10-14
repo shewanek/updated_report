@@ -2,7 +2,7 @@ import streamlit as st
 # from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-from dependence import connect_to_database, load_actual_vs_targetdata
+from dependence import load_actual_vs_targetdata
 from navigation import make_sidebar1, home_sidebar
 import pandas as pd
 import plotly.graph_objects as go
@@ -16,7 +16,7 @@ import numpy as np
 # @st.cache_data
 def main():
     # Set page configuration, menu, and minimize top padding
-    # st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
     custom_cs = """
     <style>
         div.block-container {
@@ -53,11 +53,11 @@ def main():
     # with open('custom.css') as f:
     #     st.write(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-    image = Image.open('pages/michu.png')
+    # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1, 0.9])
     with col1:
-        st.image(image)
+        st.image('pages/michu.png')
     html_title = """
         <style>
         .title_dash{
@@ -89,18 +89,21 @@ def main():
 
     # Fetch data from different tables
     # Database connection and data fetching (with error handling)
-    mydb = connect_to_database()
-    if mydb is not None:
+    # Initialize database connection using Singleton pattern
+    try:
 
-        cursor = mydb.cursor()
-        dis_branch, df_actual, df_target = load_actual_vs_targetdata(mydb)
+        dis_branch, df_actual, df_target = load_actual_vs_targetdata()
         # Get the maximum date of the current month
+        # Get the current date and the maximum date for the current month
         current_date = datetime.now().date()
         current_month_max_date = current_date.replace(day=1) + pd.DateOffset(months=1) - pd.DateOffset(days=1)
-        current_month_max_date = current_month_max_date.date() 
-        # current_month_max_date = current_month_max_date + relativedelta(months=1)
-       
-        # Filter df_actual and df_target
+        current_month_max_date = current_month_max_date.date()
+
+        # Convert 'Actual Date' and 'Target Date' columns to datetime
+        df_actual['Actual Date'] = pd.to_datetime(df_actual['Actual Date']).dt.date
+        df_target['Target Date'] = pd.to_datetime(df_target['Target Date']).dt.date
+
+        # Filter df_actual and df_target based on the current month's max date
         df_actual = df_actual[df_actual['Actual Date'] <= current_month_max_date]
         df_target = df_target[df_target['Target Date'] <= current_month_max_date]
 
@@ -214,7 +217,7 @@ def main():
         else:
             make_sidebar1()
 
-       
+    
         # df_combine
         st.markdown("""
             <style>
@@ -2754,7 +2757,11 @@ def main():
                 st.write(" ")
 
 
-            
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {e}")
+    # finally:
+    #     if db_instance:
+    #         db_instance.close_connection()
     # Auto-refresh interval (in seconds)
     refresh_interval = 600  # 5 minutes
     st_autorefresh(interval=refresh_interval * 1000, key="Michu report dash")       

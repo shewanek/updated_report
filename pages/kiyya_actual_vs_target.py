@@ -1,11 +1,11 @@
 import streamlit as st
 from PIL import Image
-from dependence import connect_to_database, load_kiyya_actual_vs_targetdata
+from dependence import load_kiyya_actual_vs_targetdata
 from navigation import make_sidebar1, home_sidebar
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
-import decimal
+from decimal import Decimal
 
 
 def main():
@@ -84,10 +84,8 @@ def main():
     # Fetch data from different tables
     # Database connection and data fetching (with error handling)
     
-    mydb = connect_to_database()
-    if mydb is not None:
-        cursor = mydb.cursor()
-        df_actual, df_target = load_kiyya_actual_vs_targetdata(mydb)
+    try:
+        df_actual, df_target = load_kiyya_actual_vs_targetdata()
 
         # st.write(df_actual)
        
@@ -318,7 +316,7 @@ def main():
                         st.write(" ")
                         # Define the function to convert decimal.Decimal to float
                         def convert_to_float(value):
-                            if isinstance(value, decimal.Decimal):
+                            if isinstance(value, Decimal):
                                 return float(value)
                             return value
                         df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
@@ -342,6 +340,11 @@ def main():
                             'Actual Customer': actual_grouped['Saving Account'],  # Renamed Saving Account to Actual Customer
                             'Percentage(%)': (actual_grouped['Saving Account'] / target_grouped['Target Customer'] * 100) if target_grouped['Target Customer'] != 0 else 0
                         }
+                        def convert_decimal(value):
+                            if isinstance(value, Decimal):
+                                return float(value)
+                            return value
+                        # target_grouped['Target Customer'] = target_grouped['Target Customer'].apply(convert_decimal)
 
                         # Create a DataFrame for display with Target, Actual, and Metrics (Kiyya Customer)
                         final_df = pd.DataFrame({
@@ -350,10 +353,12 @@ def main():
                             'Percentage(%)': [totals['Percentage(%)']],
                             'Metric': ['Kiyya Customer']
                         })
+                        final_df['Actual'] = final_df['Actual'].apply(convert_decimal)
 
                         # Round the 'Target', 'Actual', and 'Percentage(%)' columns
                         final_df.loc[:,'Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
-                        final_df.loc[:,'Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
+                        # Now apply the formatting only to the valid numbers
+                        final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}" if pd.notnull(x) else "")
                         final_df.loc[:,'Percentage(%)'] = final_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
 
                         # Reset the index and rename it to start from 1
@@ -405,7 +410,10 @@ def main():
 
             with tab2:
                 tab3, tab4 = st.tabs(["Per Sub Process", "Per Recruiter"])
-                
+                def convert_decimal(value):
+                    if isinstance(value, Decimal):
+                        return float(value)
+                    return value
                 # Display combined data in a table
                 
                 with tab3:
@@ -477,7 +485,7 @@ def main():
 
                         # Format the 'Target Customer' and 'Actual Customer' columns with commas
                         grouped_df['Target Customer'] = grouped_df['Target Customer'].map(lambda x: f"{int(x):,}" if isinstance(x, (int, float)) else x)
-                        grouped_df['Actual Customer'] = grouped_df['Actual Customer'].map(lambda x: f"{int(x):,}" if isinstance(x, (int, float)) else x)
+                        grouped_df['Actual Customer'] = grouped_df['Actual Customer'].map(lambda x: f"{int(x):,}" if isinstance(x, (int, float)) else x).apply(convert_decimal)
 
                         # Reset index for better display
                         grouped_df_reset = grouped_df.reset_index(drop=True)
@@ -592,7 +600,8 @@ def main():
 
                         # Format the 'Target Customer' and 'Actual Customer' columns for better readability
                         grouped_df['Target Customer'] = grouped_df['Target Customer'].map(lambda x: f"{x:,.0f}")
-                        grouped_df['Actual Customer'] = grouped_df['Actual Customer'].map(lambda x: f"{x:,.0f}")
+                        grouped_df['Actual Customer'] = grouped_df['Actual Customer'].map(lambda x: f"{x:,.0f}").apply(convert_decimal)
+
 
                         # Reset index for better display
                         grouped_df_reset = grouped_df.reset_index(drop=True)
@@ -1674,7 +1683,8 @@ def main():
 
             
 
-
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {e}")
             
     # # Auto-refresh interval (in seconds)
     # refresh_interval = 600  # 5 minutes

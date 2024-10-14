@@ -82,28 +82,28 @@ def register():
     st.markdown(custom_cs, unsafe_allow_html=True)
     with st.form(key = 'Create Account', clear_on_submit=True):
         col1, col2 = st.columns([0.7, 0.5])
-        with col1:
-            # if st.form_submit_button("Michu Women Targeted, Registered Report"):
-            #     sleep(0.5)
-            #     st.switch_page('pages/sales_duretidash.py')
-            # st.write("")
-            # st.write("")
-            if st.form_submit_button("Michu New Customer  Dashboard"):
-                sleep(0.5)
-                st.switch_page('pages/sales_uniquedash.py')
-            st.write("")
-            st.write("")
-            if st.form_submit_button("Michu Kiyya Product Dashboard"):
-                sleep(0.5)
-                st.switch_page('pages/kiyya_sales.py')
+        # with col1:
+        #     # if st.form_submit_button("Michu Women Targeted, Registered Report"):
+        #     #     sleep(0.5)
+        #     #     st.switch_page('pages/sales_duretidash.py')
+        #     # st.write("")
+        #     # st.write("")
+        #     if st.form_submit_button("Michu New Customer  Dashboard"):
+        #         sleep(0.5)
+        #         st.switch_page('pages/sales_uniquedash.py')
+        #     st.write("")
+        #     st.write("")
+        #     if st.form_submit_button("Michu Kiyya Product Dashboard"):
+        #         sleep(0.5)
+        #         st.switch_page('pages/kiyya_sales.py')
             
         with col2:
-            if st.form_submit_button("Michu Customers Detail Report"):
-                sleep(0.5)
-                st.switch_page('pages/sales_data.py')
+            # if st.form_submit_button("Michu Customers Detail Report"):
+            #     sleep(0.5)
+            #     st.switch_page('pages/sales_data.py')
 
-            st.write("")
-            st.write("")
+            # st.write("")
+            # st.write("")
             if st.form_submit_button("Target Performance Report"):
                 sleep(0.5)
                 st.switch_page('pages/Actual_vs_Target.py')

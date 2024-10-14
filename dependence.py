@@ -1,63 +1,17 @@
-import mysql.connector
 import pandas as pd
 import streamlit as st
 import hashlib
 import re
 import json
 import numpy as np
-from mysql.connector import pooling
-# from dotenv import load_dotenv
-
-# load_dotenv()
-# import os
-# Function to establish MySQL connection (with error handling and resource cleanup)
+from decimal import Decimal
+from datetime import date, datetime
+from db_connection import DatabaseOperations
 
 
-def connect_to_database():
-    try:
-        mydb = mysql.connector.connect(
-            host="10.101.200.141",
-            port="3306",
-            user="sane",
-            password="Sanemichu!4422",
-            database="michu_dashBoard"
-        )
-        print("Connected to MySQL database successfully.")
-        print("---------------connection----------")
-        return mydb
-    except mysql.connector.Error as err:
-        print("Error connecting to database:", err)
-        st.error("An error occurred while connecting to the database. Please check your connection details.")
-        return None  # Indicate failure
-
-
-# Close the MySQL connection
-def close_connection(mydb):
-    if mydb and mydb.is_connected():
-        mydb.close()
-        print("MySQL connection is closed.")
-        print("-----------co     --------------")
-
-def fetch_data(query, mydb):
-    mydb = connect_to_database()
-    if mydb is not None:
-
-        try:
-            cursor = mydb.cursor()
-            cursor.execute(query)
-            result = cursor.fetchall()
-            return result
-        except mysql.connector.Error as err:
-            print(f"Error executing query: {err}")
-            st.error("An error occurred while fetching data from the database.")
-            return None
-        finally:
-            if mydb.is_connected():
-                cursor.close()  # Close the cursor after the query
-                close_connection(mydb)  # Ensure the connection is closed
-
-
-
+        
+# Initialize DatabaseOperations once
+db_ops = DatabaseOperations()
 # @st.cache_data
 def load_dataframes(mydb):
     dureti_customer_query = f"SELECT * FROM duretCustomer WHERE `Register_Date` >= '2024-07-01'"
@@ -68,10 +22,10 @@ def load_dataframes(mydb):
     JOIN branch_list bl ON ui.branch = bl.branch_code
     """
     # Fetch data and create DataFrame
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'Branch'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query), columns=['userId', 'userName', 'District', 'Branch'])
 
-    # df_user_info = pd.DataFrame(fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId','userName','District','Branch'])
-    df_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), columns=['customerId', 'userId','full Name', 'Product Type','Phone Number','Saving Account', 'Region', 'Zone/sub city/ Woreda','Register Date'])
+    # df_user_info = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId','userName','District','Branch'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), columns=['customerId', 'userId','full Name', 'Product Type','Phone Number','Saving Account', 'Region', 'Zone/sub city/ Woreda','Register Date'])
     
     # Merge the two DataFrames based on 'userId'
     merged_df = pd.merge(df_user_info, df_customer, on='userId', how='inner')
@@ -88,10 +42,10 @@ def load_unquie(mydb):
     """
 
     # Fetch data and create DataFrame
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['District', 'branch_code', 'Branch'])
-    # df_user_info = pd.DataFrame(fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['District', 'branch_code', 'Branch'])
+    # df_user_info = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
     unique_customer_query = f"SELECT * FROM unique_intersection WHERE `Disbursed_Date` >= '2024-07-01'"
-    df_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), columns=['uniqueId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), columns=['uniqueId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
     
     # Merge the two DataFrames based on 'userId'
     merged_df = pd.merge(df_user_info, df_customer, on='branch_code', how='inner')
@@ -109,12 +63,12 @@ def load_unquiecustomer(mydb):
     branch_customer_query = f"SELECT userId, fullName, Product_Type, phoneNumber, TIN_Number, Saving_Account, disbursed_Amount, Staff_Name,Disbursed_date FROM branchcustomer"
 
     # Fetch data and create DataFrame
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
-    # df_user_info = pd.DataFrame(fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
+    # df_user_info = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
     unique_customer_query = f"SELECT * FROM unique_intersection WHERE `Disbursed_Date` >= '2024-07-01'"
-    df_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), columns=['uniqueId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), columns=['uniqueId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-    branch_customer = pd.DataFrame(fetch_data(branch_customer_query, mydb), columns=['userId', 'Full Name', 'Product_Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)','Disbursed_Date'])
+    branch_customer = pd.DataFrame(db_ops.fetch_data(branch_customer_query, mydb), columns=['userId', 'Full Name', 'Product_Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)','Disbursed_Date'])
 
     unique_by_branch = pd.merge(branch_customer, df_customer, on='Saving Account', how='inner')
     unique_bybranch = pd.merge(unique_by_branch, df_user_info, on='branch_code', how='inner')
@@ -157,10 +111,10 @@ def load_convertion(mydb):
     """
 
     # Fetch data and create DataFrame
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
-    # df_user_info = pd.DataFrame(fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
+    # df_user_info = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
     unique_customer_query = f"SELECT * FROM conversiondata WHERE `Disbursed_Date` >= '2024-07-01'"
-    df_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), columns=['ConversionId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), columns=['ConversionId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
     
     # Merge the two DataFrames based on 'userId'
     merged_df = pd.merge(df_user_info, df_customer, on='branch_code', how='inner')
@@ -170,78 +124,94 @@ def load_convertion(mydb):
     return df_combine
 
 
-def load_branchdata(mydb):
-    # Access the username from session state
-    username = st.session_state.get("username", "")
+def load_branchdata(username, page=1, page_size=1000):
+    try:
+        # Calculate the offset based on the current page and page size
+        offset = (page - 1) * page_size
 
-    # Fetch userId based on username
-    user_id_query = f"SELECT userId, district FROM user_info WHERE userName = '{username}'"
-    user_id_result = fetch_data(user_id_query, mydb)
+        # Fetch userId based on username
+        user_id_query = "SELECT userId, district FROM user_info WHERE userName = %s"
+        user_id_result = db_ops.fetch_data(user_id_query, (username,))
 
-    if not user_id_result:
-        st.warning("No user found with the given username.")
-        return pd.DataFrame()  # Return an empty DataFrame if no user is found
+        if not user_id_result:
+            st.warning("No user found with the given username.")
+            return pd.DataFrame(), 0  # Return an empty DataFrame if no user is found
 
-    user_id = user_id_result[0][0]  # Assuming userId is the first element in the first row of the result
-    district = user_id_result[0][1]
+        user_id = user_id_result[0]['userId']
+        district = user_id_result[0]['district']
 
-    # Fetch data from user_info and duretCustomer tables based on userId
-    # Fetch data from user_info and join with branch_list to get the branch name
-    query = f"""
-    SELECT ui.userId, ui.userName, ui.district, ui.branch, bl.branch_name
-    FROM user_info ui
-    JOIN branch_list bl ON ui.branch = bl.branch_code
-    WHERE ui.userId = '{user_id}'
-    """
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
+        # Fetch user_info with selected columns
+        query = """
+        SELECT ui.userId, ui.userName, ui.district, ui.branch, bl.branch_name
+        FROM user_info ui
+        JOIN branch_list bl ON ui.branch = bl.branch_code
+        WHERE ui.userId = %s
+        """
+        df_user_info = pd.DataFrame(db_ops.fetch_data(query, (user_id,)), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
 
+        # Ensure 'branch_code' is a string
+        df_user_info['branch_code'] = df_user_info['branch_code'].astype(str)
 
-    # df_user_info = pd.DataFrame(fetch_data(f"SELECT * FROM user_info WHERE userId = '{user_id}'", mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role', 'password', 'ccreatedAt'])
-    # Filtered queries for data starting from July 1
-    dureti_customer_query = f"SELECT * FROM duretCustomer WHERE `Register_Date` >= '2024-07-01'"
-    unique_customer_query = f"SELECT * FROM unique_intersection WHERE `disbursed_date` >= '2024-07-01'"
-    conversion_customer_query = f"SELECT * FROM conversiondata WHERE `disbursed_date` >= '2024-07-01'"
+        # Fetch paginated data from different tables
+        dureti_customer_query = f"""
+        SELECT uniqId, userId, full Name, Product_Type, Phone Number, Saving Account, Region, Zone/Subcity/Woreda, Register Date 
+        FROM duretCustomer 
+        WHERE `Register_Date` >= '2024-07-01' 
+        LIMIT {page_size} OFFSET {offset}
+        """
+        unique_customer_query = f"""
+        SELECT uniqId, branch_code, Customer Number, Customer Name, Saving Account, Product Type, Disbursed Amount, Disbursed Date 
+        FROM unique_intersection 
+        WHERE `disbursed_date` >= '2024-07-01' 
+        LIMIT {page_size} OFFSET {offset}
+        """
+        conversion_customer_query = f"""
+        SELECT conId, branch_code, Customer Number, Customer Name, Saving Account, Product Type, Disbursed Amount, Disbursed Date 
+        FROM conversiondata 
+        WHERE `disbursed_date` >= '2024-07-01' 
+        LIMIT {page_size} OFFSET {offset}
+        """
+        branch_customer_query = f"""
+        SELECT userId, fullName, Product_Type, phoneNumber, TIN_Number, Saving_Account, disbursed_Amount, Staff_Name, Disbursed_date 
+        FROM branchcustomer 
+        LIMIT {page_size} OFFSET {offset}
+        """
 
-    branch_customer_query = f"SELECT userId, fullName, Product_Type, phoneNumber, TIN_Number, Saving_Account, disbursed_Amount, Staff_Name,Disbursed_date FROM branchcustomer"
+        # Fetch paginated data
+        dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query))
+        unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
+        conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query))
+        branch_customer = pd.DataFrame(db_ops.fetch_data(branch_customer_query))
 
-    dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), columns=['uniqId', 'userId', 'full Name', 'Product_Type', 'Phone Number', 'Saving Account', 'Region', 'Zone/Subcity/Woreda', 'Register Date'])
-    unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
-    conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+        # Ensure branch_code is string in relevant DataFrames
+        unique_customer['branch_code'] = unique_customer['branch_code'].astype(str)
+        conversion_customer['branch_code'] = conversion_customer['branch_code'].astype(str)
 
-    # Merge df_user_info with dureti_customer on 'userId'
-    merged_df_1 = pd.merge(df_user_info, dureti_customer, on='userId', how='inner')
+        # Perform the merge operation on paginated data
+        merged_df_1 = pd.merge(df_user_info, dureti_customer, on='userId', how='inner')
+        merged_df_2 = pd.merge(df_user_info, unique_customer, on='branch_code', how='inner')
+        merged_df_3 = pd.merge(df_user_info, conversion_customer, on='branch_code', how='inner')
+
+        # Merge branch_customer with other data
+        branch_customer['branch_code'] = branch_customer['userId'].astype(str)
+        unique_by_branch = pd.merge(branch_customer, unique_customer, on='Saving Account', how='inner')
+        unique_cust_by_branch = unique_by_branch[['District', 'Branch', 'Full Name', 'Product Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)', 'Disbursed_Date']]
+
+        # Perform a right join
+        merged_df = pd.merge(unique_customer, branch_customer, on='Saving Account', how='left', indicator=True)
+        unique_by_self = merged_df[merged_df['_merge'] == 'left_only']
+        unique_cust_by_self = pd.merge(unique_by_self, df_user_info, on='branch_code', how='inner')
+        unique_cust_by_self = unique_cust_by_self[['District', 'Branch', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date']]
+
+        # Return paginated data
+        return merged_df_1, merged_df_2, merged_df_3, unique_cust_by_branch, unique_cust_by_self, len(branch_customer)
     
-    merged_df_2 = pd.merge(df_user_info, unique_customer, on='branch_code', how='inner')
-    # merged_df_2
-
-    merged_df_3 = pd.merge(df_user_info, conversion_customer, on='branch_code', how='inner')
-    # merged_df_3
-
-    branch_customer = pd.DataFrame(fetch_data(branch_customer_query, mydb), columns=['userId', 'Full Name', 'Product_Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)','Disbursed_Date'])
-
-    unique_by_branch = pd.merge(branch_customer, unique_customer, on='Saving Account', how='inner')
-    unique_bybranch = pd.merge(unique_by_branch, df_user_info, on='branch_code', how='inner')
-    unique_cust_by_branch = unique_bybranch[['District', 'Branch', 'Full Name', 'Product Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)','Disbursed_Date']]
-
-    # Perform a right join
-    merged_df = pd.merge(unique_customer, branch_customer,  on='Saving Account', how='left', indicator=True)
-    # Filter to keep only rows that are only in df_customer
-    unique_byself = merged_df[merged_df['_merge'] == 'left_only']
-    unique_by_self = pd.merge(unique_byself, df_user_info, on='branch_code', how='inner')
-    unique_cust_by_self = unique_by_self[['District', 'Branch', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date']]
-    
-    # Step 1: Identify rows in branch_customer that are not in df_customer
-    # Using a left join and filtering for rows without a match in df_customer
-    missing_in_df_customer = branch_customer[~branch_customer['Saving Account'].isin(unique_customer['Saving Account'])]
-
-    # Step 2: Merge the result with df_user_info to get additional details
-    result_with_details = pd.merge(missing_in_df_customer, df_user_info, on='userId', how='inner')
-
-    # Step 3: Select the desired columns for display
-    registed_by_branch = result_with_details[['District', 'Branch', 'Full Name', 'Product_Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)', 'Disbursed_Date']]
+    except Exception as e:
+        st.error("Failed to load your branch data.")
+        st.exception(e)
+        return None, None, None, None, None, 0
 
 
-    return merged_df_1, merged_df_2, merged_df_3, unique_cust_by_branch, unique_cust_by_self, registed_by_branch
 
 def load_districtduretidata(mydb):
     # Access the username from session state
@@ -249,7 +219,7 @@ def load_districtduretidata(mydb):
 
     # Fetch userId based on username
     user_id_query = f"SELECT userId, district FROM user_info WHERE userName = '{username}'"
-    user_id_result = fetch_data(user_id_query, mydb)
+    user_id_result = db_ops.fetch_data(user_id_query, mydb)
 
     if not user_id_result:
         st.warning("No user found with the given username.")
@@ -267,10 +237,10 @@ def load_districtduretidata(mydb):
     JOIN branch_list bl ON ui.branch = bl.branch_code
     WHERE ui.district = '{district}'
     """
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role'])
 
-    # df_user_info = pd.DataFrame(fetch_data(f"SELECT * FROM user_info WHERE district = '{district}'", mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role', 'password', 'ccreatedAt'])
-    df_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), columns=['customerId', 'userId', 'Full Name', 'Product Type', 'Phone Number', 'Saving Account', 'Region', 'Zone/Subcity/Woreda', 'Register Date'])
+    # df_user_info = pd.DataFrame(db_ops.fetch_data(f"SELECT * FROM user_info WHERE district = '{district}'", mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role', 'password', 'ccreatedAt'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), columns=['customerId', 'userId', 'Full Name', 'Product Type', 'Phone Number', 'Saving Account', 'Region', 'Zone/Subcity/Woreda', 'Register Date'])
 
     # Merge the two DataFrames based on 'userId'
     merged_df = pd.merge(df_user_info, df_customer, on='userId', how='inner')
@@ -287,7 +257,7 @@ def load_districtuniquedata(mydb):
     # st.write(username)
     # Fetch userId based on username
     user_id_query = f"SELECT  district FROM user_info WHERE userName = '{username}'"
-    user_id_result = fetch_data(user_id_query, mydb)
+    user_id_result = db_ops.fetch_data(user_id_query, mydb)
 
     if not user_id_result:
         st.warning("No user found with the given username.")
@@ -305,12 +275,12 @@ def load_districtuniquedata(mydb):
     branch_customer_query = f"SELECT userId, fullName, Product_Type, phoneNumber, TIN_Number, Saving_Account, disbursed_Amount, Staff_Name,Disbursed_date FROM branchcustomer"
 
     # Fetch data and create DataFrame
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
-    # df_user_info = pd.DataFrame(fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
+    # df_user_info = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
 
-    df_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), columns=['uniqueId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), columns=['uniqueId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-    branch_customer = pd.DataFrame(fetch_data(branch_customer_query, mydb), columns=['userId', 'Full Name', 'Product_Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)','Disbursed_Date'])
+    branch_customer = pd.DataFrame(db_ops.fetch_data(branch_customer_query, mydb), columns=['userId', 'Full Name', 'Product_Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)','Disbursed_Date'])
 
     unique_by_branch = pd.merge(branch_customer, df_customer, on='Saving Account', how='inner')
     unique_bybranch = pd.merge(unique_by_branch, df_user_info, on='branch_code', how='inner')
@@ -348,7 +318,7 @@ def load_districtconversiondata(mydb):
     # st.write(username)
     # Fetch userId based on username
     user_id_query = f"SELECT  district FROM user_info WHERE userName = '{username}'"
-    user_id_result = fetch_data(user_id_query, mydb)
+    user_id_result = db_ops.fetch_data(user_id_query, mydb)
 
     if not user_id_result:
         st.warning("No user found with the given username.")
@@ -363,10 +333,10 @@ def load_districtconversiondata(mydb):
     JOIN branch_list bl ON ui.branch = bl.branch_code
     WHERE ui.district = '{district}'
     """
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'full_Name', 'userName', 'District', 'branch_code', 'Branch', 'role'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['userId', 'full_Name', 'userName', 'District', 'branch_code', 'Branch', 'role'])
     
-    # df_user_info = pd.DataFrame(fetch_data(f"SELECT * FROM user_info WHERE district = '{district}'", mydb), columns=['userId', 'full_Name','userName','District','Branch','role','password','ccreatedAt'])
-    df_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), columns=['convId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    # df_user_info = pd.DataFrame(db_ops.fetch_data(f"SELECT * FROM user_info WHERE district = '{district}'", mydb), columns=['userId', 'full_Name','userName','District','Branch','role','password','ccreatedAt'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), columns=['convId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
     
     # Merge the two DataFrames based on 'userId'
     merged_df = pd.merge(df_user_info, df_customer, on='branch_code', how='inner')
@@ -386,7 +356,7 @@ def aggregate_and_insert_actual_data(mydb):
             SELECT disbursed_date FROM conversiondata
         ) AS combined_dates
     """
-    latest_disbursed_date = fetch_data(latest_disbursed_query, mydb)[0][0]
+    latest_disbursed_date = db_ops.fetch_data(latest_disbursed_query)[0][0]
     
     # Check if this date already exists in the actual table
     check_date_query = f"""
@@ -394,7 +364,7 @@ def aggregate_and_insert_actual_data(mydb):
             SELECT 1 FROM actual WHERE actual_date = '{latest_disbursed_date}'
         )
     """
-    date_exists = fetch_data(check_date_query, mydb)[0][0]
+    date_exists = db_ops.fetch_data(check_date_query)[0][0]
     
     if date_exists:
         # st.warning("The latest disbursed date is already present in the actual table.")
@@ -405,7 +375,7 @@ def aggregate_and_insert_actual_data(mydb):
             (SELECT disbursed_date FROM unique_intersection WHERE disbursed_date = '{latest_disbursed_date}' LIMIT 1) AS unique_date,
             (SELECT disbursed_date FROM conversiondata WHERE disbursed_date = '{latest_disbursed_date}' LIMIT 1) AS conversion_date
     """
-    date_check = fetch_data(date_check_query, mydb)[0]
+    date_check = db_ops.fetch_data(date_check_query)[0]
     
     unique_date = date_check[0]
     conversion_date = date_check[1]
@@ -426,8 +396,8 @@ def aggregate_and_insert_actual_data(mydb):
         WHERE disbursed_date = '{latest_disbursed_date}'
     """
     
-    unique_data = fetch_data(unique_query, mydb)
-    conversion_data = fetch_data(conversion_query, mydb)
+    unique_data = db_ops.fetch_data(unique_query)
+    conversion_data = db_ops.fetch_data(conversion_query)
     
     # Convert fetched data to DataFrames
     unique_df = pd.DataFrame(unique_data, columns=['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date', 'uni_id'])
@@ -473,7 +443,7 @@ def aggregate_and_insert_actual_data(mydb):
 
 
 # @st.cache_data
-def load_actual_vs_targetdata(mydb):
+def load_actual_vs_targetdata():
     # Access the username from session state
     username = st.session_state.get("username", "")
     role = st.session_state.get("role", "")
@@ -482,241 +452,351 @@ def load_actual_vs_targetdata(mydb):
     # st.write(username)
 
     if role == "Admin" or role == 'under_admin':
-        user_id_query = "SELECT district FROM user_info"
-        district_result = fetch_data(user_id_query, mydb)
-        # print(district_result)
-        if not district_result:
-            st.warning("No users found.")
-            return pd.DataFrame()  # Return an empty DataFrame if no users are found
+        try:
+            # Fetch districts from user_info
+            user_id_query = "SELECT district FROM user_info"
+            district_result = db_ops.fetch_data(user_id_query)
 
-        # Handle the mix of lists and non-lists in the result
-        districts = []
-        for item in district_result:
-            if isinstance(item, list):
-                districts.extend(item)
-            else:
-                districts.append(item)
-        # Flatten nested lists and tuples, ensuring all items are strings
-        districts = [str(d[0]) if isinstance(d, (list, tuple)) else str(d) for d in districts]
-        
-        # Convert the list of districts to a string suitable for the SQL IN clause
-        districts_str = ', '.join(f"'{d}'" for d in districts)
-        # print(districts_str)
+            if not district_result:
+                st.warning("No users found.")
+                return pd.DataFrame()  # Return an empty DataFrame if no users are found
 
-        district_query = f"SELECT dis_Id, district_name FROM district_list WHERE district_name IN ({districts_str})"
-        district_result = fetch_data(district_query, mydb)
-        if not district_result:
-            st.warning("No district found with the given district names.")
-            return pd.DataFrame()  # Return an empty DataFrame if no districts are found
+            # Extract only the district names from the result
+            districts = [item['district'] for item in district_result if item.get('district')]
 
-        dis_ids = [row[0] for row in district_result]
+            if not districts:
+                st.warning("No valid district names found.")
+                return pd.DataFrame()
 
-        # Convert the list of dis_Id to a string suitable for the SQL IN clause
-        dis_ids_str = ', '.join(f"'{d}'" for d in dis_ids)
+            # Convert the list of districts to a tuple for parameterized query
+            districts_tuple = tuple(districts) if len(districts) > 1 else (districts[0],)
 
+            # Create the SQL query with placeholders for each district
+            district_query = f"SELECT dis_Id, district_name FROM district_list WHERE district_name IN ({', '.join(['%s'] * len(districts_tuple))})"
 
-        # Fetch branch code and branch name
-        branch_code_query = f"SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id IN ({dis_ids_str})"
-        branch_code_result = fetch_data(branch_code_query, mydb)
-        if not branch_code_result:
-            st.warning("No branches found for the given districts.")
-            return pd.DataFrame()  # Return an empty DataFrame if no branches are found
+            # Fetch data with parameterized query
+            district_result = db_ops.fetch_data(district_query, districts_tuple)
+            # st.write(district_result)
+            # Check if any districts were found
+            if not district_result:
+                st.warning("No district found with the given district names.")
+                return pd.DataFrame()  # Return an empty DataFrame if no districts are found
 
-        # Extract branch codes from the result
-        branch_codes = [row[1] for row in branch_code_result]
+            # Extract dis_Id values from the district query result
+            dis_ids = [row['dis_Id'] for row in district_result]  # Assuming result is a dictionary with 'dis_Id' as a key
 
-        # Convert the list of branch codes to a string suitable for the SQL IN clause
-        branch_codes_str = ', '.join(f"'{c}'" for c in branch_codes)
+            # If no valid dis_ids, warn and return
+            if not dis_ids:
+                st.warning("No valid district IDs found.")
+                return pd.DataFrame()
 
-        # Create DataFrames from the fetched data
-        actul_dis = pd.DataFrame(district_result, columns=['dis_Id', 'District'])
-        actual_branch = pd.DataFrame(branch_code_result, columns=['dis_Id', 'Branch Code', 'Branch'])
+            # Convert the list of dis_ids to a tuple for parameterized SQL query
+            dis_ids_tuple = tuple(dis_ids) if len(dis_ids) > 1 else (dis_ids[0],)
 
-        # Merge DataFrames based on 'dis_Id'
-        act_dis_branch = pd.merge(actul_dis, actual_branch, on='dis_Id', how='inner')
+            # Fetch branch code and branch name using a parameterized query
+            branch_code_query = f"SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id IN ({', '.join(['%s'] * len(dis_ids_tuple))})"
+            branch_code_result = db_ops.fetch_data(branch_code_query, dis_ids_tuple)
+            # st.write(branch_code_result)
 
+            # Check if branch information was found
+            if not branch_code_result:
+                st.warning("No branches found for the given districts.")
+                return pd.DataFrame()  # Return an empty DataFrame if no branches are found
+            # Assuming district_result and branch_code_result return dictionaries with relevant keys
+            actul_dis = pd.DataFrame(district_result)  # Use 'district_name' from the result
+            actul_dis.columns = ['dis_Id', 'District']
+            actual_branch = pd.DataFrame(branch_code_result)
+            actual_branch.columns = ['dis_Id', 'Branch Code', 'Branch']
+            # st.write(actual_branch)
+            # Merge DataFrames based on 'dis_Id'
+            act_dis_branch = pd.merge(actul_dis, actual_branch, on='dis_Id', how='inner')
 
-        
+            # Display the merged DataFrame
+            # Helper function to convert Decimal to float
+            def convert_decimal(value):
+                if isinstance(value, Decimal):
+                    return float(value)
+                return value
 
-        # Aggregate and insert actual data
-        aggregate_and_insert_actual_data(mydb)
+            # Helper function to convert date types to string
+            def convert_date(value):
+                if isinstance(value, (date, datetime)):
+                    return value.strftime('%Y-%m-%d')
+                return value
 
+            # Extract branch codes from the result
+            branch_codes = [row['branch_code'] for row in branch_code_result if 'branch_code' in row]  # Ensure the key exists
 
-        # Fetch actual data
-        df_actual = pd.DataFrame(
-            fetch_data(f"SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date FROM actual WHERE branch_code IN ({branch_codes_str})", mydb), 
-            columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
-        )      
-        # Fetch target data
-        df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target", mydb),
-            columns=['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
-        )
+            # If no valid branch codes, warn and return
+            if not branch_codes:
+                st.warning("No valid branch codes found.")
+                return pd.DataFrame()  # or return None if you prefer
 
-        return act_dis_branch, df_actual, df_target
+            # Create the SQL query with the correct number of placeholders
+            placeholders = ', '.join(['%s'] * len(branch_codes))  # Create placeholders for the number of branch codes
+            actual_query = f"""
+                SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date 
+                FROM actual 
+                WHERE branch_code IN ({placeholders})
+            """
+
+            # Fetch actual data using a parameterized query
+            fetch_actual = db_ops.fetch_data(actual_query, tuple(branch_codes))  # Ensure the tuple is passed correctly
+            # Debugging: Print the raw data fetched
+            # st.write("Actual Data Fetched:", fetch_actual)
+
+            # Check if fetch_actual has data
+            if not fetch_actual:
+                st.warning("No actual data found for the selected branch codes.")
+                return pd.DataFrame()
+
+            # Convert the data to a DataFrame and handle data type conversions
+            df_actual = pd.DataFrame(fetch_actual)
+            # Rename columns for 'actual' data
+            df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
+            # Apply data type conversions
+            df_actual['Actual Unique Customer'] = df_actual['Actual Unique Customer'].apply(convert_decimal)
+            df_actual['Actual Number Of Account'] = df_actual['Actual Number Of Account'].apply(convert_decimal)
+            df_actual['Actual Disbursed Amount'] = df_actual['Actual Disbursed Amount'].apply(convert_decimal)
+            df_actual['Actual Date'] = df_actual['Actual Date'].apply(convert_date)
+            df_actual['created_date'] = df_actual['created_date'].apply(convert_date)
+            # st.write(df_actual)
+            
+            # Fetch target data
+            target_query = """
+                SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date 
+                FROM target
+            """
+            fetch_target = db_ops.fetch_data(target_query)
+            # st.write(fetch_target)
+            df_target = pd.DataFrame(fetch_target)
+            # Rename columns for 'target' data
+            df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
+            # Apply data type conversions
+            df_target['Target Unique Customer'] = df_target['Target Unique Customer'].apply(convert_decimal)
+            df_target['Target Number Of Account'] = df_target['Target Number Of Account'].apply(convert_decimal)
+            df_target['Target Disbursed Amount'] = df_target['Target Disbursed Amount'].apply(convert_decimal)
+            df_target['Target Date'] = df_target['Target Date'].apply(convert_date)
+            df_target['created_date'] = df_target['created_date'].apply(convert_date)
+
+            # st.write(df_target)
+           
+
+            return act_dis_branch, df_actual, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 
     elif role == "Sales Admin":
-        district_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        district_result = fetch_data(district_query, mydb)
+        try:
+            # Fetch district for the Sales Admin based on their username
+            district_query = "SELECT district FROM user_info WHERE userName = %s"
+            district_result = db_ops.fetch_data(district_query, (username,))
+            
+            if not district_result:
+                st.warning("No users found.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()  # Return empty DataFrames if no users found
 
-        if not district_result:
-            st.warning("No users found.")
-            return pd.DataFrame()  # Return an empty DataFrame if no users are found
+            district = district_result[0]['district']
+            
+            # Handle JSON-encoded district data
+            if isinstance(district, str):
+                try:
+                    districts = json.loads(district)
+                except json.JSONDecodeError:
+                    districts = [district]  # If not JSON-encoded, treat it as a single district
+            else:
+                districts = [district]
 
-        district = district_result[0][0]
-        # Handle the possibility of the district being a JSON-encoded string
-        if isinstance(district, str):
-            districts = json.loads(district)
-        else:
-            districts = [district]
+            # Use placeholders for parameterized queries
+            placeholders = ', '.join(['%s'] * len(districts))
 
-        # Convert the list of districts to a string suitable for the SQL IN clause
-        districts_str = ', '.join(f"'{d}'" for d in districts)
+            # Fetch dis_Id for the districts
+            district_query = f"SELECT dis_Id, district_name FROM district_list WHERE district_name IN ({placeholders})"
+            district_result = db_ops.fetch_data(district_query, tuple(districts))
+            
+            if not district_result:
+                st.warning("No districts found with the given district names.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()  # Return empty DataFrames if no districts found
 
-        # Fetch dis_Id for the districts
-        district_query = f"SELECT dis_Id, district_name FROM district_list WHERE district_name IN ({districts_str})"
-        district_result = fetch_data(district_query, mydb)
-        if not district_result:
-            st.warning("No district found with the given district names.")
-            return pd.DataFrame()  # Return an empty DataFrame if no districts are found
+            dis_ids = [row['dis_Id'] for row in district_result]
 
-        dis_ids = [row[0] for row in district_result]
+            # Fetch branch code and branch name for the dis_ids
+            branch_code_query = f"SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id IN ({placeholders})"
+            branch_code_result = db_ops.fetch_data(branch_code_query, tuple(dis_ids))
+            
+            if not branch_code_result:
+                st.warning("No branches found for the given districts.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()  # Return empty DataFrames if no branches found
 
-        # Convert the list of dis_Id to a string suitable for the SQL IN clause
-        dis_ids_str = ', '.join(f"'{d}'" for d in dis_ids)
+            # Extract branch codes from the result
+            branch_codes = [row['branch_code'] for row in branch_code_result]
+            branch_codes_str = ', '.join(['%s'] * len(branch_codes))
 
-        # Fetch branch code and branch name
-        branch_code_query = f"SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id IN ({dis_ids_str})"
-        branch_code_result = fetch_data(branch_code_query, mydb)
-        if not branch_code_result:
-            st.warning("No branches found for the given districts.")
-            return pd.DataFrame()  # Return an empty DataFrame if no branches are found
+            # Create DataFrames for district and branch information
+            actul_dis = pd.DataFrame(district_result)
+            actul_dis.columns=['dis_Id', 'District']
+            actual_branch = pd.DataFrame(branch_code_result)
+            actual_branch.columns=['dis_Id', 'Branch Code', 'Branch']
 
-        # Extract branch codes from the result
-        branch_codes = [row[1] for row in branch_code_result]
+            # Merge district and branch DataFrames based on 'dis_Id'
+            act_dis_branch = pd.merge(actul_dis, actual_branch, on='dis_Id', how='inner')
+            # st.write(act_dis_branch)
 
-        # Convert the list of branch codes to a string suitable for the SQL IN clause
-        branch_codes_str = ', '.join(f"'{c}'" for c in branch_codes)
+            # Fetch actual data
+            actual_query = f"""
+                SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date 
+                FROM actual WHERE branch_code IN ({branch_codes_str})
+            """
+            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, tuple(branch_codes)))
+            df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
+            # st.write(df_actual)
 
-        # Create DataFrames from the fetched data
-        actul_dis = pd.DataFrame(district_result, columns=['dis_Id', 'District'])
-        actual_branch = pd.DataFrame(branch_code_result, columns=['dis_Id', 'Branch Code', 'Branch'])
+            # Fetch target data
+            target_query = f"""
+                SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date 
+                FROM target WHERE branch_code IN ({branch_codes_str})
+            """
+            df_target = pd.DataFrame(db_ops.fetch_data(target_query, tuple(branch_codes)))
+            df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
+            # st.write(df_target)
 
-        # Merge DataFrames based on 'dis_Id'
-        act_dis_branch = pd.merge(actul_dis, actual_branch, on='dis_Id', how='inner')
-
-        # Fetch actual data
-        df_actual = pd.DataFrame(
-            fetch_data(f"SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date FROM actual WHERE branch_code IN ({branch_codes_str})", mydb), 
-            columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
-        )
-
-        # Fetch target data
-        df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target WHERE branch_code IN ({branch_codes_str})", mydb),
-            columns=['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
-        )
-
-        return act_dis_branch, df_actual, df_target
+            return act_dis_branch, df_actual, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
     elif role == "Branch User":
-        # Fetch branch and district for the given username
-        
-        user_id_query = f"SELECT branch, district FROM user_info WHERE userName = '{username}'"
-        user_id_result = fetch_data(user_id_query, mydb)
+        try:
+            # Fetch branch and district for the given username
+            user_id_query = "SELECT branch, district FROM user_info WHERE userName = %s"
+            user_id_result = db_ops.fetch_data(user_id_query, (username,))
 
-        if not user_id_result:
-            st.warning("No user found with the given username.")
-            return pd.DataFrame()  # Return an empty DataFrame if no user is found
+            if not user_id_result:
+                st.warning("No user found with the given username.")
+                return pd.DataFrame()  # Return an empty DataFrame if no user is found
 
-        branch = user_id_result[0][0]  # Assuming branch is the first element in the first row of the result
-        district = user_id_result[0][1]
+            branch = user_id_result[0]['branch']  # Assuming branch is the first element in the first row of the result
+            district = user_id_result[0]['district']
 
-        # Fetch branch code and branch name
-        branch_code_query = f"SELECT branch_code, branch_name FROM branch_list WHERE branch_code = '{branch}'"
-        branch_code_result = fetch_data(branch_code_query, mydb)
+            # Fetch branch code and branch name
+            branch_code_query = "SELECT branch_code, branch_name FROM branch_list WHERE branch_code = %s"
+            branch_code_result = db_ops.fetch_data(branch_code_query, (branch,))
 
-        if not branch_code_result:
-            st.warning("No branch found with the given branch name.")
-            return pd.DataFrame()  # Return an empty DataFrame if no branch is found
+            if not branch_code_result:
+                st.warning("No branch found with the given branch name.")
+                return pd.DataFrame()  # Return an empty DataFrame if no branch is found
 
-        branch_code = branch_code_result[0][0]
+            branch_code = branch_code_result[0]['branch_code']
 
-        # Create DataFrames from the fetched data
-        actul_dis = pd.DataFrame(user_id_result, columns=['Branch Code', 'District'])
-        actual_branch = pd.DataFrame(branch_code_result, columns=['Branch Code', 'Branch'])
+            # Create DataFrames from the fetched data
+            actul_dis = pd.DataFrame(user_id_result)
+            actul_dis.columns=['Branch Code', 'District']
+            actual_branch = pd.DataFrame(branch_code_result)
+            actual_branch.columns=['Branch Code', 'Branch']
 
-        # Merge DataFrames based on 'branch'
-        act_dis_branch = pd.merge(actul_dis, actual_branch, on='Branch Code', how='inner')
+            # Merge DataFrames based on 'branch'
+            act_dis_branch = pd.merge(actul_dis, actual_branch, on='Branch Code', how='inner')
+            # st.write(act_dis_branch)
 
-        # Fetch actual data
-        df_actual = pd.DataFrame(
-            fetch_data(f"SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date FROM actual WHERE branch_code = '{branch_code}'", mydb),
-            columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
-        )
+            # Fetch actual data
+            actual_query = """
+                SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date 
+                FROM actual 
+                WHERE branch_code = %s
+            """
+            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, (branch_code,)))
+            df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
 
-        # Fetch target data
-        df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target WHERE branch_code = '{branch_code}'", mydb),
-            columns=['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
-        )
+            # Fetch target data
+            target_query = """
+                SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date 
+                FROM target 
+                WHERE branch_code = %s
+            """
+            df_target = pd.DataFrame(db_ops.fetch_data(target_query, (branch_code,)))
+            df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
 
-        
-        return act_dis_branch, df_actual, df_target
-
+            
+            return act_dis_branch, df_actual, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
     else:
-        # Fetch branch and district for the given username
-        user_id_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_id_result = fetch_data(user_id_query, mydb)
+        try:
+            # Fetch district for the given username
+            user_id_query = "SELECT district FROM user_info WHERE userName = %s"
+            user_id_result = db_ops.fetch_data(user_id_query, (username,))
 
-        if not user_id_result:
-            st.warning("No user found with the given username.")
-            return pd.DataFrame()  # Return an empty DataFrame if no user is found
+            if not user_id_result:
+                st.warning("No user found with the given username.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
-        # district = user_id_result[0][0]  # Assuming district is the first element in the first row of the result
-        district = user_id_result[0][0]
+            # district = user_id_result[0][0]  # Assuming district is the first element in the first row of the result
+            district = user_id_result[0]['district']
 
-        # Fetch dis_Id for the district
-        district_query = f"SELECT dis_Id, district_name FROM district_list WHERE district_name = '{district}'"
-        district_result = fetch_data(district_query, mydb)
-        if not district_result:
-            st.warning("No district found with the given district name.")
-            return pd.DataFrame()  # Return an empty DataFrame if no district is found
+            # Fetch dis_Id for the district
+            district_query = "SELECT dis_Id, district_name FROM district_list WHERE district_name = %s"
+            district_result = db_ops.fetch_data(district_query, (district,))
+            if not district_result:
+                st.warning("No district found with the given district name.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()   # Return an empty DataFrame if no district is found
 
-        dis_id = district_result[0][0]
+            dis_id = district_result[0]['dis_Id']
 
-        # Fetch branch code and branch name
-        branch_code_query = f"SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id = '{dis_id}'"
-        branch_code_result = fetch_data(branch_code_query, mydb)
-        if not branch_code_result:
-            st.warning("No branches found for the given district.")
-            return pd.DataFrame()  # Return an empty DataFrame if no branches are found
+            # Fetch branch code and branch name
+            branch_code_query = "SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id = %s"
+            branch_code_result = db_ops.fetch_data(branch_code_query, (dis_id,))
+            if not branch_code_result:
+                st.warning("No branches found for the given district.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()  # Return an empty DataFrame if no branches are found
 
-        # Extract branch codes from the result
-        branch_code = [f"'{row[1]}'" for row in branch_code_result]  # Get all branch codes from the query result and quote them
+            # Extract branch codes from the result
+            branch_codes = [row['branch_code'] for row in branch_code_result]
+            # branch_code = [f"'{row['branch_code']}'" for row in branch_code_result]  # Get all branch codes from the query result and quote them
+            # branch_codes_str = ','.join(f"'{code}'" for code in branch_code)  # Prepare for SQL IN clause
+            branch_codes_str = ', '.join(['%s'] * len(branch_codes))
 
-        # Create DataFrames from the fetched data
-        actul_dis = pd.DataFrame(district_result, columns=['dis_Id', 'District'])
-        actual_branch = pd.DataFrame(branch_code_result, columns=['dis_Id', 'Branch Code', 'Branch'])
 
-        # Merge DataFrames based on 'dis_Id'
-        act_dis_branch = pd.merge(actul_dis, actual_branch, on='dis_Id', how='inner')
+            # Create DataFrames from the fetched data
+            actul_dis = pd.DataFrame(district_result)
+            actul_dis.columns=['dis_Id', 'District']
+            actual_branch = pd.DataFrame(branch_code_result)
+            actual_branch.columns=['dis_Id', 'Branch Code', 'Branch']
 
-        # Fetch actual data
-        df_actual = pd.DataFrame(
-            fetch_data(f"SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date FROM actual WHERE branch_code IN ({','.join(branch_code)})", mydb), 
-            columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
-        )
+            # Merge DataFrames based on 'dis_Id'
+            act_dis_branch = pd.merge(actul_dis, actual_branch, on='dis_Id', how='inner')
+            # st.write(act_dis_branch)
 
-        # Fetch target data
-        df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target WHERE branch_code IN ({','.join(branch_code)})", mydb),
-            columns=['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
-        )
+            # Fetch actual data using parameterized query
+            actual_query = f"""
+                SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date 
+                FROM actual 
+                WHERE branch_code IN ({branch_codes_str})
+            """
+            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, tuple(branch_codes)))
+            # st.write(df_actual)
+            df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
 
-        return act_dis_branch, df_actual, df_target
+            # Fetch target data using parameterized query
+            target_query = f"""
+                SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date 
+                FROM target 
+                WHERE branch_code IN ({branch_codes_str})
+            """
+            df_target = pd.DataFrame(db_ops.fetch_data(target_query, tuple(branch_codes)))
+            df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
+
+            return act_dis_branch, df_actual, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 
 
@@ -728,7 +808,7 @@ def load_salesduretidata(mydb):
 
     # Fetch userId based on username
     user_id_query = f"SELECT userId, district FROM user_info WHERE userName = '{username}'"
-    user_id_result = fetch_data(user_id_query, mydb)
+    user_id_result = db_ops.fetch_data(user_id_query, mydb)
 
     if not user_id_result:
         st.warning("No user found with the given username.")
@@ -753,8 +833,8 @@ def load_salesduretidata(mydb):
     dureti_customer_query = f"SELECT * FROM duretCustomer WHERE `Register_Date` >= '2024-07-01'"
 
     # Fetch data from user_info and duretCustomer tables based on userId
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role'])
-    df_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), columns=['customerId', 'userId', 'Full Name', 'Product Type', 'Phone Number', 'Saving Account', 'Region', 'Zone/Subcity/Woreda', 'Register Date'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), columns=['customerId', 'userId', 'Full Name', 'Product Type', 'Phone Number', 'Saving Account', 'Region', 'Zone/Subcity/Woreda', 'Register Date'])
 
     # Merge the two DataFrames based on 'userId'
     merged_df = pd.merge(df_user_info, df_customer, on='userId', how='inner')
@@ -770,7 +850,7 @@ def load_salesuniquedata(mydb):
     # st.write(username)
     # Fetch userId based on username
     user_id_query = f"SELECT  district FROM user_info WHERE userName = '{username}'"
-    user_id_result = fetch_data(user_id_query, mydb)
+    user_id_result = db_ops.fetch_data(user_id_query, mydb)
 
     if not user_id_result:
         st.warning("No user found with the given username.")
@@ -795,12 +875,12 @@ def load_salesuniquedata(mydb):
     branch_customer_query = f"SELECT userId, fullName, Product_Type, phoneNumber, TIN_Number, Saving_Account, disbursed_Amount, Staff_Name,Disbursed_date FROM branchcustomer"
 
     # Fetch data and create DataFrame
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
-    # df_user_info = pd.DataFrame(fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['userId', 'userName', 'District', 'branch_code', 'Branch'])
+    # df_user_info = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_info", mydb), columns=['userId', 'userName','District','Branch'])
     unique_customer_query = f"SELECT * FROM unique_intersection WHERE `Disbursed_Date` >= '2024-07-01'"
-    df_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), columns=['uniqueId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), columns=['uniqueId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-    branch_customer = pd.DataFrame(fetch_data(branch_customer_query, mydb), columns=['userId', 'Full Name', 'Product_Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)','Disbursed_Date'])
+    branch_customer = pd.DataFrame(db_ops.fetch_data(branch_customer_query, mydb), columns=['userId', 'Full Name', 'Product_Type', 'Phone Number', 'TIN', 'Saving Account', 'Disbursed_Amount', 'Recruiter (Staff Name)','Disbursed_Date'])
 
     unique_by_branch = pd.merge(branch_customer, df_customer, on='Saving Account', how='inner')
     unique_bybranch = pd.merge(unique_by_branch, df_user_info, on='branch_code', how='inner')
@@ -834,7 +914,7 @@ def load_salesconversiondata(mydb):
 
     # Fetch userId based on username
     user_id_query = f"SELECT userId, district FROM user_info WHERE userName = '{username}'"
-    user_id_result = fetch_data(user_id_query, mydb)
+    user_id_result = db_ops.fetch_data(user_id_query, mydb)
 
     if not user_id_result:
         st.warning("No user found with the given username.")
@@ -856,8 +936,8 @@ def load_salesconversiondata(mydb):
     """
     conversion_customer_query = f"SELECT * FROM conversiondata WHERE `Disbursed_Date` >= '2024-07-01'"
 
-    df_user_info = pd.DataFrame(fetch_data(query, mydb), columns=['userId', 'full_Name','userName','District', 'branch_code', 'Branch','role'])
-    df_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), columns=['ConversionId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_user_info = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['userId', 'full_Name','userName','District', 'branch_code', 'Branch','role'])
+    df_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), columns=['ConversionId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
     
     # Merge the two DataFrames based on 'userId'
     merged_df = pd.merge(df_user_info, df_customer, on='branch_code', how='inner')
@@ -867,7 +947,7 @@ def load_salesconversiondata(mydb):
     return df_combine
 
 def load_resetpassword(mydb):
-    df_combine = pd.DataFrame(fetch_data("SELECT * FROM reset_user_password", mydb), columns=['ResetId', 'user_Id', 'user name','full Name','outlook email','District/Branch','Asked Date'])
+    df_combine = pd.DataFrame(db_ops.fetch_data("SELECT * FROM reset_user_password", mydb), columns=['ResetId', 'user_Id', 'user name','full Name','outlook email','District/Branch','Asked Date'])
     
     return df_combine
 
@@ -1084,29 +1164,29 @@ def get_user_emails(cursor):
     emails = [user[0] for user in cursor.fetchall()]
     return emails
 
-def get_usernames(cursor):
+def get_usernames():
     """
     Fetches a list of usernames from the MySQL server database.
 
     Returns:
         A list of user usernames.
     """
-    cursor.execute("SELECT username FROM user_info")
-    usernames = [user[0] for user in cursor.fetchall()]
+    query = "SELECT username FROM user_info"
+    usernames = [user['username'] for user in db_ops.fetch_data(query)]  # Fetch data and extract usernames
     return usernames
 
-def get_crmusernames(cursor):
+def get_crmusernames():
     """
     Fetches a list of usernames from the MySQL server database.
 
     Returns:
         A list of user usernames.
     """
-    cursor.execute("SELECT username FROM crm_user")
-    usernames = [user[0] for user in cursor.fetchall()]
+    query = "SELECT username FROM crm_user"
+    usernames = [user['username'] for user in db_ops.fetch_data(query)]  # Fetch data and extract usernames
     return usernames
 
-def get_password_by_username(cursor, username):
+def get_password_by_username(username):
     """
     Fetches the hashed password associated with a given username.
 
@@ -1116,17 +1196,17 @@ def get_password_by_username(cursor, username):
     Returns:
         The hashed password if the username exists, None otherwise.
     """
-    cursor.execute("SELECT password FROM user_info WHERE username = %s", (username,))
-    result = cursor.fetchone()
-    # cursor.execute("SELECT crm_password FROM crm_user WHERE username = %s", (username,))
-    # resultt = cursor.fetchone()
-    if result:
-        return result[0]
+    # Use parameterized query to prevent SQL injection
+    query = "SELECT password FROM user_info WHERE username = %s"
+    result = db_ops.fetch_one(query, (username,))  # Fetch the result using the username as a parameter
     
-    return None
+    if result:
+        return result['password']  # Return the hashed password from the dictionary
+    
+    return None  # Return None if no result is found
 
 
-def get_crmpassword_by_username(cursor, username):
+def get_crmpassword_by_username(username):
     """
     Fetches the hashed password associated with a given username.
 
@@ -1136,11 +1216,16 @@ def get_crmpassword_by_username(cursor, username):
     Returns:
         The hashed password if the username exists, None otherwise.
     """
-    cursor.execute("SELECT crm_password FROM crm_user WHERE username = %s", (username,))
-    result = cursor.fetchone()
-    if result:
-        return result[0]
-    return None
+    try:
+        query = "SELECT crm_password FROM crm_user WHERE username = %s"
+        result = db_ops.fetch_one(query,  (username,))
+        if result:
+            return result['crm_password']
+        return None
+    except Exception as e:
+        st.error("Failed to get the crm password")
+        st.exception(e)
+        return False
 
 
 def verify_password(password, hashed_password):
@@ -1190,7 +1275,7 @@ def update_password(conn, cursor, username, new_password):
         st.error("Failed to update password")
         st.exception(e)
         return False
-def get_role_by_username(cursor, username):
+def get_role_by_username(username):
     """
     Retrieves the role associated with the given username from the database.
 
@@ -1202,20 +1287,27 @@ def get_role_by_username(cursor, username):
         str: Role associated with the username.
     """
     # cursor.execute("SELECT role FROM user_info WHERE username = %s", (username,))
-    cursor.execute("""
-        SELECT rl.role 
-        FROM user_info ui
-        JOIN role_list rl ON ui.role = rl.role_Id
-        WHERE ui.username = %s
-    """, (username,))
-    result = cursor.fetchone()
-    if result:
-        return result[0]  # Returning the role
-    else:
-        return None
-    
+    try:
+        query = """
+            SELECT rl.role 
+            FROM user_info ui
+            JOIN role_list rl ON ui.role = rl.role_Id
+            WHERE ui.username = %s
+        """
+        result = db_ops.fetch_one(query, (username,))
+        
+        if result:
+            return result['role']  # Return the role from the dictionary
+        
+        return None  # Return None if no result is found
 
-def get_role_by_crmusername(cursor, username):
+    except Exception as e:
+        # Log the error for developers and show a user-friendly message
+        st.error("An error occurred while retrieving the role. Please try again later.")
+        st.exception(f"Error: {str(e)}")  # Log the actual error for debugging
+        return False
+
+def get_role_by_crmusername(username):
     """
     Retrieves the role associated with the given username from the database.
 
@@ -1227,17 +1319,23 @@ def get_role_by_crmusername(cursor, username):
         str: Role associated with the username.
     """
     # cursor.execute("SELECT role FROM user_info WHERE username = %s", (username,))
-    cursor.execute("""
-        SELECT ui.role 
-        FROM crm_list ui
-        JOIN crm_user rl ON ui.employe_id = rl.employe_id
-        WHERE rl.username = %s
-    """, (username,))
-    resultt = cursor.fetchone()
-    if resultt:
-        return resultt[0]
-    else:
-        return None
+    try:
+        query = """
+            SELECT ui.role 
+            FROM crm_list ui
+            JOIN crm_user rl ON ui.employe_id = rl.employe_id
+            WHERE rl.username = %s
+        """
+        resultt = db_ops.fetch_one(query, (username,))
+        if resultt:
+            return resultt['role']
+        else:
+            return None
+    except Exception as e:
+        # Log the error for developers and show a user-friendly message
+        st.error("An error occurred while retrieving the role. Please try again later.")
+        st.exception(f"Error: {str(e)}")  # Log the actual error for debugging
+        return False
 
 
 
@@ -1299,29 +1397,42 @@ def get_duretiacount(cursor):
     account = [user[0] for user in cursor.fetchall()]
     return account
 
-def get_unquiephone(cursor):
+def get_unquiephone():
     """
     Fetches a list of phoneNumber from the MySQL server database.
 
     Returns:
         A list of user phoneNumber.
     """
-    cursor.execute("SELECT phoneNumber FROM uniquecustomer")
-    phone = [user[0] for user in cursor.fetchall()]
-    modified_phone = ['0' + p[4:] if len(p) > 4 else '0' for p in phone]
-    # st.write(modified_phone)
-    return modified_phone
+    try:
+        query = "SELECT phoneNumber FROM uniquecustomer"
+        phone = [user['phoneNumber'] for user in db_ops.fetch_data(query)]
+        modified_phone = ['0' + p[4:] if len(p) > 4 else '0' for p in phone]
+        # st.write(modified_phone)
+        return modified_phone
+    
+    except Exception as e:
+        # Log the error for developers and show a user-friendly message
+        st.error("An error occurred while retrieving the phone number. Please try again later.")
+        st.exception(f"Error: {str(e)}")  # Log the actual error for debugging
+        return False
 
-def get_unquieaccount(cursor):
+def get_unquieaccount():
     """
     Fetches a list of account from the MySQL server database.
 
     Returns:
         A list of user account.
     """
-    cursor.execute("SELECT Saving_Account FROM uniquecustomer")
-    account = [user[0] for user in cursor.fetchall()]
-    return account
+    try:
+        query = "SELECT Saving_Account FROM uniquecustomer"
+        account = [user['Saving_Account'] for user in db_ops.fetch_data(query)]
+        return account
+    except Exception as e:
+        # Log the error for developers and show a user-friendly message
+        st.error("An error occurred while retrieving the saving account. Please try again later.")
+        st.exception(f"Error: {str(e)}")  # Log the actual error for debugging
+        return False
 
 def validate_saving_account(saving_account):
     """
@@ -1336,28 +1447,40 @@ def validate_saving_account(saving_account):
     
     return saving_account.isdigit() and len(saving_account) in [12, 13]
 
-def get_conversionphone(cursor):
+def get_conversionphone():
     """
     Fetches a list of phoneNumber from the MySQL server database.
 
     Returns:
         A list of user phoneNumber.
     """
-    cursor.execute("SELECT phoneNumber FROM conversioncustomer")
-    phone = [user[0] for user in cursor.fetchall()]
-    modified_phone = ['0' + p[4:] if len(p) > 4 else '0' for p in phone]
-    return modified_phone
+    try:
+        query = "SELECT phoneNumber FROM conversioncustomer"
+        phone = [user['phoneNumber'] for user in db_ops.fetch_data(query)]
+        modified_phone = ['0' + p[4:] if len(p) > 4 else '0' for p in phone]
+        return modified_phone
+    except Exception as e:
+        # Log the error for developers and show a user-friendly message
+        st.error("An error occurred while retrieving the phone number. Please try again later.")
+        st.exception(f"Error: {str(e)}")  # Log the actual error for debugging
+        return False
 
-def get_conversionaccount(cursor):
+def get_conversionaccount():
     """
     Fetches a list of account from the MySQL server database.
 
     Returns:
         A list of user account.
     """
-    cursor.execute("SELECT Saving_Account FROM conversioncustomer")
-    account = [user[0] for user in cursor.fetchall()]
-    return account
+    try:
+        query = "SELECT Saving_Account FROM conversioncustomer"
+        account = [user['Saving_Account'] for user in db_ops.fetch_data(query)]
+        return account
+    except Exception as e:
+        # Log the error for developers and show a user-friendly message
+        st.error("An error occurred while retrieving the account number. Please try again later.")
+        st.exception(f"Error: {str(e)}")  # Log the actual error for debugging
+        return False
 
 def validate_email(email):
     pattern = r"^[a-zA-Z0-9._%+-]+@coopbankoromiasc\.com$"
@@ -1382,7 +1505,7 @@ def has_user_sent_request_today(cursor, username):
     request_count = cursor.fetchone()[0]
     return request_count > 0
 
-def get_fullname_by_username(cursor, username):
+def get_fullname_by_username(username):
     """
     Retrieves the role associated with the given username from the database.
 
@@ -1393,17 +1516,24 @@ def get_fullname_by_username(cursor, username):
     Returns:
         str: Role associated with the username.
     """
-    cursor.execute("SELECT full_Name FROM user_info WHERE username = %s", (username,))
-    result = cursor.fetchone()
+    try:
+        query = "SELECT full_Name FROM user_info WHERE username = %s"
+        result = db_ops.fetch_one(query, (username,))
 
-    if result:
-        return result[0]  # Returning the role
+        if result:
+            return result['full_Name']  # Returning the role
 
-    else:
-        return None
+        else:
+            return None
+    
+    except Exception as e:
+        # Log the error for developers and show a user-friendly message
+        st.error("An error occurred while retrieving the full name. Please try again later.")
+        st.exception(f"Error: {str(e)}")  # Log the actual error for debugging
+        return False
     
 
-def get_fullname_by_crmusername(cursor, username):
+def get_fullname_by_crmusername(username):
     """
     Retrieves the role associated with the given username from the database.
 
@@ -1414,15 +1544,20 @@ def get_fullname_by_crmusername(cursor, username):
     Returns:
         str: Role associated with the username.
     """
-
-    cursor.execute("""SELECT ui.full_name FROM crm_list ui
-                   JOIN crm_user rl ON ui.employe_id = rl.employe_id 
-                   WHERE rl.username = %s""", (username,))
-    resultt = cursor.fetchone()
-    if resultt:
-        return resultt[0]
-    else:
-        return None
+    try:
+        query = """SELECT ui.full_name FROM crm_list ui
+                    JOIN crm_user rl ON ui.employe_id = rl.employe_id 
+                    WHERE rl.username = %s"""
+        resultt = db_ops.fetch_one(query, (username,))
+        if resultt:
+            return resultt['full_name']
+        else:
+            return None
+    except Exception as e:
+        # Log the error for developers and show a user-friendly message
+        st.error("An error occurred while retrieving the full name. Please try again later.")
+        st.exception(f"Error: {str(e)}")  # Log the actual error for debugging
+        return False
     
 
 def get_roles_from_db(cursor):
@@ -1471,7 +1606,7 @@ def get_branch_from_db(cursor, district):
         return []
     
 def load_targetdata(mydb):
-    df_branch = pd.DataFrame(fetch_data("SELECT branch_code, branch_name FROM branch_list", mydb), columns=['Branch Code', 'Branch'])
+    df_branch = pd.DataFrame(db_ops.fetch_data("SELECT branch_code, branch_name FROM branch_list", mydb), columns=['Branch Code', 'Branch'])
 
     query = """
     SELECT t.branch_code, t.unique_target, t.account_target, t.disbursment_target, t.target_date, t.created_date
@@ -1483,7 +1618,7 @@ def load_targetdata(mydb):
     ) latest ON t.branch_code = latest.branch_code AND t.created_date = latest.max_date
     """
     
-    df_target = pd.DataFrame(fetch_data(query, mydb), columns=['Branch Code', 'Unique Target', 'Account Target', 'Disbursment Target', 'Target Date', 'Uploaded Date'])
+    df_target = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['Branch Code', 'Unique Target', 'Account Target', 'Disbursment Target', 'Target Date', 'Uploaded Date'])
 
     # Merge the two DataFrames based on 'Branch Code'
     merged_df = pd.merge(df_branch, df_target, on='Branch Code', how='inner')
@@ -1493,7 +1628,7 @@ def load_targetdata(mydb):
     return df_combine
 
 def load_actualdata(mydb):
-    df_branch = pd.DataFrame(fetch_data("SELECT branch_code, branch_name FROM branch_list", mydb), columns=['Branch Code', 'Branch'])
+    df_branch = pd.DataFrame(db_ops.fetch_data("SELECT branch_code, branch_name FROM branch_list", mydb), columns=['Branch Code', 'Branch'])
 
     query = """
     SELECT t.branch_code, t.unique_actual, t.account_actual, t.disbursment_actual, t.actual_date, t.created_date
@@ -1505,7 +1640,7 @@ def load_actualdata(mydb):
     ) latest ON t.branch_code = latest.branch_code AND t.created_date = latest.max_date
     """
     
-    df_actual = pd.DataFrame(fetch_data(query, mydb), columns=['Branch Code', 'Unique Actual', 'Account Actual', 'Disbursment Actual', 'Actual Date', 'Uploaded Date'])
+    df_actual = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['Branch Code', 'Unique Actual', 'Account Actual', 'Disbursment Actual', 'Actual Date', 'Uploaded Date'])
 
     # Merge the two DataFrames based on 'Branch Code'
     merged_df = pd.merge(df_branch, df_actual, on='Branch Code', how='inner')
@@ -1516,32 +1651,42 @@ def load_actualdata(mydb):
 
 
 
-def branchCustomer(conn, cursor, username, fullName, product_type, phone_number, tin_number, Saving_Account, disbursed_Amount, region, zone, woreda, specific_area, line_of_business, purpose_of_loan, staff_name,  remark):
+def branchCustomer(username, fullName, product_type, phone_number, tin_number, Saving_Account, disbursed_Amount, region, zone, woreda, specific_area, line_of_business, purpose_of_loan, staff_name, remark):
     try:
-        processed_phone_number = "+251" + phone_number[1:]
+        # Validate the phone number format before processing
+        if phone_number.startswith('0') and len(phone_number) == 10:
+            processed_phone_number = "+251" + phone_number[1:]  # Properly format phone number
+            
+        else:
+            st.error("Invalid phone number format. Please enter a valid Ethiopian number starting with '0'.")
+            return False
+
         # Retrieve userId from user_info table using the provided username
-        cursor.execute("SELECT userId FROM user_info WHERE username = %s", (username,))
-        result = cursor.fetchone()  # Fetch the first row
+        query1 = "SELECT userId FROM user_info WHERE username = %s"
+        result = db_ops.fetch_one(query1, (username,))  # Fetch the first row
+        
         if result:
-            userId = result[0]  # Extract userId from the result
-            # Insert customer information into the customer table
-            cursor.execute("""
-                INSERT INTO branchcustomer(userId, fullName, Product_Type, phoneNumber, TIN_Number, Saving_Account, disbursed_Amount, Region, zone, Woreda, Specific_Area, Line_of_Business, Purpose_of_Loan, Staff_Name, Remark)
+            userId = result['userId']  # Extract userId from the result
+
+            # Insert customer information into the branchcustomer table
+            query2 = """
+                INSERT INTO branchcustomer(userId, fullName, Product_Type, phoneNumber, TIN_Number, Saving_Account, disbursed_Amount, Region, Zone, Woreda, Specific_Area, Line_of_Business, Purpose_of_Loan, Staff_Name, Remark)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (userId, fullName, product_type, processed_phone_number, tin_number, Saving_Account, disbursed_Amount, region, zone, woreda, specific_area, line_of_business, purpose_of_loan, staff_name, remark))
-            conn.commit()
+            """
+            db_ops.insert_data(query2, (userId, fullName, product_type, processed_phone_number, tin_number, Saving_Account, disbursed_Amount, region, zone, woreda, specific_area, line_of_business, purpose_of_loan, staff_name, remark))
             return True
         else:
             st.error("User not found with the provided username.")
             return False
+
     except Exception as e:
-        st.error("Failed to create user")
-        st.exception(e)
+        st.error("Failed to insert customer information. Please check your input and try again.")
+        st.exception(e)  # Log the actual error for debugging
         return False
 
 
 
-def check_unique_phone(cursor, phone_number):
+def check_unique_phone(phone_number):
     """
     Fetches phone number from the MySQL server database to check if it exists.
 
@@ -1553,30 +1698,33 @@ def check_unique_phone(cursor, phone_number):
         bool: True if the phone number exists, False otherwise
     """
     processed_phone_number = "+251" + phone_number[1:]
+    try:
+        # Retrieve phone number from customer_list table
+        query1 = "SELECT phone_number FROM customer_list WHERE phone_number = %s"
+        result1 = db_ops.fetch_one(query1, (processed_phone_number,))
+        
+        # Retrieve phone number from customer_list_nonecode table
+        query2 = "SELECT phone_number FROM customer_list_nonecode WHERE phone_number = %s"
+        result2 = db_ops.fetch_one(query2, (processed_phone_number,))
+        # Retrieve phone number from branchcustomer table
+        query3 = "SELECT phoneNumber FROM branchcustomer WHERE phoneNumber = %s"
+        result3 = db_ops.fetch_one(query3, (processed_phone_number,))
 
-    # Retrieve phone number from customer_list table
-    cursor.execute("SELECT phone_number FROM customer_list WHERE phone_number = %s", (processed_phone_number,))
-    result1 = cursor.fetchone()
-    
-    # Retrieve phone number from customer_list_nonecode table
-    cursor.execute("SELECT phone_number FROM customer_list_nonecode WHERE phone_number = %s", (processed_phone_number,))
-    result2 = cursor.fetchone()
-    # Retrieve phone number from branchcustomer table
-    cursor.execute("SELECT phoneNumber FROM branchcustomer WHERE phoneNumber = %s", (processed_phone_number,))
-    result3 = cursor.fetchone()
+        # Retrieve phone number from kiyya_customer table
+        query4 = "SELECT phone_number FROM kiyya_customer WHERE phone_number = %s"
+        result4 = db_ops.fetch_one(query4, (processed_phone_number,))
 
-     # Retrieve phone number from kiyya_customer table
-    cursor.execute("SELECT phone_number FROM kiyya_customer WHERE phone_number = %s", (processed_phone_number,))
-    result4 = cursor.fetchone()
-
-     # Retrieve phone number from women_product table
-    cursor.execute("SELECT phone_number FROM women_product_customer WHERE phone_number = %s", (processed_phone_number,))
-    result5 = cursor.fetchone()
-    
-    # Check if phone number exists in any of the tables
-    return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None
-
-def check_unique_account(cursor, account):
+        # Retrieve phone number from women_product table
+        query5 = "SELECT phone_number FROM women_product_customer WHERE phone_number = %s"
+        result5 = db_ops.fetch_one(query5, (processed_phone_number,))
+        
+        # Check if phone number exists in any of the tables
+        return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None
+    except Exception as e:
+        st.error("Failed to search phone number")
+        st.exception(e)
+        return False
+def check_unique_account(account):
     """
     Fetches phone number from the MySQL server database to check if it exists.
 
@@ -1588,48 +1736,51 @@ def check_unique_account(cursor, account):
         bool: True if the phone number exists, False otherwise
     """
     # processed_phone_number = "+251" + phone_number[1:]
+    try:
+        # Retrieve phone number from customer_list table
+        query1 = "SELECT saving_account FROM customer_list WHERE saving_account = %s"
+        result1 = db_ops.fetch_one(query1, (account,))
+        
+        # Retrieve phone number from customer_list_nonecode table
+        query2 = "SELECT saving_account FROM customer_list_nonecode WHERE saving_account = %s"
+        result2 = db_ops.fetch_one(query2, (account,))
 
-    # Retrieve phone number from customer_list table
-    cursor.execute("SELECT saving_account FROM customer_list WHERE saving_account = %s", (account,))
-    result1 = cursor.fetchone()
+        # Retrieve phone number from branchcustomer table
+        query3 = "SELECT Saving_Account FROM branchcustomer WHERE Saving_Account = %s"
+        result3 = db_ops.fetch_one(query3, (account,))
+
+        # Retrieve phone number from actualdata table
+        query4 = "SELECT saving_account FROM actualdata WHERE saving_account = %s"
+        result4 = db_ops.fetch_one(query4, (account,))
+
+        # Retrieve phone number from unique_intersection table
+        query5 = "SELECT saving_account FROM unique_intersection WHERE saving_account = %s"
+        result5 = db_ops.fetch_one(query5, (account,))
+
+        # Retrieve phone number from conversiondata table
+        query6 = "SELECT saving_account FROM conversiondata WHERE saving_account = %s"
+        result6 = db_ops.fetch_one(query6, (account,))
+
+        # Retrieve phone number from kiyya_customer table
+        query7 = "SELECT account_number FROM kiyya_customer WHERE account_number = %s"
+        result7 = db_ops.fetch_one(query7, (account,))
     
-    # Retrieve phone number from customer_list_nonecode table
-    cursor.execute("SELECT saving_account FROM customer_list_nonecode WHERE saving_account = %s", (account,))
-    result2 = cursor.fetchone()
 
-    # Retrieve phone number from branchcustomer table
-    cursor.execute("SELECT Saving_Account FROM branchcustomer WHERE Saving_Account = %s", (account,))
-    result3 = cursor.fetchone()
+        # Retrieve phone number from women_product table
+        query8 = "SELECT account_no FROM women_product_customer WHERE account_no = %s"
+        result8 = db_ops.fetch_one(query8, (account,))
 
-    # Retrieve phone number from actualdata table
-    cursor.execute("SELECT saving_account FROM actualdata WHERE saving_account = %s", (account,))
-    result4 = cursor.fetchone()
-
-    # Retrieve phone number from unique_intersection table
-    cursor.execute("SELECT saving_account FROM unique_intersection WHERE saving_account = %s", (account,))
-    result5 = cursor.fetchone()
-
-    # Retrieve phone number from conversiondata table
-    cursor.execute("SELECT saving_account FROM conversiondata WHERE saving_account = %s", (account,))
-    result6 = cursor.fetchone()
-
-    # Retrieve phone number from kiyya_customer table
-    cursor.execute("SELECT account_number FROM kiyya_customer WHERE account_number = %s", (account,))
-    result7 = cursor.fetchone()
-   
-
-    # Retrieve phone number from women_product table
-    cursor.execute("SELECT account_no FROM women_product_customer WHERE account_no = %s", (account,))
-    result8 = cursor.fetchone()
-
-    
-    # Check if phone number exists in any of the tables
-    return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None or result6 is not None or result7 is not None or result8 is not None
-
+        
+        # Check if phone number exists in any of the tables
+        return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None or result6 is not None or result7 is not None or result8 is not None
+    except Exception as e:
+        st.error("Failed to search account number")
+        st.exception(e)
+        return False
 
 
 def load_uniqactualdata(mydb):
-    df_branch = pd.DataFrame(fetch_data("SELECT branch_code, branch_name FROM branch_list", mydb), columns=['Branch Code', 'Branch'])
+    df_branch = pd.DataFrame(db_ops.fetch_data("SELECT branch_code, branch_name FROM branch_list", mydb), columns=['Branch Code', 'Branch'])
 
     query = """
     SELECT branch_code, customer_number, customer_name, saving_account, product_type, disbursed_amount, disbursed_date, upload_date
@@ -1639,7 +1790,7 @@ def load_uniqactualdata(mydb):
     )
     """
     
-    df_actual = pd.DataFrame(fetch_data(query, mydb), columns=['Branch Code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_actual = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['Branch Code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
     # Merge the two DataFrames based on 'Branch Code'
     merged_df = pd.merge(df_branch, df_actual, on='Branch Code', how='inner')
@@ -1649,7 +1800,7 @@ def load_uniqactualdata(mydb):
     return df_combine
 
 def load_convactualdata(mydb):
-    df_branch = pd.DataFrame(fetch_data("SELECT branch_code, branch_name FROM branch_list", mydb), columns=['Branch Code', 'Branch'])
+    df_branch = pd.DataFrame(db_ops.fetch_data("SELECT branch_code, branch_name FROM branch_list", mydb), columns=['Branch Code', 'Branch'])
 
     query = """
     SELECT branch_code, customer_number, customer_name, saving_account, product_type, disbursed_amount, disbursed_date, upload_date
@@ -1658,7 +1809,7 @@ def load_convactualdata(mydb):
     SELECT MAX(DATE_FORMAT(upload_date, '%Y-%m-%d %H:%i')) FROM conversiondata)
     """
     
-    df_actual = pd.DataFrame(fetch_data(query, mydb), columns=['Branch Code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_actual = pd.DataFrame(db_ops.fetch_data(query, mydb), columns=['Branch Code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
     # Merge the two DataFrames based on 'Branch Code'
     merged_df = pd.merge(df_branch, df_actual, on='Branch Code', how='inner')
@@ -1667,8 +1818,8 @@ def load_convactualdata(mydb):
     
     return df_combine
 
-def load_customer_detail(mydb):
-    username = st.session_state.get("username", "")
+def load_customer_detail(username):
+    # username = st.session_state.get("username", "")
     role = st.session_state.get("role", "")
     
     if role == 'Admin' or role == 'under_admin':
@@ -1685,10 +1836,10 @@ def load_customer_detail(mydb):
         arrears_query = """
         SELECT * FROM customer_list WHERE loan_status = 'In Arrears'
         """
-        df_branch = pd.DataFrame(fetch_data(code_query, mydb), columns=['District', 'branch_code', 'Branch'])
-        df_closed = pd.DataFrame(fetch_data(closed_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_active = pd.DataFrame(fetch_data(active_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_arrears = pd.DataFrame(fetch_data(arrears_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_branch = pd.DataFrame(db_ops.fetch_data(code_query), columns=['District', 'branch_code', 'Branch'])
+        df_closed = pd.DataFrame(db_ops.fetch_data(closed_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_active = pd.DataFrame(db_ops.fetch_data(active_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_arrears = pd.DataFrame(db_ops.fetch_data(arrears_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
 
         df_merged_closed = pd.merge(df_branch, df_closed, on='branch_code', how='inner')
         df_merged_active = pd.merge(df_branch, df_active, on='branch_code', how='inner')
@@ -1703,7 +1854,7 @@ def load_customer_detail(mydb):
     
     elif role == 'Sales Admin':
         user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_district = fetch_data(user_query, mydb)
+        user_district = db_ops.fetch_data(user_query)
         district = user_district[0][0]
         # Handle the possibility of the district being a JSON-encoded string
         if isinstance(district, str):
@@ -1719,7 +1870,7 @@ def load_customer_detail(mydb):
         JOIN district_list dr ON br.dis_Id = dr.dis_Id
         WHERE dr.district_name IN ({districts_str})
         """
-        df_branch = pd.DataFrame(fetch_data(code_query, mydb), columns=['District', 'branch_code', 'Branch'])
+        df_branch = pd.DataFrame(db_ops.fetch_data(code_query), columns=['District', 'branch_code', 'Branch'])
         branch_codes_str = ', '.join([f"'{code}'" for code in df_branch['branch_code']])
         # st.write(branch_codes_str)
 
@@ -1739,9 +1890,9 @@ def load_customer_detail(mydb):
         AND branch_code IN ({branch_codes_str})
         """
         
-        df_closed = pd.DataFrame(fetch_data(closed_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_active = pd.DataFrame(fetch_data(active_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_arrears = pd.DataFrame(fetch_data(arrears_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_closed = pd.DataFrame(db_ops.fetch_data(closed_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_active = pd.DataFrame(db_ops.fetch_data(active_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_arrears = pd.DataFrame(db_ops.fetch_data(arrears_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
 
         df_merged_closed = pd.merge(df_branch, df_closed, on='branch_code', how='inner')
         df_merged_active = pd.merge(df_branch, df_active, on='branch_code', how='inner')
@@ -1756,13 +1907,13 @@ def load_customer_detail(mydb):
     
     elif role == 'District User': 
         user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_district = fetch_data(user_query, mydb)
+        user_district = db_ops.fetch_data(user_query)
         code_query = f"""
         SELECT dr.district_name, br.branch_code, br.branch_name FROM branch_list br
         JOIN district_list dr ON br.dis_Id = dr.dis_Id
         WHERE dr.district_name = '{user_district[0][0]}'
         """
-        df_branch = pd.DataFrame(fetch_data(code_query, mydb), columns=['District', 'branch_code', 'Branch'])
+        df_branch = pd.DataFrame(db_ops.fetch_data(code_query), columns=['District', 'branch_code', 'Branch'])
         branch_codes_str = ', '.join([f"'{code}'" for code in df_branch['branch_code']])
         # st.write(branch_codes_str)
 
@@ -1782,9 +1933,9 @@ def load_customer_detail(mydb):
         AND branch_code IN ({branch_codes_str})
         """
         
-        df_closed = pd.DataFrame(fetch_data(closed_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_active = pd.DataFrame(fetch_data(active_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_arrears = pd.DataFrame(fetch_data(arrears_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_closed = pd.DataFrame(db_ops.fetch_data(closed_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_active = pd.DataFrame(db_ops.fetch_data(active_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_arrears = pd.DataFrame(db_ops.fetch_data(arrears_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
 
         df_merged_closed = pd.merge(df_branch, df_closed, on='branch_code', how='inner')
         df_merged_active = pd.merge(df_branch, df_active, on='branch_code', how='inner')
@@ -1798,13 +1949,13 @@ def load_customer_detail(mydb):
         return df_combine_closed, df_combine_active, df_combine_arrears
     elif role == 'Branch User':
         user_query = f"SELECT branch FROM user_info WHERE userName = '{username}'"
-        user_branch_code = fetch_data(user_query, mydb)
+        user_branch_code = db_ops.fetch_data(user_query)
         code_query = f"""
         SELECT dr.district_name, br.branch_code, br.branch_name FROM branch_list br
         JOIN district_list dr ON br.dis_Id = dr.dis_Id
         WHERE br.branch_code = '{user_branch_code[0][0]}'
         """
-        df_branch = pd.DataFrame(fetch_data(code_query, mydb), columns=['District', 'branch_code', 'Branch'])
+        df_branch = pd.DataFrame(db_ops.fetch_data(code_query), columns=['District', 'branch_code', 'Branch'])
         branch_codes_str = ', '.join([f"'{code}'" for code in df_branch['branch_code']])
         # st.write(branch_codes_str)
 
@@ -1824,9 +1975,9 @@ def load_customer_detail(mydb):
         AND branch_code IN ({branch_codes_str})
         """
         
-        df_closed = pd.DataFrame(fetch_data(closed_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_active = pd.DataFrame(fetch_data(active_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_arrears = pd.DataFrame(fetch_data(arrears_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_closed = pd.DataFrame(db_ops.fetch_data(closed_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_active = pd.DataFrame(db_ops.fetch_data(active_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_arrears = pd.DataFrame(db_ops.fetch_data(arrears_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
 
         df_merged_closed = pd.merge(df_branch, df_closed, on='branch_code', how='inner')
         df_merged_active = pd.merge(df_branch, df_active, on='branch_code', how='inner')
@@ -1853,10 +2004,10 @@ def load_customer_detail(mydb):
         arrears_query = """
         SELECT * FROM customer_list WHERE loan_status = 'In Arrears'
         """
-        df_branch = pd.DataFrame(fetch_data(code_query, mydb), columns=['District', 'branch_code', 'Branch'])
-        df_closed = pd.DataFrame(fetch_data(closed_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_active = pd.DataFrame(fetch_data(active_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_arrears = pd.DataFrame(fetch_data(arrears_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_branch = pd.DataFrame(db_ops.fetch_data(code_query), columns=['District', 'branch_code', 'Branch'])
+        df_closed = pd.DataFrame(db_ops.fetch_data(closed_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_active = pd.DataFrame(db_ops.fetch_data(active_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_arrears = pd.DataFrame(db_ops.fetch_data(arrears_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
 
         df_merged_closed = pd.merge(df_branch, df_closed, on='branch_code', how='inner')
         df_merged_active = pd.merge(df_branch, df_active, on='branch_code', how='inner')
@@ -1871,7 +2022,7 @@ def load_customer_detail(mydb):
     
     elif role == 'collection_user':
         user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_district = fetch_data(user_query, mydb)
+        user_district = db_ops.fetch_data(user_query)
         district = user_district[0][0]
         # Handle the possibility of the district being a JSON-encoded string
         if isinstance(district, str):
@@ -1887,7 +2038,7 @@ def load_customer_detail(mydb):
         JOIN district_list dr ON br.dis_Id = dr.dis_Id
         WHERE dr.district_name IN ({districts_str})
         """
-        df_branch = pd.DataFrame(fetch_data(code_query, mydb), columns=['District', 'branch_code', 'Branch'])
+        df_branch = pd.DataFrame(db_ops.fetch_data(code_query), columns=['District', 'branch_code', 'Branch'])
         branch_codes_str = ', '.join([f"'{code}'" for code in df_branch['branch_code']])
         # st.write(branch_codes_str)
 
@@ -1907,9 +2058,9 @@ def load_customer_detail(mydb):
         AND branch_code IN ({branch_codes_str})
         """
         
-        df_closed = pd.DataFrame(fetch_data(closed_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_active = pd.DataFrame(fetch_data(active_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
-        df_arrears = pd.DataFrame(fetch_data(arrears_query, mydb), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_closed = pd.DataFrame(db_ops.fetch_data(closed_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_active = pd.DataFrame(db_ops.fetch_data(active_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
+        df_arrears = pd.DataFrame(db_ops.fetch_data(arrears_query), columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Gender','Phone Number', 'Saving Account', 'Business TIN','Application Status', 'Michu Loan Product', 'Approved Amount','Approved Date','Expiry Date','Oustanding Total','Arrears Start Date', 'Loan Status', 'created_date'])
 
         df_merged_closed = pd.merge(df_branch, df_closed, on='branch_code', how='inner')
         df_merged_active = pd.merge(df_branch, df_active, on='branch_code', how='inner')
@@ -1946,7 +2097,7 @@ def get_branch_code(mydb):
 
     user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
     
-    user_district = fetch_data(user_query, mydb)
+    user_district = db_ops.fetch_data(user_query)
     if not user_district:
         return None
 
@@ -1971,7 +2122,7 @@ def get_branch_code(mydb):
     """
     branch_codes = None
     if role == 'Branch User':
-        branch_code = fetch_data(branch_query, mydb)
+        branch_code = db_ops.fetch_data(branch_query, mydb)
         if branch_code:
             branchs_code = branch_code[0][0]
             if isinstance(branchs_code, str):
@@ -1984,13 +2135,13 @@ def get_branch_code(mydb):
         
 
     elif role == 'collection_admin':
-        branch_code = fetch_data(col_admin_query, mydb)
+        branch_code = db_ops.fetch_data(col_admin_query, mydb)
         if branch_code:
             branchs_code = [row[0] for row in branch_code]
             branch_codes = branchs_code
         
     elif role == 'collection_user':
-        branch_code = fetch_data(col_user_query, mydb)
+        branch_code = db_ops.fetch_data(col_user_query, mydb)
         if branch_code:
             branchs_code = [row[0] for row in branch_code]
             branch_codes = branchs_code
@@ -2007,7 +2158,7 @@ def get_dis_and_branch(mydb):
         SELECT dr.district_name, br.branch_code, br.branch_name FROM branch_list br
         JOIN district_list dr ON br.dis_Id = dr.dis_Id
         """
-    df_branch = pd.DataFrame(fetch_data(code_query, mydb), columns=['District', 'branch_code', 'Branch'])
+    df_branch = pd.DataFrame(db_ops.fetch_data(code_query, mydb), columns=['District', 'branch_code', 'Branch'])
     return df_branch
 
 
@@ -2027,7 +2178,7 @@ def get_employe_id(mydb, employe_id):
         The employee ID if found, None otherwise.
     """
     query = f"SELECT employe_id FROM crm_list WHERE employe_id = '{employe_id}'"
-    empid = fetch_data(query, mydb)
+    empid = db_ops.fetch_data(query, mydb)
     
     if empid:
         return empid[0][0]
@@ -2046,7 +2197,7 @@ def get_employe_usename(mydb, username):
         The employee ID if found, None otherwise.
     """
     query = f"SELECT username FROM crm_user WHERE username = '{username}'"
-    username = fetch_data(query, mydb)
+    username = db_ops.fetch_data(query, mydb)
     
     if username:
         return username[0][0]
@@ -2065,7 +2216,7 @@ def get_employe_user(mydb, employe_id):
         The employee ID if found, None otherwise.
     """
     query = f"SELECT employe_id FROM crm_user WHERE employe_id = '{employe_id}'"
-    empid = fetch_data(query, mydb)
+    empid = db_ops.fetch_data(query, mydb)
     
     if empid:
         return empid[0][0]
@@ -2102,25 +2253,18 @@ def insert_crmuser(conn, cursor, employe_id, username, password):
         return False
 
 
-def womenCustomer(conn, cursor, name, phone_number, Saving_Account, disbursed_Amount, remark):
+def womenCustomer(name, phone_number, Saving_Account, disbursed_Amount, remark):
     username = st.session_state.get("username", "")
-    crm_id = get_id(conn, cursor, username)
+    crm_id = get_id(username)
 
-    # # Debugging: Print types of variables
-    # st.write(f"crm_id: {crm_id}, Type: {type(crm_id)}")
-    # st.write(f"name: {name}, Type: {type(name)}")
-    # st.write(f"phone_number: {phone_number}, Type: {type(phone_number)}")
-    # st.write(f"Saving_Account: {Saving_Account}, Type: {type(Saving_Account)}")
-    # st.write(f"disbursed_Amount: {disbursed_Amount}, Type: {type(disbursed_Amount)}")
-    # st.write(f"remark: {remark}, Type: {type(remark)}")
     try:
         processed_phone_number = "+251" + phone_number[1:]
         
-        cursor.execute("""
+        query = """
             INSERT INTO women_product_customer(crm_id, full_name, phone_number, account_no, disbursed_amount, remark)
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (crm_id, name, processed_phone_number, Saving_Account, disbursed_Amount, remark))
-        conn.commit()
+        """
+        db_ops.insert_data(query, (crm_id, name, processed_phone_number, Saving_Account, disbursed_Amount, remark))
         return True
     except Exception as e:
         st.error("Failed to create user")
@@ -2129,7 +2273,7 @@ def womenCustomer(conn, cursor, name, phone_number, Saving_Account, disbursed_Am
 
 
 # Function to fetch employee ID from the crm_user table
-def get_id(mydb, cursor, username):
+def get_id(username):
     """
     Fetches an employee ID from the crm_user table in the MySQL server database.
 
@@ -2140,56 +2284,63 @@ def get_id(mydb, cursor, username):
     Returns:
         The employee ID if found, None otherwise.
     """
-    if username in get_usernames(cursor):
-        cursor.execute("SELECT userId FROM user_info WHERE userName = %s", (username,))
-        result = cursor.fetchone()
-    else:
-        cursor.execute("SELECT crm_id FROM crm_user WHERE username = %s", (username,))
-        result = cursor.fetchone()
-    return result[0] if result else None
+    try:
+        if username in get_usernames():
+            query1 = "SELECT userId FROM user_info WHERE userName = %s"
+            result = db_ops.fetch_one(query1, (username,))
+            return result['userId']
+        else:
+            query2 = "SELECT crm_id FROM crm_user WHERE username = %s"
+            result = db_ops.fetch_one(query2, (username,))
+            return result['crm_id']
+        # return result[0] if result else None
+    except Exception as e:
+        st.error("Failed to fetch user id")
+        st.exception(e)
+        return None
 
 
-def get_unquiedureatphone(cursor):
+def get_unquiedureatphone():
     """
     Fetches a list of phoneNumber from the MySQL server database.
 
     Returns:
         A list of user phoneNumber. kiyya_customer
     """
-    cursor.execute("SELECT phone_number FROM women_product_customer")
-    phone = [user[0] for user in cursor.fetchall()]
+    query = "SELECT phone_number FROM women_product_customer"
+    phone = [user['phone_number'] for user in db_ops.fetch_data(query)]
     modified_phone = ['0' + p[4:] if len(p) > 4 else '0' for p in phone]
     # st.write(modified_phone)
     return modified_phone
 
-def get_unquiedkiyyaphone(cursor):
+def get_unquiedkiyyaphone():
+    """
+    Fetches a list of phoneNumber from the MySQL server database.
+
+    Returns:
+        A list of user phoneNumber kiyya_customer
+    """
+    query = "SELECT phone_number FROM kiyya_customer"
+    phone = [user['phone_number'] for user in db_ops.fetch_data(query)]
+    modified_phone = ['0' + p[4:] if len(p) > 4 else '0' for p in phone]
+    # st.write(modified_phone)
+    return modified_phone
+
+def get_unquiedkiyyaphone():
     """
     Fetches a list of phoneNumber from the MySQL server database.
 
     Returns:
         A list of user phoneNumber. kiyya_customer
     """
-    cursor.execute("SELECT phone_number FROM kiyya_customer")
-    phone = [user[0] for user in cursor.fetchall()]
-    modified_phone = ['0' + p[4:] if len(p) > 4 else '0' for p in phone]
-    # st.write(modified_phone)
-    return modified_phone
-
-def get_unquiedkiyyaphone(cursor):
-    """
-    Fetches a list of phoneNumber from the MySQL server database.
-
-    Returns:
-        A list of user phoneNumber. kiyya_customer
-    """
-    cursor.execute("SELECT phone_number FROM kiyya_customer")
-    phone = [user[0] for user in cursor.fetchall()]
+    query = "SELECT phone_number FROM kiyya_customer"
+    phone = [user['phone_number'] for user in db_ops.fetch_data(query)]
     modified_phone = ['0' + p[4:] if len(p) > 4 else '0' for p in phone]
     # st.write(modified_phone)
     return modified_phone
 
 
-def check_durationunique_account(cursor, account):
+def check_durationunique_account(account):
     """
     Checks if an account number exists in any of the specified tables with specific conditions.
 
@@ -2201,26 +2352,26 @@ def check_durationunique_account(cursor, account):
         True if the account number exists in any of the tables, False otherwise.
     """
     # Retrieve account number from women_product_customer table
-    cursor.execute("SELECT account_no FROM women_product_customer WHERE account_no = %s", (account,))
-    result4 = cursor.fetchone()  # Only fetch one result, no need to fetch all
+    query1 = "SELECT account_no FROM women_product_customer WHERE account_no = %s"
+    result4 = db_ops.fetch_one(query1, (account,))  # Only fetch one result, no need to fetch all
 
     # Retrieve saving account from unique_intersection table with specific product types
-    cursor.execute("""
+    query2 = """
         SELECT saving_account FROM unique_intersection 
         WHERE saving_account = %s AND (product_type = 'Women Formal' OR product_type = 'Women Informal')
-    """, (account,))
-    result5 = cursor.fetchone()  # Fetch only one result
+    """
+    result5 = db_ops.fetch_one(query2, (account,))  # Fetch only one result
 
     # Retrieve saving account from conversiondata table with specific product types
-    cursor.execute("""
+    query3 = """
         SELECT saving_account FROM conversiondata 
         WHERE saving_account = %s AND (product_type = 'Women Formal' OR product_type = 'Women Informal')
-    """, (account,))
-    result6 = cursor.fetchone()  # Fetch only one result
+    """
+    result6 = db_ops.fetch_one(query3, (account,))  # Fetch only one result
 
     # Retrieve account number from kiyya_customer table
-    cursor.execute("SELECT account_number FROM kiyya_customer WHERE account_number = %s", (account,))
-    result7 = cursor.fetchone()  # Fetch only one result
+    query4 = "SELECT account_number FROM kiyya_customer WHERE account_number = %s"
+    result7 = db_ops.fetch_one(query4, (account,))  # Fetch only one result
 
     # # Retrieve account number from branch_customer table  
     # cursor.execute("SELECT Saving_Account FROM branchcustomer WHERE Saving_Account = %s", (account,))
@@ -2241,10 +2392,10 @@ def load_women_data(mydb):
     # Fetch userId based on username
     if role == "CRM":
         crm_id_query = f"SELECT crm_id FROM crm_user WHERE username = '{username}'"
-        crm_id_result = fetch_data(crm_id_query, mydb)
+        crm_id_result = db_ops.fetch_data(crm_id_query, mydb)
     else:
         crm_id_query = f"SELECT userId FROM user_info WHERE username = '{username}'"
-        crm_id_result = fetch_data(crm_id_query, mydb)
+        crm_id_result = db_ops.fetch_data(crm_id_query, mydb)
 
     # Check if crm_id_result is empty
     if not crm_id_result:
@@ -2257,13 +2408,13 @@ def load_women_data(mydb):
     conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
 
 
-    dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+    dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), 
                                    columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date'])
 
-    unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+    unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), 
                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-    conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+    conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), 
                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
     # Merge DataFrames on 'Saving Account'
@@ -2299,7 +2450,7 @@ def load_all_women_data(mydb):
         FROM crm_list br
         JOIN crm_user dr ON br.employe_id = dr.employe_id
         """
-    crm_user_list = pd.DataFrame(fetch_data(crm_user_query, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
+    crm_user_list = pd.DataFrame(db_ops.fetch_data(crm_user_query, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
 
     # Women product customer query
     women_customer_query = """
@@ -2307,7 +2458,7 @@ def load_all_women_data(mydb):
         FROM user_info br
         JOIN women_product_customer dr ON br.userId = dr.crm_id
         """
-    women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
+    women_customer_list = pd.DataFrame(db_ops.fetch_data(women_customer_query, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
 
     # Combine user data
     combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['crm_id'])
@@ -2318,13 +2469,13 @@ def load_all_women_data(mydb):
     conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') and disbursed_date >= '2024-10-01'"
 
     # Fetching customer data
-    dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+    dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), 
                                    columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date'])
 
-    unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+    unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), 
                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-    conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+    conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), 
                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
     # Merging on 'Saving Account'
@@ -2358,23 +2509,23 @@ def load_all_women_data(mydb):
 
 
 
-def kiyya_customer(conn, cursor, username, fullName, phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan):
+def kiyya_customer(username, fullName, phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan):
     try:
         processed_phone_number = "+251" + phone_number[1:]
-        userId  = get_id(conn, cursor, username)
+        userId  = get_id(username)
         if userId:
             # Insert customer information into the customer table
-            cursor.execute("""
+            query = """
                 INSERT INTO kiyya_customer(userId, fullName, phone_number, account_number, customer_ident_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, daily_sales, purpose_of_loan)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (userId, fullName, processed_phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan))
-            conn.commit()
+            """
+            db_ops.insert_data(query, (userId, fullName, processed_phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan))
             return True
         else:
             st.error("User not found with the provided username.")
             return False
     except Exception as e:
-        st.error("Failed to create user")
+        st.error("Failed to create customer due to an unexpected error.")
         st.exception(e)
         return False
 
@@ -2390,7 +2541,7 @@ def load_all_kiyya_data(mydb):
         JOIN crm_user dr ON br.employe_id = dr.employe_id
         JOIN kiyya_customer k ON k.userId = dr.crm_id
         """
-    crm_user_list = pd.DataFrame(fetch_data(crm_user_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
+    crm_user_list = pd.DataFrame(db_ops.fetch_data(crm_user_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
 
     # Women product customer query
     women_customer_query = """
@@ -2398,7 +2549,7 @@ def load_all_kiyya_data(mydb):
     FROM user_info br
     JOIN kiyya_customer dr ON br.userId = dr.userId
     """
-    women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
+    women_customer_list = pd.DataFrame(db_ops.fetch_data(women_customer_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
 
     # Combine user data
     combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['userId']).reset_index(drop=True).rename(lambda x: x + 1)
@@ -2410,12 +2561,12 @@ def load_all_kiyya_data(mydb):
     conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') and disbursed_date >= '2024-10-01'"
 
     # Fetching customer data
-    dureti_customer = pd.DataFrame(fetch_data(keyya_customer_query, mydb), 
+    dureti_customer = pd.DataFrame(db_ops.fetch_data(keyya_customer_query, mydb), 
                                    columns=['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
-    unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+    unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), 
                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-    conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+    conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), 
                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
     # Merge DataFrames on 'Saving Account'
@@ -2459,10 +2610,10 @@ def load_kiyya_data(mydb):
     # Fetch userId based on username
     if role == "CRM":
         crm_id_query = f"SELECT crm_id FROM crm_user WHERE username = '{username}'"
-        crm_id_result = fetch_data(crm_id_query, mydb)
+        crm_id_result = db_ops.fetch_data(crm_id_query, mydb)
     else:
         crm_id_query = f"SELECT userId FROM user_info WHERE username = '{username}'"
-        crm_id_result = fetch_data(crm_id_query, mydb)
+        crm_id_result = db_ops.fetch_data(crm_id_query, mydb)
 
     # Check if crm_id_result is empty
     if not crm_id_result:
@@ -2474,13 +2625,13 @@ def load_kiyya_data(mydb):
     conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
 
 
-    dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+    dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), 
                                    columns = ['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
 
-    unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+    unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), 
                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-    conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+    conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), 
                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
     # Merge DataFrames on 'Saving Account'
@@ -2512,7 +2663,7 @@ def load_kiyya_branch_data(mydb):
     if role == 'District User':
         # Fetch the user's district
         user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_district = fetch_data(user_query, mydb)
+        user_district = db_ops.fetch_data(user_query, mydb)
 
         # Check if a district was found for the user
         if not user_district or len(user_district) == 0:
@@ -2524,7 +2675,7 @@ def load_kiyya_branch_data(mydb):
 
         # Fetch userIds for the corresponding district
         crm_id_query = f"SELECT userId FROM user_info WHERE district = '{district_value}'"
-        crm_id_result = fetch_data(crm_id_query, mydb)
+        crm_id_result = db_ops.fetch_data(crm_id_query, mydb)
 
         # Check if any userIds were found
         if not crm_id_result or len(crm_id_result) == 0:
@@ -2548,16 +2699,16 @@ def load_kiyya_branch_data(mydb):
         JOIN kiyya_customer dr ON br.userId = dr.userId
         WHERE br.district = ('{district_value}')
         """
-        women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['userId', 'Recruited by'])
+        women_customer_list = pd.DataFrame(db_ops.fetch_data(women_customer_query, mydb), columns=['userId', 'Recruited by'])
         # st.write(women_customer_list)
 
-        dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+        dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), 
                                     columns = ['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
 
-        unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+        unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), 
                                     columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-        conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+        conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), 
                                         columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
         # Merge DataFrames on 'Saving Account'
@@ -2587,7 +2738,7 @@ def load_kiyya_branch_data(mydb):
     elif role == 'Sales Admin':
         # Fetch the user's district (assuming district is stored as a JSON-like array in the database)
         user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_district_result = fetch_data(user_query, mydb)
+        user_district_result = db_ops.fetch_data(user_query, mydb)
 
         # Check if districts were found for the user
         if not user_district_result or len(user_district_result) == 0:
@@ -2607,7 +2758,7 @@ def load_kiyya_branch_data(mydb):
 
         # Fetch userIds for the corresponding districts
         crm_id_query = f"SELECT userId FROM user_info WHERE district IN ('{district_in_clause}')"
-        crm_id_result = fetch_data(crm_id_query, mydb)
+        crm_id_result = db_ops.fetch_data(crm_id_query, mydb)
         # st.write(crm_id_result)
 
         # Check if any userIds were found
@@ -2634,17 +2785,17 @@ def load_kiyya_branch_data(mydb):
         JOIN kiyya_customer dr ON br.userId = dr.userId
         WHERE br.district IN ('{district_in_clause}')
         """
-        women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
+        women_customer_list = pd.DataFrame(db_ops.fetch_data(women_customer_query, mydb), columns=['userId', 'Recruited by', 'Sub Process'])
         # st.write(women_customer_list)
         
         # Fetch and create DataFrames for each query
-        dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+        dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), 
                                     columns=['kiyya_id', 'userId', 'Full Name', 'Phone Number', 'Saving Account', 'Customer Identification Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
 
-        unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+        unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), 
                                     columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-        conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+        conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), 
                                         columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
         # Merge DataFrames on 'Saving Account'
@@ -2684,7 +2835,7 @@ def load_formal_branch_data(mydb):
     if role == 'District User':
         # Fetch the user's district
         user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_district = fetch_data(user_query, mydb)
+        user_district = db_ops.fetch_data(user_query, mydb)
 
         # Check if a district was found for the user
         if not user_district or len(user_district) == 0:
@@ -2696,7 +2847,7 @@ def load_formal_branch_data(mydb):
 
         # Fetch userIds for the corresponding district
         crm_id_query = f"SELECT userId FROM user_info WHERE district = '{district_value}'"
-        crm_id_result = fetch_data(crm_id_query, mydb)
+        crm_id_result = db_ops.fetch_data(crm_id_query, mydb)
 
         # Check if any userIds were found
         if not crm_id_result or len(crm_id_result) == 0:
@@ -2713,13 +2864,13 @@ def load_formal_branch_data(mydb):
         conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
 
 
-        dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+        dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), 
                                     columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date'])
 
-        unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+        unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), 
                                     columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-        conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+        conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), 
                                         columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
         
@@ -2730,7 +2881,7 @@ def load_formal_branch_data(mydb):
         JOIN women_product_customer dr ON br.userId = dr.crm_id
         WHERE br.district = ('{district_value}')
         """
-        women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['crm_id', 'Recruited by'])
+        women_customer_list = pd.DataFrame(db_ops.fetch_data(women_customer_query, mydb), columns=['crm_id', 'Recruited by'])
 
 
         # Merge DataFrames on 'Saving Account'
@@ -2758,7 +2909,7 @@ def load_formal_branch_data(mydb):
     elif role == 'Sales Admin':
         # Fetch the user's district (assuming district is stored as a JSON-like array in the database)
         user_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_district = fetch_data(user_query, mydb)
+        user_district = db_ops.fetch_data(user_query, mydb)
 
         # Check if a district was found for the user
         if not user_district or len(user_district) == 0:
@@ -2777,7 +2928,7 @@ def load_formal_branch_data(mydb):
 
         # Fetch userIds for the corresponding districts
         crm_id_query = f"SELECT userId FROM user_info WHERE district IN ('{district_in_clause}')"
-        crm_id_result = fetch_data(crm_id_query, mydb)
+        crm_id_result = db_ops.fetch_data(crm_id_query, mydb)
 
         # Check if any userIds were found
         if not crm_id_result or len(crm_id_result) == 0:
@@ -2795,13 +2946,13 @@ def load_formal_branch_data(mydb):
         conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
 
         # Fetch data and create DataFrames
-        dureti_customer = pd.DataFrame(fetch_data(dureti_customer_query, mydb), 
+        dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query, mydb), 
                                     columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date'])
 
-        unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+        unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, mydb), 
                                     columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-        conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+        conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, mydb), 
                                         columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
         # Women product customer query
@@ -2811,7 +2962,7 @@ def load_formal_branch_data(mydb):
         JOIN women_product_customer dr ON br.userId = dr.crm_id
         WHERE br.district IN ('{district_in_clause}')
         """
-        women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
+        women_customer_list = pd.DataFrame(db_ops.fetch_data(women_customer_query, mydb), columns=['crm_id', 'Recruited by', 'Sub Process'])
         # st.write(women_customer_list)
 
         # Merge DataFrames on 'Saving Account'
@@ -2844,11 +2995,12 @@ def load_formal_branch_data(mydb):
 def load_kiyya_report_data(mydb):
     
 
-    # df_user_info = pd.DataFrame(fetch_data(f"SELECT * FROM user_info WHERE userId = '{user_id}'", mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role', 'password', 'ccreatedAt'])
+    # df_user_info = pd.DataFrame(db_ops.fetch_data(f"SELECT * FROM user_info WHERE userId = '{user_id}'", mydb), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role', 'password', 'ccreatedAt'])
     # Filtered queries for data starting from July 1
-    keyya_customer_query = f"SELECT * FROM kiyya_customer"
+    keyya_customer_query = f"SELECT count(kiyya_id) FROM kiyya_customer"
+    keyya_customer_query = f"SELECT count(kiyya_id) FROM kiyya_customer"
     
-    kiyya_customer = pd.DataFrame(fetch_data(keyya_customer_query, mydb), columns=['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
+    kiyya_customer = pd.DataFrame(db_ops.fetch_data(keyya_customer_query, mydb))
     
 
     return kiyya_customer
@@ -2856,7 +3008,7 @@ def load_kiyya_report_data(mydb):
 
 
 
-def load_kiyya_actual_vs_targetdata(mydb):
+def load_kiyya_actual_vs_targetdata():
     # Access the username from session state
     username = st.session_state.get("username", "")
     role = st.session_state.get("role", "")
@@ -2865,237 +3017,269 @@ def load_kiyya_actual_vs_targetdata(mydb):
     # st.write(username)
 
     if role == "Admin" or role == 'under_admin':
-        
-        # CRM user query
-        crm_user_query = """
-            SELECT DISTINCT dr.crm_id, br.full_name, br.sub_process, br.employe_id 
-            FROM crm_list br
-            LEFT JOIN crm_user dr ON br.employe_id = dr.employe_id;
+        try:
+            # CRM user query
+            crm_user_query = """
+                SELECT DISTINCT dr.crm_id, br.full_name, br.sub_process, br.employe_id 
+                FROM crm_list br
+                JOIN crm_user dr ON br.employe_id = dr.employe_id
+                """
+            crm_user_list = pd.DataFrame(db_ops.fetch_data(crm_user_query))
+            # st.write(crm_user_list)
+            crm_user_list.columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code']
+            # st.write(crm_user_list)
+            # Women product customer query
+            women_customer_query = """
+            SELECT DISTINCT br.userId, br.full_Name, br.district, br.branch 
+            FROM user_info br
             """
-        crm_user_list = pd.DataFrame(fetch_data(crm_user_query, mydb), columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code'])
+            women_customer_list = pd.DataFrame(db_ops.fetch_data(women_customer_query))
+            women_customer_list.columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code']
 
-        # Women product customer query
-        women_customer_query = """
-        SELECT DISTINCT br.userId, br.full_Name, br.district, br.branch 
-        FROM user_info br
-        """
-        women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code'])
-
-        # Combine user data
-        combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['branch_code']).reset_index(drop=True).rename(lambda x: x + 1)
-    
-        # st.write(combined_user)
-        # Queries for customer data
-        in_customer_query = "SELECT kiyya_id, userId, fullName, phone_number, account_number, registered_date FROM kiyya_customer where userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59' and `registered_date` >= '2024-10-01'"
-        # Queries for customer data
-        formal_customer_query = "SELECT wpc_id, crm_id, full_name, phone_number, account_no, registered_date FROM women_product_customer WHERE `registered_date` >= '2024-10-01'"
-
-        unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date >= '2024-10-01'AND saving_account NOT IN (SELECT saving_account FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date < '2024-10-01')"
-        conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date >= '2024-10-01' AND saving_account NOT IN (SELECT saving_account FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date < '2024-10-01')"
-
-        # Fetching customer data for informal customers
-        informal_customer = pd.DataFrame(fetch_data(in_customer_query, mydb), 
-                                        columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
-
-        # Add product_type column as 'Informal' for informal_customer
-        informal_customer['product_type'] = 'Women Informal'
-
-
-        # Convert 'Register Date' to match the format of formal_customer ('YYYY-MM-DD')
-        informal_customer['Register Date'] = pd.to_datetime(informal_customer['Register Date']).dt.strftime('%Y-%m-%d')
-
-        # Fetching customer data for formal customers
-        formal_customer = pd.DataFrame(fetch_data(formal_customer_query, mydb), 
-                                    columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
-
-        # Add product_type column as 'Formal' for formal_customer
-        formal_customer['product_type'] = 'Women Formal'
-        unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
-                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
-
-        conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
-                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+            # Combine user data
+            combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['branch_code']).reset_index(drop=True).rename(lambda x: x + 1)
+            # st.write(combined_user)
         
-        # Merge DataFrames on 'Saving Account'
-        unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
-        # st.write(unique_conversation)
-        bf_kiyya = "select saving_account from misseddata"
-        bf_kiyya_customer = pd.DataFrame(fetch_data(bf_kiyya, mydb), columns=['Saving Account'])
-        # st.write(bf_kiyya_customer[['Saving Account']])
-        unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
+            # st.write(combined_user)
+            # Queries for customer data
+            in_customer_query = "SELECT kiyya_id, userId, fullName, phone_number, account_number, registered_date FROM kiyya_customer where userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59' and `registered_date` >= '2024-10-01'"
+            # Queries for customer data
+            formal_customer_query = "SELECT wpc_id, crm_id, full_name, phone_number, account_no, registered_date FROM women_product_customer WHERE `registered_date` >= '2024-10-01'"
 
-        # Filter rows where bf_kiyya_customer doesn't have a match in unique_conversation
-        unique_not_in_bf_kiyya = unique_conversation[unique_conversation['_merge'] == 'left_only']
+            unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date >= '2024-10-01'AND saving_account NOT IN (SELECT saving_account FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date < '2024-10-01')"
+            conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date >= '2024-10-01' AND saving_account NOT IN (SELECT saving_account FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date < '2024-10-01')"
 
-        # Drop the _merge column (optional)
-        unique_conversation = unique_not_in_bf_kiyya.drop(columns=['_merge'])
-        # st.write(unique_conversation)
-        infrmal_formal = pd.concat([informal_customer, formal_customer], axis=0).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1)
-        # st.write(combined_user)
-        informal_formal_code = infrmal_formal.merge(combined_user, on='user_Id', how='inner')
-        # st.write(informal_formal_code)
-        # disbersed_by_recurate = pd.merge(infrmal_formal, unique_conversation, on='Saving Account', how='inner')
-        # st.write(disbersed_by_recurate)
-        full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left').drop_duplicates(subset=['Saving Account'], keep='first')
-        # st.write(full_disb)
+            # Fetching customer data for informal customers
+            informal_customer = pd.DataFrame(db_ops.fetch_data(in_customer_query))
+            informal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
 
-        
-        
-        # st.write(merged_df)
-        # Replace null values in user_Id of full_disb with user_Id from combined_user when branch_code matches
-        full_disb['branch_code_y'] = np.where(
-            full_disb['branch_code_y'].isnull(),    # Check if user_Id is null
-            full_disb['branch_code_x'],    # Replace with user_Id_combined if condition is met
-            full_disb['branch_code_y']              # Keep the original user_Id otherwise
-        )
-        # st.write(full_disb)
+            # Add product_type column as 'Informal' for informal_customer
+            informal_customer['product_type'] = 'Women Informal'
 
-        # Drop the extra combined columns that were added during the merge
-        full_disberment_user = pd.merge(full_disb, combined_user, left_on='branch_code_y', right_on='branch_code', how='outer')
-        # st.write(full_disberment_user)
-        full_disberment_user.drop_duplicates(subset=['branch_code'])
-        # st.write(full_disberment_user)
 
-    
+            # Convert 'Register Date' to match the format of formal_customer ('YYYY-MM-DD')
+            informal_customer['Register Date'] = pd.to_datetime(informal_customer['Register Date']).dt.strftime('%Y-%m-%d')
+
+            # Fetching customer data for formal customers
+            formal_customer = pd.DataFrame(db_ops.fetch_data(formal_customer_query))
+            formal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+
+            # Add product_type column as 'Formal' for formal_customer
+            formal_customer['product_type'] = 'Women Formal'
+            unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
+            unique_customer.columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+
+            conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query))
+            conversion_customer.columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+            
+            # Merge DataFrames on 'Saving Account'
+            unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
+            # st.write(unique_conversation)
+            bf_kiyya = "select saving_account from misseddata"
+            bf_kiyya_customer = pd.DataFrame(db_ops.fetch_data(bf_kiyya))
+            bf_kiyya_customer.columns=['Saving Account']
+            unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
+
+            # Filter rows where bf_kiyya_customer doesn't have a match in unique_conversation
+            unique_not_in_bf_kiyya = unique_conversation[unique_conversation['_merge'] == 'left_only']
+
+            # Drop the _merge column (optional)
+            unique_conversation = unique_not_in_bf_kiyya.drop(columns=['_merge'])
+            # st.write(unique_conversation)
+            infrmal_formal = pd.concat([informal_customer, formal_customer], axis=0).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1)
+            # st.write(combined_user)
+            informal_formal_code = infrmal_formal.merge(combined_user, on='user_Id', how='inner')
+            # st.write(informal_formal_code)
+            # disbersed_by_recurate = pd.merge(infrmal_formal, unique_conversation, on='Saving Account', how='inner')
+            # st.write(disbersed_by_recurate)
+            full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left').drop_duplicates(subset=['Saving Account'], keep='first')
+            # st.write(full_disb)
+
+            
+            
+            # st.write(merged_df)
+            # Replace null values in user_Id of full_disb with user_Id from combined_user when branch_code matches
+            full_disb['branch_code_y'] = np.where(
+                full_disb['branch_code_y'].isnull(),    # Check if user_Id is null
+                full_disb['branch_code_x'],    # Replace with user_Id_combined if condition is met
+                full_disb['branch_code_y']              # Keep the original user_Id otherwise
+            )
+            # st.write(full_disb)
+
+            # Drop the extra combined columns that were added during the merge
+            full_disberment_user = pd.merge(full_disb, combined_user, left_on='branch_code_y', right_on='branch_code', how='outer')
+            # st.write(full_disberment_user)
+            full_disberment_user.drop_duplicates(subset=['branch_code'])
+            # st.write(full_disberment_user)
 
         
-        df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_id, user_id, target_amount, catagory, registered_date FROM kiyya_target", mydb),
-            columns=['target_id', 'branch_code', 'Target Customer', 'Catagory', 'registered_date']
-        )
-        # st.write(df_target)
 
-        return  full_disberment_user, df_target
+            target_query = "SELECT target_id, user_id, target_amount, catagory, registered_date FROM kiyya_target"
+            df_target = pd.DataFrame(db_ops.fetch_data(target_query))
+            df_target.columns=['target_id', 'branch_code', 'Target Customer', 'Catagory', 'registered_date'] 
+            # st.write(df_target)
+
+            return  full_disberment_user, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame()
     
 
     elif role == "District User":
-        # Fetch branch and district for the given username
-        user_id_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_id_result = fetch_data(user_id_query, mydb)
-        if not user_id_result:
-            st.warning("No user found with the given username.")
-            return pd.DataFrame()  # Return an empty DataFrame if no user is found
+        try:
+            # Fetch district for the given username
+            user_id_query = "SELECT district FROM user_info WHERE userName = %s"
+            user_id_result = db_ops.fetch_data(user_id_query, (username,))
+            if not user_id_result:
+                st.warning("No user found with the given username.")
+                return pd.DataFrame(), pd.DataFrame()
 
-        # district = user_id_result[0][0]  # Assuming district is the first element in the first row of the result
-        district = user_id_result[0][0]
+            # district = user_id_result[0][0]  # Assuming district is the first element in the first row of the result
+            district = user_id_result[0]['district']
 
-        # Fetch branch and district for the given username
-        user_branch_code_query = f"SELECT branch FROM user_info where district = '{district}'"
-        branch_code_result = fetch_data(user_branch_code_query, mydb)
+            # Fetch branch codes based on district
+            user_branch_code_query = "SELECT branch FROM user_info WHERE district = %s"
+            branch_code_result = db_ops.fetch_data(user_branch_code_query, (district,))
+            if not branch_code_result:
+                st.warning(f"No branches found for the district: {district}.")
+                return pd.DataFrame(), pd.DataFrame()
 
-        # Ensure that the result is a list or tuple of branch codes
-        branch_codes = [row[0] for row in branch_code_result]  # Access the first item in each tuple
+            # Ensure that the result is a list or tuple of branch codes
+            branch_codes = [row['branch'] for row in branch_code_result]  # Access the first item in each tuple
 
-        # Join branch codes into a comma-separated string for the IN clause
-        branch_codes_str = ', '.join(f"'{code}'" for code in branch_codes)
+            # Join branch codes into a comma-separated string for the IN clause
+            # branch_codes_str = ', '.join(f"'{code}'" for code in branch_codes)
+            branch_codes_str = ', '.join(['%s'] * len(branch_codes))
 
-        # CRM user query with the correct IN clause
-        crm_user_query = f"""
-            SELECT DISTINCT dr.crm_id, br.full_name, br.sub_process, br.employe_id 
-            FROM crm_list br
-            LEFT JOIN crm_user dr ON br.employe_id = dr.employe_id
-            WHERE br.employe_id IN ({branch_codes_str})
-        """
+            # CRM user query
+            crm_user_query = f"""
+                SELECT DISTINCT dr.crm_id, br.full_name, br.sub_process, br.employe_id 
+                FROM crm_list br
+                JOIN crm_user dr ON br.employe_id = dr.employe_id
+                WHERE br.employe_id IN ({branch_codes_str})
+            """
+            crm_user_list = pd.DataFrame(db_ops.fetch_data(crm_user_query, tuple(branch_codes)))
+            st.write(crm_user_list)
+            crm_user_list.columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code']
 
-        crm_user_list = pd.DataFrame(fetch_data(crm_user_query, mydb), columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code'])
+            # Women product customer query
+            women_customer_query = "SELECT DISTINCT userId, full_Name, district, branch FROM user_info WHERE district = %s"
+            women_customer_list = pd.DataFrame(db_ops.fetch_data(women_customer_query, (district,)))
+            women_customer_list.columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code']
 
-        # Women product customer query
-        women_customer_query = f"""
-        SELECT DISTINCT br.userId, br.full_Name, br.district, br.branch 
-        FROM user_info br
-        Where br.district = '{district}'
-        """
-        women_customer_list = pd.DataFrame(fetch_data(women_customer_query, mydb), columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code'])
-
-        # Combine user data
-        combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['branch_code']).reset_index(drop=True).rename(lambda x: x + 1)
-    
-        # st.write(combined_user)
-        # Queries for customer data
-        in_customer_query = "SELECT kiyya_id, userId, fullName, phone_number, account_number, registered_date FROM kiyya_customer where userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59' and `registered_date` >= '2024-10-01'"
-        # Queries for customer data
-        formal_customer_query = "SELECT wpc_id, crm_id, full_name, phone_number, account_no, registered_date FROM women_product_customer WHERE `registered_date` >= '2024-10-01'"
-
-        unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date >= '2024-10-01'AND saving_account NOT IN (SELECT saving_account FROM unique_intersection WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date < '2024-10-01')"
-        conversion_customer_query = "SELECT * FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date >= '2024-10-01' AND saving_account NOT IN (SELECT saving_account FROM conversiondata WHERE product_type IN ('Women Informal', 'Women Formal') AND disbursed_date < '2024-10-01')"
-
-        # Fetching customer data for informal customers
-        informal_customer = pd.DataFrame(fetch_data(in_customer_query, mydb), 
-                                        columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
-
-        # Add product_type column as 'Informal' for informal_customer
-        informal_customer['product_type'] = 'Women Informal'
-
-
-        # Convert 'Register Date' to match the format of formal_customer ('YYYY-MM-DD')
-        informal_customer['Register Date'] = pd.to_datetime(informal_customer['Register Date']).dt.strftime('%Y-%m-%d')
-
-        # Fetching customer data for formal customers
-        formal_customer = pd.DataFrame(fetch_data(formal_customer_query, mydb), 
-                                    columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
-
-        # Add product_type column as 'Formal' for formal_customer
-        formal_customer['product_type'] = 'Women Formal'
-        unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
-                                    columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
-
-        conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
-                                        columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+            # Combine user data
+            combined_user = pd.concat([crm_user_list, women_customer_list], axis=0).drop_duplicates(subset=['branch_code']).reset_index(drop=True).rename(lambda x: x + 1)
         
-        # Merge DataFrames on 'Saving Account'
-        unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
-        # st.write(unique_conversation)
-        bf_kiyya = "select saving_account from misseddata"
-        bf_kiyya_customer = pd.DataFrame(fetch_data(bf_kiyya, mydb), columns=['Saving Account'])
+            # Queries for customer data (informal customers)
+            in_customer_query = """
+                SELECT kiyya_id, userId, fullName, phone_number, account_number, registered_date 
+                FROM kiyya_customer 
+                WHERE userId != '1cc2ceef-fc07-44b9-9696-86d734d1dd59' 
+                AND registered_date >= '2024-10-01'
+            """
+            informal_customer = pd.DataFrame(db_ops.fetch_data(in_customer_query))
+            informal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+            informal_customer['product_type'] = 'Women Informal'
+            # Convert 'Register Date' to match the format of formal_customer ('YYYY-MM-DD')
+            informal_customer['Register Date'] = pd.to_datetime(informal_customer['Register Date']).dt.strftime('%Y-%m-%d')
+
+            # Queries for customer data (formal customers)
+            formal_customer_query = """
+                SELECT wpc_id, crm_id, full_name, phone_number, account_no, registered_date 
+                FROM women_product_customer 
+                WHERE registered_date >= '2024-10-01'
+            """
+            formal_customer = pd.DataFrame(db_ops.fetch_data(formal_customer_query))
+            formal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+            formal_customer['product_type'] = 'Women Formal'
+
+            # Queries for unique and conversion customers
+            unique_customer_query = """
+                SELECT * FROM unique_intersection 
+                WHERE product_type IN ('Women Informal', 'Women Formal') 
+                AND disbursed_date >= '2024-10-01'
+                AND saving_account NOT IN (
+                    SELECT saving_account FROM unique_intersection 
+                    WHERE product_type IN ('Women Informal', 'Women Formal') 
+                    AND disbursed_date < '2024-10-01'
+                )
+            """
+            conversion_customer_query = """
+                SELECT * FROM conversiondata 
+                WHERE product_type IN ('Women Informal', 'Women Formal') 
+                AND disbursed_date >= '2024-10-01'
+                AND saving_account NOT IN (
+                    SELECT saving_account FROM conversiondata 
+                    WHERE product_type IN ('Women Informal', 'Women Formal') 
+                    AND disbursed_date < '2024-10-01'
+                )
+            """
+            unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
+            unique_customer.columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+            conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query))
+            conversion_customer.columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+
+            
+            # Merge DataFrames on 'Saving Account'
+            unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
+            # Fetching missed data
+            bf_kiyya_query = "SELECT saving_account FROM misseddata"
+            bf_kiyya_customer = pd.DataFrame(db_ops.fetch_data(bf_kiyya_query))
+            bf_kiyya_customer.columns=['Saving Account']
+            
+            unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
+
+            # Filter rows where bf_kiyya_customer doesn't have a match in unique_conversation
+            unique_not_in_bf_kiyya = unique_conversation[unique_conversation['_merge'] == 'left_only']
+
+            # Drop the _merge column (optional)
+            unique_conversation = unique_not_in_bf_kiyya.drop(columns=['_merge'])
+            infrmal_formal = pd.concat([informal_customer, formal_customer], axis=0).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1)
+            # st.write(infrmal_formal)
+            informal_formal_code = infrmal_formal.merge(combined_user, on='user_Id', how='inner')
+            # st.write(informal_formal_code)
+            # disbersed_by_recurate = pd.merge(infrmal_formal, unique_conversation, on='Saving Account', how='inner')
+            # st.write(disbersed_by_recurate)
+            full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left')
+            # st.write(full_disb)
+
+            
+            
+            # st.write(merged_df)
+            # Replace null values in user_Id of full_disb with user_Id from combined_user when branch_code matches
+            full_disb['branch_code_y'] = np.where(
+                full_disb['branch_code_y'].isnull(),    # Check if user_Id is null
+                full_disb['branch_code_x'],    # Replace with user_Id_combined if condition is met
+                full_disb['branch_code_y']              # Keep the original user_Id otherwise
+            )
+            # st.write(full_disb)
+
+            # Drop the extra combined columns that were added during the merge
+            full_disberment_user = pd.merge(full_disb, combined_user, left_on='branch_code_y', right_on='branch_code', how='outer')
+            # st.write(full_disberment_user)
+            full_disberment_user.drop_duplicates(subset=['branch_code'])
+            # st.write(full_disberment_user)
+
         
-        unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
 
-        # Filter rows where bf_kiyya_customer doesn't have a match in unique_conversation
-        unique_not_in_bf_kiyya = unique_conversation[unique_conversation['_merge'] == 'left_only']
+            # Fetch target data
+            df_target_query = f"SELECT target_id, user_id, target_amount, catagory, registered_date FROM kiyya_target WHERE user_id IN ({branch_codes_str})"
+            df_target = pd.DataFrame(db_ops.fetch_data(df_target_query))
+            df_target.columns=['target_id', 'branch_code', 'Target Customer', 'Catagory', 'registered_date']
 
-        # Drop the _merge column (optional)
-        unique_conversation = unique_not_in_bf_kiyya.drop(columns=['_merge'])
-        infrmal_formal = pd.concat([informal_customer, formal_customer], axis=0).drop_duplicates().reset_index(drop=True).rename(lambda x: x + 1)
-        # st.write(infrmal_formal)
-        informal_formal_code = infrmal_formal.merge(combined_user, on='user_Id', how='inner')
-        # st.write(informal_formal_code)
-        # disbersed_by_recurate = pd.merge(infrmal_formal, unique_conversation, on='Saving Account', how='inner')
-        # st.write(disbersed_by_recurate)
-        full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left')
-        # st.write(full_disb)
+            
 
-        
-        
-        # st.write(merged_df)
-        # Replace null values in user_Id of full_disb with user_Id from combined_user when branch_code matches
-        full_disb['branch_code_y'] = np.where(
-            full_disb['branch_code_y'].isnull(),    # Check if user_Id is null
-            full_disb['branch_code_x'],    # Replace with user_Id_combined if condition is met
-            full_disb['branch_code_y']              # Keep the original user_Id otherwise
-        )
-        # st.write(full_disb)
-
-        # Drop the extra combined columns that were added during the merge
-        full_disberment_user = pd.merge(full_disb, combined_user, left_on='branch_code_y', right_on='branch_code', how='outer')
-        # st.write(full_disberment_user)
-        full_disberment_user.drop_duplicates(subset=['branch_code'])
-        # st.write(full_disberment_user)
-
-    
-
-        
-        df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_id, user_id, target_amount, catagory, registered_date FROM kiyya_target WHERE user_id IN ({branch_codes_str})", mydb),
-            columns=['target_id', 'branch_code', 'Target Customer', 'Catagory', 'registered_date']
-        )
-        # st.write(df_target)
-
-        return  full_disberment_user, df_target
+            return  full_disberment_user, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame()
 
 
     elif role == "Sales Admin":
         district_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        district_result = fetch_data(district_query, mydb)
+        district_result = db_ops.fetch_data(district_query)
 
         if not district_result:
             st.warning("No users found.")
@@ -3113,7 +3297,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
 
         # Fetch dis_Id for the districts
         district_query = f"SELECT dis_Id, district_name FROM district_list WHERE district_name IN ({districts_str})"
-        district_result = fetch_data(district_query, mydb)
+        district_result = db_ops.fetch_data(district_query)
         if not district_result:
             st.warning("No district found with the given district names.")
             return pd.DataFrame()  # Return an empty DataFrame if no districts are found
@@ -3125,7 +3309,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
 
         # Fetch branch code and branch name
         branch_code_query = f"SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id IN ({dis_ids_str})"
-        branch_code_result = fetch_data(branch_code_query, mydb)
+        branch_code_result = db_ops.fetch_data(branch_code_query)
         if not branch_code_result:
             st.warning("No branches found for the given districts.")
             return pd.DataFrame()  # Return an empty DataFrame if no branches are found
@@ -3145,13 +3329,13 @@ def load_kiyya_actual_vs_targetdata(mydb):
 
         # Fetch actual data
         df_actual = pd.DataFrame(
-            fetch_data(f"SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date FROM actual WHERE branch_code IN ({branch_codes_str})", mydb), 
+            db_ops.fetch_data(f"SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date FROM actual WHERE branch_code IN ({branch_codes_str})"), 
             columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
         )
 
         # Fetch target data
         df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target WHERE branch_code IN ({branch_codes_str})", mydb),
+            db_ops.fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target WHERE branch_code IN ({branch_codes_str})"),
             columns=['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
         )
 
@@ -3166,7 +3350,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
             WHERE br.userName = '{username}'
         """
         # Fetching the result
-        result = fetch_data(women_customer_query, mydb)
+        result = db_ops.fetch_data(women_customer_query)
         # st.write(result)
 
         # Check if a result was returned before accessing it
@@ -3221,7 +3405,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
             combined_user = pd.DataFrame(result, columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code'])
             # Fetching customer data for informal customers
             # st.write(combined_user)
-            informal_customer = pd.DataFrame(fetch_data(in_customer_query, mydb), 
+            informal_customer = pd.DataFrame(db_ops.fetch_data(in_customer_query), 
                                             columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
 
             # Add product_type column as 'Informal' for informal_customer
@@ -3232,22 +3416,22 @@ def load_kiyya_actual_vs_targetdata(mydb):
             informal_customer['Register Date'] = pd.to_datetime(informal_customer['Register Date']).dt.strftime('%Y-%m-%d')
 
             # Fetching customer data for formal customers
-            formal_customer = pd.DataFrame(fetch_data(formal_customer_query, mydb), 
+            formal_customer = pd.DataFrame(db_ops.fetch_data(formal_customer_query), 
                                         columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date'])
 
             # Add product_type column as 'Formal' for formal_customer
             formal_customer['product_type'] = 'Women Formal'
-            unique_customer = pd.DataFrame(fetch_data(unique_customer_query, mydb), 
+            unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query), 
                                         columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
 
-            conversion_customer = pd.DataFrame(fetch_data(conversion_customer_query, mydb), 
+            conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query), 
                                             columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
             
             # Merge DataFrames on 'Saving Account'
             unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
             # st.write(unique_conversation)
             bf_kiyya = "select saving_account from misseddata"
-            bf_kiyya_customer = pd.DataFrame(fetch_data(bf_kiyya, mydb), columns=['Saving Account'])
+            bf_kiyya_customer = pd.DataFrame(db_ops.fetch_data(bf_kiyya), columns=['Saving Account'])
             
             unique_conversation = unique_conversation.merge(bf_kiyya_customer, on='Saving Account', how='left', indicator=True)
 
@@ -3284,7 +3468,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
 
             # Fetch target data based on branch code
             df_target = pd.DataFrame(
-                fetch_data(f"SELECT target_id, user_id, target_amount, catagory, registered_date FROM kiyya_target WHERE user_id = '{branch_code}'", mydb),
+                db_ops.fetch_data(f"SELECT target_id, user_id, target_amount, catagory, registered_date FROM kiyya_target WHERE user_id = '{branch_code}'"),
                 columns=['target_id', 'branch_code', 'Target Customer', 'Category', 'registered_date']
             )
             # st.write(df_target)
@@ -3296,7 +3480,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
     else:
         # Fetch branch and district for the given username
         user_id_query = f"SELECT district FROM user_info WHERE userName = '{username}'"
-        user_id_result = fetch_data(user_id_query, mydb)
+        user_id_result = db_ops.fetch_data(user_id_query)
 
         if not user_id_result:
             st.warning("No user found with the given username.")
@@ -3307,7 +3491,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
 
         # Fetch dis_Id for the district
         district_query = f"SELECT dis_Id, district_name FROM district_list WHERE district_name = '{district}'"
-        district_result = fetch_data(district_query, mydb)
+        district_result = db_ops.fetch_data(district_query)
         if not district_result:
             st.warning("No district found with the given district name.")
             return pd.DataFrame()  # Return an empty DataFrame if no district is found
@@ -3316,7 +3500,7 @@ def load_kiyya_actual_vs_targetdata(mydb):
 
         # Fetch branch code and branch name
         branch_code_query = f"SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id = '{dis_id}'"
-        branch_code_result = fetch_data(branch_code_query, mydb)
+        branch_code_result = db_ops.fetch_data(branch_code_query)
         if not branch_code_result:
             st.warning("No branches found for the given district.")
             return pd.DataFrame()  # Return an empty DataFrame if no branches are found
@@ -3333,13 +3517,13 @@ def load_kiyya_actual_vs_targetdata(mydb):
 
         # Fetch actual data
         df_actual = pd.DataFrame(
-            fetch_data(f"SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date FROM actual WHERE branch_code IN ({','.join(branch_code)})", mydb), 
+            db_ops.fetch_data(f"SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date, created_date FROM actual WHERE branch_code IN ({','.join(branch_code)})"), 
             columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date', 'created_date']
         )
 
         # Fetch target data
         df_target = pd.DataFrame(
-            fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target WHERE branch_code IN ({','.join(branch_code)})", mydb),
+            db_ops.fetch_data(f"SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date, created_date FROM target WHERE branch_code IN ({','.join(branch_code)})"),
             columns=['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date', 'created_date']
         )
 
