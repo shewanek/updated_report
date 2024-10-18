@@ -117,11 +117,11 @@ def register():
         # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
         st.markdown('<h5><span style="color: #e38524;">Report </span> 👇🏻</h5>', unsafe_allow_html=True)
         with st.form(key = 'reports', clear_on_submit=True):
-            # st.markdown('<div class="centered-form">', unsafe_allow_html=True)
-            if st.form_submit_button("Michu Customers Detail Report"):
-                sleep(0.5)
-                st.switch_page('pages/branch_dash.py')
-            st.write("")
+            # # st.markdown('<div class="centered-form">', unsafe_allow_html=True)
+            # if st.form_submit_button("Michu Customers Detail Report"):
+            #     sleep(0.5)
+            #     st.switch_page('pages/branch_dash.py')
+            # st.write("")
             if st.form_submit_button("Target Performance Report"):
                 sleep(0.5)
                 st.switch_page('pages/Actual_vs_Target.py')
