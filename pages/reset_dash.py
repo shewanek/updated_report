@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-from dependence import connect_to_database, load_resetpassword, update_password
+from dependence import load_resetpassword, update_password
 from navigation import home_sidebar
 
 def filter_by_date(df, date_col, label):
@@ -102,9 +102,8 @@ def main():
         st.warning("No user found with the given username.")
         st.switch_page("main.py")
         
-    mydb = connect_to_database()
-    if mydb is not None:
-        df = load_resetpassword(mydb)
+    try:
+        df = load_resetpassword()
 
         # Sidebar
         st.sidebar.image("pages/michu.png")
@@ -176,8 +175,7 @@ def main():
                 with col1:
                     if st.form_submit_button(':orange[Reset Password]'):
                         # conn = connect_to_database()
-                        if mydb:
-                            cursor = mydb.cursor()
+                        try:
                             if not user_name.strip():
                                 st.error('Please enter the user\'s username')
                             elif user_name in usernames:
@@ -185,7 +183,7 @@ def main():
                                 if not new_password.strip():
                                     st.error('Please enter the new Password')
                                 elif new_password == confirm_password:
-                                    update_password(mydb, cursor, user_name, new_password)
+                                    update_password(user_name, new_password)
                                     st.success('Password was successfully reseted!')
                                     # info_message = '''
                                     # NB: Don't forget to send the reset password for the user using your Outlook email to his corresponding email address on the above table. 
@@ -203,13 +201,15 @@ def main():
                                     st.error('New password and confirmation do not match.')
                             else:
                                 st.error('User not present in the table above. The requested user\'s username must to exist in the above table in order for the password to be reset.')
-            
+                        except Exception as e:
+                            st.error(f"An error occurred while loading data: {e}")
         else:
             st.write(':orange[No user requested a password reset for this consecutive three-day]')
             st.info('NB: This portal only displays users who have made requests during the last three days. If a user made a request before three days, he or she must make another request to reset')
         
         
-
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {e}")
         # sleep(3)
 
 if __name__ == "__main__":

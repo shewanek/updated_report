@@ -3,7 +3,7 @@ from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 import plotly.express as px
-from dependence import connect_to_database, load_districtuniquedata
+from dependence import load_districtuniquedata
 from navigation import make_sidebar1
 
 # Function to establish MySQL connection
@@ -90,14 +90,12 @@ def main():
     if "username" not in st.session_state:
         st.warning("No user found with the given username.")
         st.switch_page("main.py")
-        
-    mydb = connect_to_database()
-    if mydb is not None:
-        cursor = mydb.cursor()
-        unique_cust_by_branch, unique_cust_by_self, registed_by_branch, df_combine = load_districtuniquedata(mydb)
+    username = st.session_state.get("username", "")
+    try:
+        unique_cust_by_branch, unique_cust_by_self, registed_by_branch, df_combine = load_districtuniquedata(username)
         # Side bar
         st.sidebar.image("pages/michu.png")
-        username = st.session_state.get("username", "")
+        
         full_name = st.session_state.get("full_name", "")
         # st.sidebar.write(f'Welcome, :orange[{full_name}]')
         st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
@@ -237,7 +235,8 @@ def main():
         # st.write(df_combine.drop(columns=['uniqueId', 'userName']).reset_index(drop=True).rename(lambda x: x + 1))
 
         
-
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {e}")
         
 
         

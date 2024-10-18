@@ -2,6 +2,7 @@ import streamlit as st
 from time import sleep
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 from streamlit.source_util import get_pages
+from pages.changepassword import forget_password
 
 def get_current_page_name():
     ctx = get_script_run_ctx()
@@ -592,6 +593,7 @@ def logout():
     # Update session state upon logout
     st.session_state["logged_in"] = False
     st.session_state["username"] = ""
+    st.cache_data.clear()
     st.info("Logged out successfully!")
     sleep(0.5)
     st.switch_page("main.py")
@@ -605,9 +607,10 @@ def signup():
 def password():
     # Update session state upon signing up
     st.session_state["logged_in"] = True
-    st.info("Sign up successful!")
+    # st.info("Sign up successful!")
     sleep(0.5)
-    st.switch_page("pages/changepassword.py")
+    forget_password()
+    # st.switch_page("pages/changepassword.py")
 def home():
     # change to home
     st.session_state["logged_in"] = True

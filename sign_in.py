@@ -1,5 +1,5 @@
 import streamlit as st
-from dependence import connect_to_database, validate_username, get_usernames, insert_crmuser, get_employe_usename, get_employe_id, get_employe_user
+from dependence import validate_username, get_usernames, insert_crmuser, get_employe_usename, get_employe_id, get_employe_user
 
 
 # Establish database connection
@@ -20,22 +20,20 @@ def sign_up():
         with col1:
             if st.form_submit_button(':orange[Register]'):
                 try:
-                    with connect_to_database() as mydb:  # Database connection
-                        with mydb.cursor() as cursor:  # Cursor for executing queries
-                            # Validate form inputs
-                            if not validate_form(employe_id, username, password1, password2, cursor, mydb):
-                                return
+                    # Validate form inputs
+                    if not validate_form(employe_id, username, password1, password2):
+                        return
 
-                            # If validation passes, insert the new user
-                            if insert_crmuser(mydb, cursor, employe_id, username, password1):
-                                st.success("You've successfully registered! Now you can log in using your username and password.")
-                            else:
-                                st.error("Registration failed. Please try again later.")
+                    # If validation passes, insert the new user
+                    if insert_crmuser(employe_id, username, password1):
+                        st.success("You've successfully registered! Now you can log in using your username and password.")
+                    else:
+                        st.error("Registration failed. Please try again later.")
                 except Exception as e:
                     st.error(f"Failed to register user: {e}")
 
 # Validation function for form inputs
-def validate_form(employe_id, username, password1, password2, cursor, mydb):
+def validate_form(employe_id, username, password1, password2):
     if not employe_id:
         st.warning('Please enter your ID number.')
         return False
@@ -45,16 +43,16 @@ def validate_form(employe_id, username, password1, password2, cursor, mydb):
     elif password1 != password2:
         st.warning('Passwords do not match. Please re-enter your password.')
         return False
-    elif not get_employe_id(mydb, employe_id):
+    elif not get_employe_id(employe_id):
         st.warning("Your employee ID is not found in our database. Please contact the admin.")
         return False
-    elif get_employe_user(mydb, employe_id):
+    elif get_employe_user(employe_id):
         st.warning("You've already registered; please use your username to log in.")
         return False
     elif not validate_username(username):
         st.warning('Please enter a valid username (alphanumeric, at least 2 characters long).')
         return False
-    elif get_employe_usename(mydb, username) or username in get_usernames(cursor):
+    elif get_employe_usename(username) or username in get_usernames():
         st.warning('Username already exists. Please choose a different username.')
         return False
     return True

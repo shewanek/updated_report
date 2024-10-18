@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-from dependence import connect_to_database, load_unquiecustomer, load_customer_detail
+from dependence import load_unquiecustomer, load_customer_detail
 from navigation import home_sidebar
 
 
@@ -80,12 +80,11 @@ def main():
     if "username" not in st.session_state:
         st.warning("No user found with the given username.")
         st.switch_page("main.py")
-    mydb = connect_to_database()
-    if mydb is not None:
-        cursor = mydb.cursor()
-
-        unique_customer, unique_by_self, registed_by_branch, df_unique_all = load_unquiecustomer(mydb)
-        df_combine_closed, df_combine_active, df_combine_arrears = load_customer_detail(mydb)
+    role = st.session_state.get("role", "")
+    username = st.session_state.get("username", "")
+    try:
+        unique_customer, unique_by_self, registed_by_branch, df_unique_all = load_unquiecustomer(role, username)
+        df_combine_closed, df_combine_active, df_combine_arrears = load_customer_detail(role, username)
 
         # Combine unique values for filters
         combined_districts = sorted(set(df_unique_all["District"].dropna().unique()) | set(unique_customer["District"].dropna().unique()) | set(unique_by_self["District"].dropna().unique()) | set(registed_by_branch["District"].dropna().unique()) | set(df_combine_closed["District"].dropna().unique()) | set(df_combine_active["District"].dropna().unique()) | set(df_combine_arrears["District"].dropna().unique()))
@@ -131,7 +130,6 @@ def main():
 
         # Sidebar filters
         st.sidebar.image("pages/michu.png")
-        username = st.session_state.get("username", "")
         full_name = st.session_state.get("full_name", "")
         # st.sidebar.write(f'Welcome, :orange[{full_name}]')
         st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
@@ -274,5 +272,7 @@ def main():
             st.markdown('<span style="color: #e38524;">**Michu Customer** (<span style="color: #00adef;">Active Status </span>)</span> 👇🏻', unsafe_allow_html=True)
             st.write(df_combine_active.drop(columns=['cust_id']).reset_index(drop=True).rename(lambda x: x + 1))
         # df_conversion
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {e}")
 if __name__ == "__main__":
     main()

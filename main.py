@@ -1,14 +1,13 @@
 import streamlit as st
 from dependence import get_usernames, get_password_by_username, verify_password, get_role_by_username, get_fullname_by_username, get_crmusernames, get_crmpassword_by_username, get_role_by_crmusername, get_fullname_by_crmusername
-from PIL import Image
-from time import sleep  # Assuming dash.py contains your dashboard layout
 import sys
 sys.path.append('DASHBOARD')  # Assuming 'DASHBOARD' is the parent directory containing the 'pages' package
 
 import sys
 sys.path.append('DASHBOARD')  # Assuming 'DASHBOARD' is the parent directory containing the 'pages' package
 # from pages import forgetp
-# from sign_in import sign_up
+from sign_in import sign_up
+from pages.forgetps import register
 
 
 # Helper function to set session state
@@ -25,7 +24,6 @@ def display_sidebar_welcome(full_name):
 
 # Helper function to redirect based on role
 def role_redirect(role):
-    sleep(0.5)
     if role == 'Admin':
         st.switch_page("pages/dashboard.py")
     elif role == 'Branch User':
@@ -47,13 +45,12 @@ def role_redirect(role):
 
 # Helper function to redirect based on CRM role
 def crm_role_redirect(role):
-    sleep(0.5)
-    # if role == 'CRM':
-    #     st.switch_page("pages/dashB.py")
-    # elif role == 'report':
-    #     st.switch_page("pages/kiyyaa_Report.py")
-    # else:
-    st.warning("No Role given for this User")
+    if role == 'CRM':
+        st.switch_page("pages/dashB.py")
+    elif role == 'report':
+        st.switch_page("pages/kiyyaa_Report.py")
+    else:
+        st.warning("No Role given for this User")
 
 # # Function to sign up a new user
 # def sign_up():
@@ -148,8 +145,7 @@ def main():
         st.markdown(custom_ss, unsafe_allow_html=True)
         username = st.text_input('Username', key='login_username_input', placeholder='Enter Your Username').strip()
         password = st.text_input('Password', key='login_password_input', placeholder='Enter Your Password', type='password')
-        back_image = Image.open('pages/MichuHome.jpg')
-        st.sidebar.image(back_image)
+        st.sidebar.image('pages/MichuHome.jpg')
 
         # Display the rotating message
         st.sidebar.markdown('Welcome to <span style="color: #e38524;">MICHU</span> Reporting Portal<span style="color: #00adef; font-size: 20px;">!</span>', unsafe_allow_html=True)
@@ -170,15 +166,19 @@ def main():
                         if not password.strip():
                             st.error('Please enter your Password')
                         elif stored_password and verify_password(password, stored_password):
-                            role = get_role_by_username(username)
-                            full_name = get_fullname_by_username(username)
-                            set_session_state(username, password, role, full_name)
-                            display_sidebar_welcome(full_name)
-
-                            # Role-based redirection
-                            
-                            role_redirect(role)
-                            st.balloons()
+                            try:
+                                role = get_role_by_username(username)
+                                full_name = get_fullname_by_username(username)
+                                set_session_state(username, password, role, full_name)
+                                display_sidebar_welcome(full_name)
+ 
+                                # Role-based redirection
+                                
+                                role_redirect(role)
+                                st.balloons()
+                            except Exception as e:
+                                st.error("Failed to login")
+                                st.exception(e)
 
                         else:
                             st.error('Incorrect Password. Please try again.')
@@ -190,14 +190,18 @@ def main():
                         if not password.strip():
                             st.error('Please enter your Password')
                         elif stored_password and verify_password(password, stored_password):
-                            role = get_role_by_crmusername( username)
-                            full_name = get_fullname_by_crmusername( username)
-                            set_session_state(username, password, role, full_name)
-                            display_sidebar_welcome(full_name)
+                            try:
+                                role = get_role_by_crmusername( username)
+                                full_name = get_fullname_by_crmusername( username)
+                                set_session_state(username, password, role, full_name)
+                                display_sidebar_welcome(full_name)
 
-                            # Role-based redirection for CRM users
-                            crm_role_redirect(role)
-                            st.balloons()
+                                # Role-based redirection for CRM users
+                                crm_role_redirect(role)
+                                st.balloons()
+                            except Exception as e:
+                                st.error("Failed to login")
+                                st.exception(e)
 
                         else:
                             st.error('Incorrect Password. Please try again.')
@@ -207,16 +211,17 @@ def main():
                     st.error("Failed to login")
                     st.exception(e)
 
-        # col3, col4, col5 = st.columns([0.4, 0.3, 0.3])
-        # with col3:
-        #     st.write("Don't have an account?")
-        # with col4:
-        #     if st.form_submit_button('Sign Up'):
-        #         sign_up()
-        # with col5:
-        #     if st.form_submit_button('Forgot Password?'):
-        #         sleep(0.5)
-        #         st.switch_page("pages/forgetps.py")
+        col3, col4, col5 = st.columns([0.4, 0.3, 0.3])
+        with col3:
+            st.write("Don't have an account?")
+        with col4:
+            if st.form_submit_button('Sign Up'):
+                sign_up()
+        with col5:
+            if st.form_submit_button('Forgot Password?'):
+                # sleep(0.5)
+                # st.switch_page("pages/forgetps.py")
+                register()
    
 
 if __name__ == '__main__':

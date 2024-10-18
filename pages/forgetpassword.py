@@ -1,11 +1,11 @@
 import streamlit as st
-from dependence import connect_to_database, insert_resetpuser, validate_full_name, validate_email, has_user_sent_request_today
+from dependence import insert_resetpuser, validate_full_name, validate_email, has_user_sent_request_today
 from time import sleep
 
 
 
 # Main function to handle user sign-up
-@st.dialog("Send us the following information to reset you password")
+# @st.dialog("Send us the following information to reset you password")
 def registertion():
 
     col1, col2 = st.columns([0.1,0.9])
@@ -33,9 +33,7 @@ def registertion():
 
         with col1:
             if st.form_submit_button(':orange[Send]'):
-                mydb = connect_to_database()
-                if mydb is not None:
-                    cursor = mydb.cursor()
+                try:
                     if not validate_full_name(name):
                         st.warning('Please enter valid name (First name and father name)') 
                     elif not validate_email(outlook_email):
@@ -44,20 +42,20 @@ def registertion():
                         st.warning('Please provide your district name if you are from CBO district, or your branch name if you are from CBO branch.')
                     else:
                         # Check if user has already sent a request today
-                        if has_user_sent_request_today(cursor, username):
+                        if has_user_sent_request_today(username):
                             st.warning('You have already submitted a reset request. Please check your Outlook email; we will send it to you; please wait patiently.')
                     
                         else:  
-                            if insert_resetpuser(mydb, cursor, username, name, outlook_email, branch_name):
+                            if insert_resetpuser(username, name, outlook_email, branch_name):
                                 st.success(f"Your password reset request (for {username} user name) was received successfully!. We sent you the reset password via Outlook email; check your inbox after an hour.")
                                 # sleep(5)
                                 # st.switch_page("main.py")
-                    cursor.close()
-                    mydb.close()
-        with col3:
-            if st.form_submit_button(':orange[Log In]'):
-                sleep(0.5)
-                st.switch_page("main.py")
+                except Exception as e:
+                    st.error(f"An error occurred while loading data: {e}")
+        # with col3:
+        #     if st.form_submit_button(':orange[Log In]'):
+        #         sleep(0.5)
+        #         st.switch_page("main.py")
        
         
 

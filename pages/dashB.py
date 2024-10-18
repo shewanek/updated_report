@@ -5,7 +5,7 @@ from streamlit_extras.metric_cards import style_metric_cards
 from navigation import make_sidebar
 from pages.dureati_reg import registerr
 from pages.kiyya_register import kiyya_register
-from dependence import connect_to_database, load_women_data, load_kiyya_data
+from dependence import load_women_data, load_kiyya_data
            
 # Main function to handle user sign-up
 def register():
@@ -45,8 +45,6 @@ def register():
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
-    with open('custom.css') as f:
-        st.write(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
    
     
@@ -90,11 +88,10 @@ def register():
     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
    
     st.markdown(custom_cs, unsafe_allow_html=True)
-    mydb = connect_to_database()
-    if mydb is not None:
-        # combined_cust_by_crm, crm_cust_only = load_women_data(mydb)
-        combined_cust_by_crm, crm_cust_only = load_kiyya_data(mydb)
-        f_combined_cust_by_crm, f_crm_cust_only = load_women_data(mydb)
+    try:
+        # combined_cust_by_crm, crm_cust_only = load_women_data()
+        combined_cust_by_crm, crm_cust_only = load_kiyya_data()
+        f_combined_cust_by_crm, f_crm_cust_only = load_women_data()
         col4, col5 = st.columns([0.6, 0.4])
         with col4:
             with st.form(key = 'Create_crmdash', clear_on_submit=True):
@@ -236,6 +233,8 @@ def register():
                     st.info("You have no registered today.")
             else:
                 st.info("You have no registered customers yet.")
+    except Exception as e:
+            st.error(f"An error occurred while loading data: {e}")
         
 
     

@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
-from dependence import connect_to_database, load_all_women_data, load_all_kiyya_data
+from dependence import load_all_women_data, load_all_kiyya_data
 from navigation import home_sidebar
 import pandas as pd
 
@@ -81,13 +81,11 @@ def main():
     if "username" not in st.session_state:
         st.warning("No user found with the given username.")
         st.switch_page("main.py")
-    mydb = connect_to_database()
-    if mydb is not None:
-        cursor = mydb.cursor()
-
-
-        combined_cust_by_crm, crm_cust_only = load_all_women_data(mydb)
-        merged_df_1, merged_df_2 = load_all_kiyya_data(mydb)
+    username = st.session_state.get("username", "")
+    try:
+        combined_cust_by_crm, crm_cust_only = load_all_women_data(username)
+        
+        merged_df_1, merged_df_2 = load_all_kiyya_data(username)
 
         # Combine unique values for filters
         combined_subprocess = sorted(set(combined_cust_by_crm["Sub Process"].dropna().unique()) | set(crm_cust_only["Sub Process"].dropna().unique()) | set(merged_df_1["Sub Process"].dropna().unique()) | set(merged_df_2["Sub Process"].dropna().unique()))
@@ -137,7 +135,7 @@ def main():
 
         back_image = Image.open('pages/kiyya.jpg')
         st.sidebar.image(back_image)
-        username = st.session_state.get("username", "")
+        
         full_name = st.session_state.get("full_name", "")
         # st.sidebar.write(f'Welcome, :orange[{full_name}]')
         st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
@@ -306,6 +304,8 @@ def main():
                     st.info("You have no registered   today.")
             else:
                 st.info("There is no registered customers yet.")
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {e}")
 
 
 

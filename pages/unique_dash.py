@@ -3,7 +3,7 @@ from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 from PIL import Image
 import plotly.express as px
-from dependence import connect_to_database, load_unquie
+from dependence import  load_unquie
 from navigation import home_sidebar
 
 # Function to establish MySQL connection
@@ -86,14 +86,14 @@ def main():
 
     # Fetch data from different tables
     # Database connection and data fetching (with error handling)
-    mydb = connect_to_database()
-    if mydb is not None:
-        cursor = mydb.cursor()
-        df_combine = load_unquie(mydb)
+    role = st.session_state.get("role", "")
+    username = st.session_state.get("username", "")
+    try:
+        df_combine = load_unquie(role, username)
         
         # Side bar
         st.sidebar.image("pages/michu.png")
-        username = st.session_state.get("username", "")
+        # username = st.session_state.get("username", "")
         full_name = st.session_state.get("full_name", "")
         # st.sidebar.write(f'Welcome, :orange[{full_name}]')
         st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
@@ -283,6 +283,8 @@ def main():
         #     file_name='unique_data.csv',
         #     mime='text/csv'
         # )
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {e}")
 
         
 

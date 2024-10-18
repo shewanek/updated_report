@@ -47,11 +47,11 @@ def main():
     # with open('custom.css') as f:
     #     st.write(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-    image = Image.open('pages/michu.png')
+    # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1, 0.9])
     with col1:
-        st.image(image)
+        st.image('pages/michu.png')
     html_title = """
         <style>
         .title_dash{
@@ -83,15 +83,18 @@ def main():
 
     # Fetch data from different tables
     # Database connection and data fetching (with error handling)
+    role = st.session_state.get("role", "")
+    username = st.session_state.get("username", "")
     
     try:
-        df_actual, df_target = load_kiyya_actual_vs_targetdata()
+        df_actual, df_target = load_kiyya_actual_vs_targetdata(role, username)
+        
 
         # st.write(df_actual)
        
         # st.write(df_target)
         # df.merge(merged_df, left_on='saving_account', right_on='Saving_Account', how='left')
-        df_merged = pd.merge(df_actual, df_target, on='branch_code',  how='left')
+        df_merged = pd.merge(df_actual, df_target, on='branch_code',  how='outer')
         # df_merged
         # Get the maximum date of the current month
     #     current_date = datetime.now().date()
@@ -111,7 +114,7 @@ def main():
 
         # Sidebar filters
         st.sidebar.image("pages/michu.png")
-        username = st.session_state.get("username", "")
+        # username = st.session_state.get("username", "")
         full_name = st.session_state.get("full_name", "")
         role = st.session_state.get("role", "")
         # st.sidebar.write(f'Welcome, :orange[{full_name}]')
@@ -415,6 +418,7 @@ def main():
                         return float(value)
                     return value
                 # Display combined data in a table
+                # st.write(df_merged)
                 
                 with tab3:
                     col1, col2 = st.columns([0.1, 0.9])
@@ -733,6 +737,10 @@ def main():
                         st.write(" ")
                         st.write(" ")
                         st.write(" ")
+                        def convert_to_float(value):
+                            if isinstance(value, Decimal):
+                                return float(value)
+                            return value
                         df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
                         df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
 
@@ -744,6 +752,8 @@ def main():
                         actual_grouped = df_actual_unique.groupby('branch_code').agg({
                             'Saving Account': 'count'  # Count of saving accounts for actual
                         }).sum()
+                        target_grouped = convert_to_float(target_grouped)
+                        actual_grouped = convert_to_float(actual_grouped)
 
                         # Aggregate the data to get total values
                         totals = {
@@ -759,10 +769,15 @@ def main():
                             'Percentage(%)': [totals['Percentage(%)']],
                             'Metric': ['Kiyya Customer']
                         })
+                        def convert_decimal(value):
+                            if isinstance(value, Decimal):
+                                return float(value)
+                            return value
+                        final_df['Actual'] = final_df['Actual'].apply(convert_decimal)
 
                         # Round the 'Target', 'Actual', and 'Percentage(%)' columns
                         final_df.loc[:,'Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
-                        final_df.loc[:,'Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
+                        final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}" if pd.notnull(x) else "")
                         final_df.loc[:,'Percentage(%)'] = final_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
 
                         # Reset the index and rename it to start from 1
@@ -1331,6 +1346,7 @@ def main():
             with col12:
                 col1, col2 = st.columns([0.1, 0.9])
                 with col2:
+                    
                     st.write(" ")
                     st.write(" ")
                     st.write(" ")
@@ -1338,6 +1354,11 @@ def main():
                     st.write(" ")
                     st.write(" ")
                     st.write(" ")
+                    def convert_to_float(value):
+                        if isinstance(value, Decimal):
+                            return float(value)
+                        return value
+                        
                     df_target_unique = df_merged.drop_duplicates(subset='target_id').copy()
                     df_actual_unique = df_merged.drop_duplicates(subset='Saving Account').copy()
 
@@ -1349,6 +1370,8 @@ def main():
                     actual_grouped = df_actual_unique.groupby('branch_code').agg({
                         'Saving Account': 'count'  # Count of saving accounts for actual
                     }).sum()
+                    target_grouped = convert_to_float(target_grouped)
+                    actual_grouped = convert_to_float(actual_grouped)
 
                     # Aggregate the data to get total values
                     totals = {
@@ -1364,10 +1387,11 @@ def main():
                         'Percentage(%)': [totals['Percentage(%)']],
                         'Metric': ['Kiyya Customer']
                     })
+                    # final_df['Actual'] = final_df['Actual'].apply(convert_decimal)
 
                     # Round the 'Target', 'Actual', and 'Percentage(%)' columns
                     final_df.loc[:,'Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
-                    final_df.loc[:,'Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
+                    final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}" if pd.notnull(x) else "")
                     final_df.loc[:,'Percentage(%)'] = final_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
 
                     # Reset the index and rename it to start from 1

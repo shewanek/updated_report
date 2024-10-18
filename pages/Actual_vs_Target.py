@@ -90,9 +90,10 @@ def main():
     # Fetch data from different tables
     # Database connection and data fetching (with error handling)
     # Initialize database connection using Singleton pattern
+    role = st.session_state.get("role", "")
+    username = st.session_state.get("username", "")
     try:
-
-        dis_branch, df_actual, df_target = load_actual_vs_targetdata()
+        dis_branch, df_actual, df_target = load_actual_vs_targetdata(role, username)
         # Get the maximum date of the current month
         # Get the current date and the maximum date for the current month
         current_date = datetime.now().date()
@@ -115,14 +116,14 @@ def main():
 
         # Sidebar filters
         st.sidebar.image("pages/michu.png")
-        username = st.session_state.get("username", "")
+        # username = st.session_state.get("username", "")
         full_name = st.session_state.get("full_name", "")
-        role = st.session_state.get("role", "")
+        # role = st.session_state.get("role", "")
         # st.sidebar.write(f'Welcome, :orange[{full_name}]')
         st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
         st.sidebar.header("Please filter")
 
-        role = st.session_state.get("role", "")
+        # role = st.session_state.get("role", "")
         if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
             district = st.sidebar.multiselect("Select District", options=df_merged["District"].dropna().unique())
 

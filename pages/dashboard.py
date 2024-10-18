@@ -116,12 +116,12 @@ def register():
             if st.form_submit_button("Michu new customer  Dashboard"):
                 sleep(0.5)
                 st.switch_page('pages/unique_dash.py')
-            # if st.form_submit_button("Michu Customers Detail Report"):
-            #     sleep(0.5)
-            #     st.switch_page('pages/getdata.py')
+            if st.form_submit_button("Michu Customers Detail Report"):
+                sleep(0.5)
+                st.switch_page('pages/getdata.py')
 
-            st.write("")
-            st.write("")
+            # st.write("")
+            # st.write("")
            
             if st.form_submit_button("Michu Kiyya Product Dashboard"):
                 sleep(0.5)
@@ -135,6 +135,7 @@ def register():
             if st.form_submit_button("Target Performance Report"):
                 sleep(0.5)
                 st.switch_page('pages/Actual_vs_Target.py')
+            st.write("")
             st.write("")
             st.write("")
             
