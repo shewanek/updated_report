@@ -1,8 +1,8 @@
 import streamlit as st
-from PIL import Image
+# from PIL import Image
 from time import sleep  
 from navigation import make_sidebar
-from dependence import connect_to_database, load_targetdata, load_uniqactualdata, load_convactualdata
+from dependence import load_targetdata, load_uniqactualdata, load_convactualdata
 
 
 
@@ -48,7 +48,7 @@ def upload():
     </style>
     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-    image = Image.open('pages/michu.png')
+    # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1,0.9])
     with col1:
@@ -134,12 +134,11 @@ def upload():
             st.markdown("---")
 
     # st.write("Last Uploaded Actual Data")
-    mydb = connect_to_database()
-    if mydb is not None:
-        df_target = load_targetdata(mydb)
-        # df_actual = load_actualdata(mydb)
-        df_unique = load_uniqactualdata(mydb)
-        df_conv = load_convactualdata(mydb)
+    try:
+        df_target = load_targetdata()
+        # df_actual = load_actualdata()
+        df_unique = load_uniqactualdata()
+        df_conv = load_convactualdata()
         
         with tab1:
             st.markdown('<h5>Last Uploaded <span style="color: #e38524;"> Actual Unique </span> Data 👇🏻</h5>', unsafe_allow_html=True)
@@ -154,7 +153,8 @@ def upload():
             st.markdown('<h5>Last Uploaded <span style="color: #00adef;">Target </span> Data 👇🏻</h5>', unsafe_allow_html=True)
             st.write(df_target.reset_index(drop=True).rename(lambda x: x + 1))
 
-    
+    except Exception as e:
+            st.error(f"An error occurred while loading data: {e}")
     
         
 

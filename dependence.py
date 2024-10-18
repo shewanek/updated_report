@@ -2222,7 +2222,7 @@ def get_employe_id(employe_id):
     empid = db_ops.fetch_data(query,(employe_id,))
     
     if empid:
-        return empid[0][employe_id]
+        return empid[0]['employe_id']
     return None
 
 # Function to fetch employee ID from the crm_list table
