@@ -26,6 +26,9 @@ class DatabaseOperations:
             cursor.execute(query, params)
             result = cursor.fetchall()
             return result
+        except Exception as e:
+            st.error("connection error")
+            # st.exception(e)
         finally:
             if cursor:
                 cursor.close()
@@ -38,6 +41,9 @@ class DatabaseOperations:
             cursor = connection.cursor(dictionary=True)
             cursor.execute(query, params)
             return cursor.fetchone()
+        except Exception as e:
+            st.error("connection error")
+            # st.exception(e)
         finally:
             if cursor:
                 cursor.close()
@@ -54,7 +60,20 @@ class DatabaseOperations:
             if cursor:
                 cursor.close()
             connection.close()
-    
+
+    # Add the insert_many function here
+    def insert_many(self, query, params_list):
+        connection = self.db.get_connection()
+        cursor = None
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.executemany(query, params_list)  # Use executemany for batch inserts
+            connection.commit()
+            return cursor.rowcount  # Return the number of rows inserted
+        finally:
+            if cursor:
+                cursor.close()
+            connection.close()
     # Add the update function here
     def update_data(self, query, params=None):
         connection = self.db.get_connection()

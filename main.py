@@ -34,10 +34,10 @@ def role_redirect(role):
         st.switch_page("pages/sales_dash.py")
     elif role == 'Data Uploader':
         st.switch_page("pages/UploadData.py")
-    elif role == 'collection_admin':
-        st.switch_page("pages/collection_dash.py")
-    elif role == 'collection_user':
-        st.switch_page("pages/collection_userdash.py")
+    # elif role == 'collection_admin':
+    #     st.switch_page("pages/collection_dash.py")
+    # elif role == 'collection_user':
+    #     st.switch_page("pages/collection_userdash.py")
     elif role == 'under_admin':
         st.switch_page("pages/report.py")
     else:

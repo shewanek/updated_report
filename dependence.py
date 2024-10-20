@@ -17,7 +17,7 @@ def load_dataframes():
     # Fetch data with JOIN to get branch name from branch_list table
     query = """
     SELECT ui.userId, ui.userName, ui.district, bl.branch_name
-    FROM user_infoss ui
+    FROM user_infos ui
     JOIN branch_list bl ON ui.branch = bl.branch_code
     """
     # Fetch data and create DataFrame
@@ -357,68 +357,76 @@ def load_districtconversiondata():
     return df_combine
 
 
-def aggregate_and_insert_actual_data(mydb):
+def aggregate_and_insert_actual_data():
     # Fetch the latest disbursed_date from unique_intersection and conversiondata tables
     latest_disbursed_query = """
-        SELECT MAX(disbursed_date) 
+        SELECT MAX(disbursed_date) as disbursed_date
         FROM (
             SELECT disbursed_date FROM unique_intersection
             UNION
             SELECT disbursed_date FROM conversiondata
         ) AS combined_dates
     """
-    latest_disbursed_date = db_ops.fetch_data(latest_disbursed_query)[0][0]
+    latest_disbursed_dates = db_ops.fetch_one(latest_disbursed_query)
+    latest_disbursed_date = latest_disbursed_dates['disbursed_date']
+    # st.write(latest_disbursed_date)
     
     # Check if this date already exists in the actual table
-    check_date_query = f"""
-        SELECT EXISTS (
-            SELECT 1 FROM actual WHERE actual_date = '{latest_disbursed_date}'
-        )
+    check_date_query = """
+        SELECT MAX(actual_date) as actual_date FROM actual WHERE actual_date = %s
     """
-    date_exists = db_ops.fetch_data(check_date_query)[0][0]
-    
-    if date_exists:
+    # Fetch the result, assuming db_ops.fetch_one returns a tuple like (1,) or (0,)
+    # Fetch the result and access the first element to get 1 if exists, 0 if not
+    date_exists = db_ops.fetch_one(check_date_query, (latest_disbursed_date,))
+    # st.write(date_exists)
+
+    # Now date_exists will be 1 if the date exists or 0 if it does not exist
+    if date_exists['actual_date']:
         # st.warning("The latest disbursed date is already present in the actual table.")
         return
     # Fetch the disbursed_date from both tables to ensure they are equal
-    date_check_query = f"""
+    date_check_query = """
         SELECT
-            (SELECT disbursed_date FROM unique_intersection WHERE disbursed_date = '{latest_disbursed_date}' LIMIT 1) AS unique_date,
-            (SELECT disbursed_date FROM conversiondata WHERE disbursed_date = '{latest_disbursed_date}' LIMIT 1) AS conversion_date
+            (SELECT disbursed_date FROM unique_intersection WHERE disbursed_date = %s LIMIT 1) AS unique_date,
+            (SELECT disbursed_date FROM conversiondata WHERE disbursed_date = %s LIMIT 1) AS conversion_date
     """
-    date_check = db_ops.fetch_data(date_check_query)[0]
+    date_check = db_ops.fetch_data(date_check_query, (latest_disbursed_date, latest_disbursed_date))
     
-    unique_date = date_check[0]
-    conversion_date = date_check[1]
+    unique_date = date_check[0]['unique_date']
+    conversion_date = date_check[0]['conversion_date']
+    # st.write(unique_date)
+    # st.write(conversion_date)
     
     if unique_date != conversion_date:
         # st.warning("The disbursed_date in unique_intersection does not match the disbursed_date in conversiondata.")
         return
     
     # Fetch data from unique_intersection and conversiondata tables where disbursed_date is the latest
-    unique_query = f"""
+    unique_query = """
         SELECT branch_code, customer_number, customer_name, saving_account, product_type, disbursed_amount, disbursed_date, uni_id
         FROM unique_intersection
-        WHERE disbursed_date = '{latest_disbursed_date}'
+        WHERE disbursed_date = %s
     """
-    conversion_query = f"""
+    conversion_query = """
         SELECT branch_code, customer_number, customer_name, saving_account, product_type, disbursed_amount, disbursed_date, conv_id
         FROM conversiondata
-        WHERE disbursed_date = '{latest_disbursed_date}'
+        WHERE disbursed_date = %s
     """
     
-    unique_data = db_ops.fetch_data(unique_query)
-    conversion_data = db_ops.fetch_data(conversion_query)
+    unique_data = db_ops.fetch_data(unique_query, (latest_disbursed_date,))
+    conversion_data = db_ops.fetch_data(conversion_query, (latest_disbursed_date,))
     
     # Convert fetched data to DataFrames
-    unique_df = pd.DataFrame(unique_data, columns=['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date', 'uni_id'])
-    conversion_df = pd.DataFrame(conversion_data, columns=['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date', 'conv_id'])
+    unique_df = pd.DataFrame(unique_data)
+    unique_df.columns=['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date', 'uni_id']
+    conversion_df = pd.DataFrame(conversion_data)
+    conversion_df.columns=['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date', 'conv_id']
     
     # Concatenate both DataFrames
     combined_df = pd.concat([unique_df, conversion_df])
     
     if combined_df.empty:
-        # st.warning("No data found in unique_intersection or conversiondata tables for the latest disbursed_date.")
+        st.warning("No data found in unique_intersection or conversiondata tables for the latest disbursed_date.")
         return
 
     # Group by branch_code and aggregate the required columns
@@ -428,32 +436,29 @@ def aggregate_and_insert_actual_data(mydb):
         disbursment_actual=('disbursed_amount', 'sum'),
         actual_date=('disbursed_date', 'first')
     ).reset_index()
-    
+    # st.write(aggregated_df)
     # Insert aggregated data into the actual table
-    cursor = mydb.cursor()
     for index, row in aggregated_df.iterrows():
         # Check if this branch_code and actual_date already exist in the actual table
         check_record_query = """
-            SELECT EXISTS (
-                SELECT 1 FROM actual 
+            SELECT MAX(actual_date) as actual_date FROM actual 
                 WHERE branch_code = %s AND actual_date = %s
-            )
         """
-        cursor.execute(check_record_query, (row['branch_code'], row['actual_date']))
-        record_exists = cursor.fetchone()[0]
+        # db_ops.fetch_one(check_record_query, (row['branch_code'], row['actual_date']))
+        record_exists = db_ops.fetch_one(check_record_query, (row['branch_code'], row['actual_date']))
         
-        if not record_exists:
+        if not record_exists['actual_date']:
             # Insert the new record only if it doesn't already exist
-            cursor.execute("""
+            querry = """
                 INSERT INTO actual (branch_code, unique_actual, account_actual, disbursment_actual, actual_date)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (row['branch_code'], row['unique_actual'], row['account_actual'], row['disbursment_actual'], row['actual_date']))
+            """
+            db_ops.insert_data(querry, (row['branch_code'], row['unique_actual'], row['account_actual'], row['disbursment_actual'], row['actual_date']))
     
-    mydb.commit()
-    cursor.close()
+    
 
 
-@st.cache_data
+# @st.cache_data
 def load_actual_vs_targetdata(role, username):
     # Access the username from session state
     # username = st.session_state.get("username", "")
@@ -465,6 +470,7 @@ def load_actual_vs_targetdata(role, username):
     if role == "Admin" or role == 'under_admin':
         try:
             # Fetch districts from user_infos
+            aggregate_and_insert_actual_data()
             user_id_query = "SELECT district FROM user_infos"
             district_result = db_ops.fetch_data(user_id_query)
 
@@ -1183,9 +1189,13 @@ def get_usernames():
     Returns:
         A list of user usernames.
     """
-    query = "SELECT username FROM user_infos"
-    usernames = [user['username'] for user in db_ops.fetch_data(query)]  # Fetch data and extract usernames
-    return usernames
+    try:
+        query = "SELECT username FROM user_infos"
+        usernames = [user['username'] for user in db_ops.fetch_data(query)]  # Fetch data and extract usernames
+        return usernames
+    except Exception as e:
+        st.error("Failed to get username")
+        st.exception(e)
 
 def get_crmusernames():
     """
@@ -1194,9 +1204,13 @@ def get_crmusernames():
     Returns:
         A list of user usernames.
     """
-    query = "SELECT username FROM crm_user"
-    usernames = [user['username'] for user in db_ops.fetch_data(query)]  # Fetch data and extract usernames
-    return usernames
+    try:
+        query = "SELECT username FROM crm_user"
+        usernames = [user['username'] for user in db_ops.fetch_data(query)]  # Fetch data and extract usernames
+        return usernames
+    except Exception as e:
+        st.error("Failed to get username")
+        st.exception(e)
 
 def get_password_by_username(username):
     """
@@ -1208,15 +1222,18 @@ def get_password_by_username(username):
     Returns:
         The hashed password if the username exists, None otherwise.
     """
-    # Use parameterized query to prevent SQL injection
-    query = "SELECT password FROM user_infos WHERE username = %s"
-    result = db_ops.fetch_one(query, (username,))  # Fetch the result using the username as a parameter
-    
-    if result:
-        return result['password']  # Return the hashed password from the dictionary
-    
-    return None  # Return None if no result is found
-
+    try:
+        # Use parameterized query to prevent SQL injection
+        query = "SELECT password FROM user_infos WHERE username = %s"
+        result = db_ops.fetch_one(query, (username,))  # Fetch the result using the username as a parameter
+        
+        if result:
+            return result['password']  # Return the hashed password from the dictionary
+        
+        return None  # Return None if no result is found
+    except Exception as e:
+        st.error("Failed to get password")
+        st.exception(e)
 
 def get_crmpassword_by_username(username):
     """
@@ -1628,7 +1645,9 @@ def get_branch_from_db(cursor, district):
         return []
     
 def load_targetdata():
-    df_branch = pd.DataFrame(db_ops.fetch_data("SELECT branch_code, branch_name FROM branch_list"), columns=['Branch Code', 'Branch'])
+    query1 = "SELECT branch_code, branch_name FROM branch_list"
+    df_branch = pd.DataFrame(db_ops.fetch_data(query1))
+    df_branch.columns=['Branch Code', 'Branch']
 
     query = """
     SELECT t.branch_code, t.unique_target, t.account_target, t.disbursment_target, t.target_date, t.created_date
@@ -1640,7 +1659,8 @@ def load_targetdata():
     ) latest ON t.branch_code = latest.branch_code AND t.created_date = latest.max_date
     """
     
-    df_target = pd.DataFrame(db_ops.fetch_data(query), columns=['Branch Code', 'Unique Target', 'Account Target', 'Disbursment Target', 'Target Date', 'Uploaded Date'])
+    df_target = pd.DataFrame(db_ops.fetch_data(query))
+    df_target.columns=['Branch Code', 'Unique Target', 'Account Target', 'Disbursment Target', 'Target Date', 'Uploaded Date']
 
     # Merge the two DataFrames based on 'Branch Code'
     merged_df = pd.merge(df_branch, df_target, on='Branch Code', how='inner')
@@ -1802,7 +1822,9 @@ def check_unique_account(account):
 
 
 def load_uniqactualdata():
-    df_branch = pd.DataFrame(db_ops.fetch_data("SELECT branch_code, branch_name FROM branch_list"), columns=['Branch Code', 'Branch'])
+    query1 = "SELECT branch_code, branch_name FROM branch_list"
+    df_branch = pd.DataFrame(db_ops.fetch_data(query1))
+    df_branch.columns=['Branch Code', 'Branch']
 
     query = """
     SELECT branch_code, customer_number, customer_name, saving_account, product_type, disbursed_amount, disbursed_date, upload_date
@@ -1812,7 +1834,8 @@ def load_uniqactualdata():
     )
     """
     
-    df_actual = pd.DataFrame(db_ops.fetch_data(query), columns=['Branch Code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_actual = pd.DataFrame(db_ops.fetch_data(query))
+    df_actual.columns=['Branch Code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
 
     # Merge the two DataFrames based on 'Branch Code'
     merged_df = pd.merge(df_branch, df_actual, on='Branch Code', how='inner')
@@ -1822,7 +1845,9 @@ def load_uniqactualdata():
     return df_combine
 
 def load_convactualdata():
-    df_branch = pd.DataFrame(db_ops.fetch_data("SELECT branch_code, branch_name FROM branch_list"), columns=['Branch Code', 'Branch'])
+    query1 = "SELECT branch_code, branch_name FROM branch_list"
+    df_branch = pd.DataFrame(db_ops.fetch_data(query1))
+    df_branch.columns=['Branch Code', 'Branch']
 
     query = """
     SELECT branch_code, customer_number, customer_name, saving_account, product_type, disbursed_amount, disbursed_date, upload_date
@@ -1831,7 +1856,8 @@ def load_convactualdata():
     SELECT MAX(DATE_FORMAT(upload_date, '%Y-%m-%d %H:%i')) FROM conversiondata)
     """
     
-    df_actual = pd.DataFrame(db_ops.fetch_data(query), columns=['Branch Code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+    df_actual = pd.DataFrame(db_ops.fetch_data(query))
+    df_actual.columns=['Branch Code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
 
     # Merge the two DataFrames based on 'Branch Code'
     merged_df = pd.merge(df_branch, df_actual, on='Branch Code', how='inner')
@@ -3636,6 +3662,314 @@ def load_kiyya_actual_vs_targetdata(role, username):
         return act_dis_branch, df_actual, df_target
 
 
+
+# Check if all branches exist in the branch_list table
+def all_branch_code_exist(branch_code):
+    
+    query1 = "SELECT branch_code FROM branch_list"
+    br_existing_data = db_ops.fetch_data(query1)
+    
+    existing_branches = [row['branch_code'] for row in br_existing_data]
+    
+    missing_branch_code = [branch for branch in branch_code if branch not in existing_branches]
+    
+    return missing_branch_code
+
+# Format target_date to yy/mm/dd
+def format_target_date(date):
+    return date.strftime('%y/%m/%d')
+
+# Check if any target_date from the uploaded file already exists in the target table
+def any_target_date_exists(df):
+    # Format the dates using the format_target_date function
+    formatted_dates = tuple(df['disbursed_date'].apply(format_target_date).tolist())
+    
+    if len(formatted_dates) == 1:
+        # Single date case
+        query = "SELECT disbursed_date FROM unique_intersection WHERE disbursed_date = %s"
+        result = db_ops.fetch_data(query, (formatted_dates[0],))  # Access the first date
+    else:
+        # Multiple dates case, dynamically generate placeholders
+        placeholders = ', '.join(['%s'] * len(formatted_dates))
+        query = f"SELECT disbursed_date FROM unique_intersection WHERE disbursed_date IN ({placeholders})"
+        result = db_ops.fetch_data(query, formatted_dates)
+
+    return len(result) > 0
+
+def upload_to_unique(df):
+    try:
+        # Display the Saving_Account as list where product_type is 'Women Informal'
+        informal_accounts = df[df['product_type'] == 'Women Informal']['saving_account'].tolist()
+
+        # Display the Saving_Account as list where product_type is 'Women Formal'
+        formal_accounts = df[df['product_type'] == 'Women Formal']['saving_account'].tolist()
+        # st.write(informal_accounts)
+        # st.write(formal_accounts)
+
+        # Initialize the dataframes to avoid referencing issues
+        kiyya_customer_df = pd.DataFrame(columns=['Saving_Account', 'userId'])
+        women_customer_df = pd.DataFrame(columns=['Saving_Account', 'userId'])
+
+        
+        # Prepare placeholders for informal_accounts in the query
+        if informal_accounts:
+            # Convert the list to tuple format
+            informal_accounts_tuple = tuple(informal_accounts)
+            
+            if informal_accounts_tuple:
+                # Handle case where there is only one element in the tuple
+                if len(informal_accounts_tuple) == 1:
+                    informal_accounts_tuple = f"('{informal_accounts_tuple[0]}')"
+                else:
+                    informal_accounts_tuple = str(informal_accounts_tuple)
+
+                # Fetch kiyya_customer data for accounts in informal_accounts
+                query = f"""
+                    SELECT account_number, userId 
+                    FROM kiyya_customer 
+                    WHERE account_number IN {informal_accounts_tuple}
+                        AND userId IN (SELECT userId FROM user_infos)
+                """
+                
+                # kiyya_customer_data = db_ops.fetch_data(query)
+                kiyya_customer_df = pd.DataFrame(db_ops.fetch_data(query))
+                
+                kiyya_customer_df.columns=['Saving_Account', 'userId']
+                # st.write(kiyya_customer_df)
+        # st.write(formal_accounts)
+        if formal_accounts:
+            formal_accounts_tuple = tuple(formal_accounts)
+            
+            # Ensure the tuple is not empty
+            if formal_accounts_tuple:
+                
+                # Convert to a string format compatible with SQL, especially for single elements
+                if len(formal_accounts_tuple) == 1:
+                    formal_accounts_tuple = f"('{formal_accounts_tuple[0]}')"
+                else:
+                    formal_accounts_tuple = str(formal_accounts_tuple)
+                
+                query = f"""
+                    SELECT account_no, crm_id 
+                    FROM women_product_customer 
+                    WHERE account_no IN {formal_accounts_tuple}
+                        AND crm_id IN (SELECT userId FROM user_infos)
+                """
+                
+                women_customer_df = pd.DataFrame(db_ops.fetch_data(query))
+                women_customer_df.columns=['Saving_Account', 'userId']
+                st.write(women_customer_df)
+
+        # Fetch branchcustomer data
+        querry1 = "SELECT Saving_Account, userId FROM branchcustomer"
+        branchcustomer_df = pd.DataFrame(db_ops.fetch_data(querry1))
+        branchcustomer_df.columns=['Saving_Account', 'userId']
+
+        # Fetch all user_info data
+        querry2 = "SELECT userId, branch FROM user_infos where branch like 'ET%'"
+        user_info_df = pd.DataFrame(db_ops.fetch_data(querry2))
+        user_info_df.columns=['userId', 'branch_code']
+
+      
+
+        # Concatenate customer data in reverse order to prioritize kiyya_customer and women_customer
+        combined_customer_df = pd.concat([branchcustomer_df, women_customer_df, kiyya_customer_df], ignore_index=True)
+        combined_customer_df = combined_customer_df.drop_duplicates(subset=['Saving_Account'], keep='last')
+
+        # # Close cursor after data fetching
+        # cursor.close()
+
+        # Merge combined customer data with user_info
+        merged_df = combined_customer_df.merge(user_info_df, on='userId', how='left')
+
+        # Merge the original df with merged_df on 'Saving_Account'
+        final_merged_df = df.merge(merged_df, left_on='saving_account', right_on='Saving_Account', how='left')
+        # st.write(final_merged_df)
+        # Replace the branch_code in df with the correct merged branch_code if saving_account matches
+        final_merged_df['branch_code'] = final_merged_df.apply(
+            lambda row: row['branch_code_y'] if pd.notna(row['branch_code_y']) else row['branch_code_x'], axis=1
+        )
+
+        # Prepare data for insertion
+        # data_to_insert = final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date']].values.tolist()
+        # Prepare data for insertion
+        data_to_insert = [tuple(x) for x in final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date']].values.tolist()]
+        # st.write(data_to_insert)
+        # # Prepare data for insertion
+        # data_to_insert = final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date']].values.tolist()
+
+        # Insert data into unique_intersection table
+        try:
+            insert_query = """
+                INSERT INTO unique_intersection (branch_code, customer_number, customer_name, saving_account, product_type, disbursed_amount, disbursed_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            
+             # Ensure data_to_insert is not empty
+            if data_to_insert:
+                # Make sure data_to_insert is a list of tuples
+                if all(isinstance(item, tuple) for item in data_to_insert):
+                    rows_inserted = db_ops.insert_many(insert_query, data_to_insert)
+                    st.success(f"{rows_inserted} rows uploaded successfully.")
+                    return True
+                else:
+                    st.error("Data to insert should be a list of tuples.")
+            else:
+                st.warning("No data to insert into the unique_intersection table.")
+        except Exception as e:
+            st.error(f"Error can't upload data: {e}")
+
+    except Exception as e:
+        st.error(f"Error: {e}")
+        # db_ops.rollback()  # Rollback in case of error
+        return False
+
+
+def any_target_date_exists_conv(df):
+     # Format the dates using the format_target_date function
+    formatted_dates = tuple(df['convdisbursed_date'].apply(format_target_date).tolist())
+    
+    if len(formatted_dates) == 1:
+        # Single date case
+        query = "SELECT disbursed_date FROM conversiondata WHERE disbursed_date = %s"
+        result = db_ops.fetch_data(query, (formatted_dates[0],))  # Access the first date
+    else:
+        # Multiple dates case, dynamically generate placeholders
+        placeholders = ', '.join(['%s'] * len(formatted_dates))
+        query = f"SELECT disbursed_date FROM conversiondata WHERE disbursed_date IN ({placeholders})"
+        result = db_ops.fetch_data(query, formatted_dates)
+
+    return len(result) > 0
+
+
+
+def upload_to_conv(df):
+    try:
+        # Display the Saving_Account as list where product_type is 'Women Informal'
+        informal_accounts = df[df['product_type'] == 'Women Informal']['saving_account'].tolist()
+
+        # Display the Saving_Account as list where product_type is 'Women Formal'
+        formal_accounts = df[df['product_type'] == 'Women Formal']['saving_account'].tolist()
+        # st.write(informal_accounts)
+        # st.write(formal_accounts)
+
+        # Initialize the dataframes to avoid referencing issues
+        kiyya_customer_df = pd.DataFrame(columns=['Saving_Account', 'userId'])
+        women_customer_df = pd.DataFrame(columns=['Saving_Account', 'userId'])
+
+        
+        # Prepare placeholders for informal_accounts in the query
+        if informal_accounts:
+            # Convert the list to tuple format
+            informal_accounts_tuple = tuple(informal_accounts)
+            
+            if informal_accounts_tuple:
+                # Handle case where there is only one element in the tuple
+                if len(informal_accounts_tuple) == 1:
+                    informal_accounts_tuple = f"('{informal_accounts_tuple[0]}')"
+                else:
+                    informal_accounts_tuple = str(informal_accounts_tuple)
+
+                # Fetch kiyya_customer data for accounts in informal_accounts
+                query = f"""
+                    SELECT account_number, userId 
+                    FROM kiyya_customer 
+                    WHERE account_number IN {informal_accounts_tuple}
+                        AND userId IN (SELECT userId FROM user_infos)
+                """
+                
+                # kiyya_customer_data = db_ops.fetch_data(query)
+                kiyya_customer_df = pd.DataFrame(db_ops.fetch_data(query))
+                
+                kiyya_customer_df.columns=['Saving_Account', 'userId']
+                # st.write(kiyya_customer_df)
+
+        if formal_accounts:
+            formal_accounts_tuple = tuple(formal_accounts)
+            
+            # Ensure the tuple is not empty
+            if formal_accounts_tuple:
+                
+                # Convert to a string format compatible with SQL, especially for single elements
+                if len(formal_accounts_tuple) == 1:
+                    formal_accounts_tuple = f"('{formal_accounts_tuple[0]}')"
+                else:
+                    formal_accounts_tuple = str(formal_accounts_tuple)
+                
+                query = f"""
+                    SELECT account_no, crm_id 
+                    FROM women_product_customer 
+                    WHERE account_no IN {formal_accounts_tuple}
+                        AND crm_id IN (SELECT userId FROM user_infos)
+                """
+                
+                women_customer_df = pd.DataFrame(db_ops.fetch_data(query))
+                women_customer_df.columns=['Saving_Account', 'userId']
+                # st.write(women_customer_df)
+
+        # Fetch branchcustomer data
+        querry1 = "SELECT Saving_Account, userId FROM branchcustomer"
+        branchcustomer_df = pd.DataFrame(db_ops.fetch_data(querry1))
+        branchcustomer_df.columns=['Saving_Account', 'userId']
+
+        # Fetch all user_info data
+        querry2 = "SELECT userId, branch FROM user_infos where branch like 'ET%'"
+        user_info_df = pd.DataFrame(db_ops.fetch_data(querry2))
+        user_info_df.columns=['userId', 'branch_code']
+
+      
+
+        # Concatenate customer data in reverse order to prioritize kiyya_customer and women_customer
+        combined_customer_df = pd.concat([branchcustomer_df, women_customer_df, kiyya_customer_df], ignore_index=True)
+        combined_customer_df = combined_customer_df.drop_duplicates(subset=['Saving_Account'], keep='last')
+
+        # # Close cursor after data fetching
+        # cursor.close()
+
+        # Merge combined customer data with user_info
+        merged_df = combined_customer_df.merge(user_info_df, on='userId', how='left')
+
+        # Merge the original df with merged_df on 'Saving_Account'
+        final_merged_df = df.merge(merged_df, left_on='saving_account', right_on='Saving_Account', how='left')
+        # st.write(final_merged_df)
+        # Replace the branch_code in df with the correct merged branch_code if saving_account matches
+        final_merged_df['branch_code'] = final_merged_df.apply(
+            lambda row: row['branch_code_y'] if pd.notna(row['branch_code_y']) else row['branch_code_x'], axis=1
+        )
+
+        # Prepare data for insertion
+        # data_to_insert = final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date']].values.tolist()
+        # Prepare data for insertion
+        data_to_insert = [tuple(x) for x in final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'convdisbursed_date']].values.tolist()]
+        # st.write(data_to_insert)
+        try:
+            insert_query = """
+                INSERT INTO conversiondata (branch_code, customer_number, customer_name, saving_account, product_type, disbursed_amount, disbursed_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            
+             # Ensure data_to_insert is not empty
+            if data_to_insert:
+                # Make sure data_to_insert is a list of tuples
+                if all(isinstance(item, tuple) for item in data_to_insert):
+                    rows_inserted = db_ops.insert_many(insert_query, data_to_insert)
+                    st.success(f"{rows_inserted} rows uploaded successfully.")
+                    return True
+                else:
+                    st.error("Data to insert should be a list of tuples.")
+            else:
+                st.warning("No data to insert into the unique_intersection table.")
+        except Exception as e:
+            st.error(f"Error can't upload data: {e}")
+
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error: {e}")
+
+        # Rollback in case of error
+        # db_ops.rollback()
+        
+        return False
 
 
 

@@ -113,35 +113,42 @@ def register():
         # st.write("")
         col4, col5 = st.columns([0.7, 0.4])
         with col4:
-            # if st.form_submit_button("Michu new customer  Dashboard"):
-            #     sleep(0.5)
-            #     st.switch_page('pages/unique_dash.py')
+            if st.form_submit_button("Michu new customer  Dashboard"):
+                # sleep(0.5)
+                st.switch_page('pages/unique_dash.py')
             # st.write("")
             # st.write("")
-            # # if st.form_submit_button("Michu Conversion Dashboard"):
-            # #     sleep(0.5)
-            # #     st.switch_page('pages/conversion_dash.py')
-            # # st.write("")
-            # # st.write("")
-            # if st.form_submit_button("Michu Kiyya Product Dashboard"):
+            if st.form_submit_button("Michu Customers Detail Report"):
+                # sleep(0.5)
+                st.switch_page('pages/getdata.py')
+            # if st.form_submit_button("Michu Conversion Dashboard"):
             #     sleep(0.5)
-            #     st.switch_page('pages/dureti_dash.py')
-            if st.form_submit_button("Target Performance Report"):
-                sleep(0.5)
-                st.switch_page('pages/Actual_vs_Target.py')
+            #     st.switch_page('pages/conversion_dash.py')
+            # st.write("")
+            # st.write("")
+            if st.form_submit_button("Michu Kiyya Product Dashboard"):
+                # sleep(0.5)
+                st.switch_page('pages/dureti_dash.py')
+            # if st.form_submit_button("Target Performance Report"):
+            #     sleep(0.5)
+            #     st.switch_page('pages/Actual_vs_Target.py')
         with col5:
             
             # if st.form_submit_button("Michu Customers Detail Report"):
             #     sleep(0.5)
             #     st.switch_page('pages/getdata.py')
             
-            # if st.form_submit_button("Target Performance Report"):
-            #     sleep(0.5)
-            #     st.switch_page('pages/Actual_vs_Target.py')
+            if st.form_submit_button("Target Performance Report"):
+                # sleep(0.5)
+                st.switch_page('pages/Actual_vs_Target.py')
+
+            st.write("")
+            st.write("")
+            st.write("")
            
             # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
             if st.form_submit_button("Target Performance Kiyya Report"):
-                sleep(0.5)
+                # sleep(0.5)
                 st.switch_page('pages/kiyya_actual_vs_target.py')
         st.markdown('</div>', unsafe_allow_html=True)
     
