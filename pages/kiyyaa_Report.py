@@ -1,7 +1,8 @@
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
-from PIL import Image
-from dependence import connect_to_database, load_kiyya_report_data
+# from PIL import Image
+from dependence import load_kiyya_report_data
+from streamlit_extras.metric_cards import style_metric_cards
 
 
 def main():
@@ -44,11 +45,11 @@ def main():
     refresh_interval = 600  # 5 minutes
     st_autorefresh(interval=refresh_interval * 1000, key="Michu report dash")
 
-    image = Image.open('pages/michu.png')
+    # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1, 0.9])
     with col1:
-        st.image(image)
+        st.image('pages/michu.png')
     html_title = """
         <style>
         .title_dash{
@@ -78,13 +79,11 @@ def main():
     if "username" not in st.session_state:
         st.warning("No user found with the given username.")
         st.switch_page("main.py")
-    mydb = connect_to_database()
-    if mydb is not None:
-        cursor = mydb.cursor()
+    try:
 
 
 
-        merged_df = load_kiyya_report_data(mydb)
+        kiyya_customer, kiyya_customer_today = load_kiyya_report_data()
 
 
 
@@ -93,12 +92,12 @@ def main():
        
        
 
-        back_image = Image.open('pages/kiyya.jpg')
-        st.sidebar.image(back_image)
+        # back_image = Image.open('pages/kiyya.jpg')
+        st.sidebar.image('pages/kiyya.jpg')
         username = st.session_state.get("username", "")
         full_name = st.session_state.get("full_name", "")
-        # # st.sidebar.write(f'Welcome, :orange[{full_name}]')
-        # st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
+        # st.sidebar.write(f'Welcome, :orange[{full_name}]')
+        st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
         
 
         # col1, col2 = st.sidebar.columns(2)
@@ -137,7 +136,11 @@ def main():
          # df_combine
          
 
-    
+        col1, col2 = st.columns(2)
+        # col2.markdown('<style>div.block-container{padding-top:0.0002rem;}</style>', unsafe_allow_html=True)
+        col1.metric(label="**Total Rigister Customer till now**", value=kiyya_customer, delta="Customer")
+        col2.metric(label="**Total Rigister Customer of Today**", value=kiyya_customer_today, delta="Today Customer")
+        style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
         # # Display combined data in a table
         # st.write(":orange[Michu Women Targeted Customer List 👇🏻]")
         # st.write(df_combine.drop(columns=['customerId', 'userName']).reset_index(drop=True).rename(lambda x: x + 1))
@@ -159,7 +162,7 @@ def main():
                 }
             </style>
             """, unsafe_allow_html=True)
-        st.write("Wait till ")
+        # st.write("Wait till ")
         
         # if merged_df is not None and not merged_df.empty:
         #     st.markdown(f'<span style="color: #e38524;">**Registered Customer**👇🏻', unsafe_allow_html=True)
@@ -169,6 +172,8 @@ def main():
         #     # st.download_button(label=":blue[Download CSV]", data=csv, file_name='unique_data.csv', mime='text/csv')
         # else:
         #     st.info("There is no registered customers yet.")
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {e}")
 
 
 

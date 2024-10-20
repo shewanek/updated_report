@@ -3068,13 +3068,22 @@ def load_kiyya_report_data():
 
     # df_user_infos = pd.DataFrame(db_ops.fetch_data(f"SELECT * FROM user_infos WHERE userId = '{user_id}'"), columns=['userId', 'full_Name', 'userName', 'District', 'Branch', 'role', 'password', 'ccreatedAt'])
     # Filtered queries for data starting from July 1
-    keyya_customer_query = f"SELECT count(kiyya_id) FROM kiyya_customer"
-    keyya_customer_query = f"SELECT count(kiyya_id) FROM kiyya_customer"
+    keyya_customer_query = f"SELECT count(kiyya_id) as total FROM kiyya_customer"
+    today_date = datetime.today().strftime('%Y-%m-%d')
+
+    # Build the query to count records from today
+    kiyya_customer_query = f"""
+        SELECT COUNT(kiyya_id) as total
+        FROM kiyya_customer 
+        WHERE DATE(registered_date) = '{today_date}'
+    """
     
-    kiyya_customer = pd.DataFrame(db_ops.fetch_data(keyya_customer_query))
+    # Fetch data and extract the counts
+    kiyya_customer = db_ops.fetch_data(keyya_customer_query)[0]['total']  # Extract the count value
+    kiyya_customer_today = db_ops.fetch_data(kiyya_customer_query)[0]['total']  # Extract the count value
     
 
-    return kiyya_customer
+    return kiyya_customer, kiyya_customer_today
 
 
 
