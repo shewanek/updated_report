@@ -1,7 +1,5 @@
 import streamlit as st
 from datetime import datetime, timedelta
-from streamlit_autorefresh import st_autorefresh
-from PIL import Image
 from dependence import load_resetpassword, update_password
 # from navigation import home_sidebar
 
