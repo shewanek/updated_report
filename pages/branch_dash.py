@@ -56,8 +56,16 @@ def main():
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
-    # with open('custom.css') as f:
-    #     st.write(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    customm = """
+        <style>
+            .app-header {
+                display: none;
+            }
+        </style>
+        """
+
+    # Apply the custom CSS
+    st.markdown(customm, unsafe_allow_html=True)
 
     # Auto-refresh interval (in seconds)
     refresh_interval = 6600  # Adjust as needed (e.g., 10 minutes for real-time)

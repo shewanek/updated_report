@@ -43,8 +43,16 @@ def register():
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
-    with open('custom.css') as f:
-        st.write(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    customm = """
+        <style>
+            .app-header {
+                display: none;
+            }
+        </style>
+        """
+
+    # Apply the custom CSS
+    st.markdown(customm, unsafe_allow_html=True)
 
    
     

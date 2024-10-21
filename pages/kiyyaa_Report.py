@@ -30,6 +30,16 @@ def main():
     </style>
     """
     st.markdown(custom_cs, unsafe_allow_html=True)
+    customm = """
+        <style>
+            .app-header {
+                display: none;
+            }
+        </style>
+        """
+
+    # Apply the custom CSS
+    st.markdown(customm, unsafe_allow_html=True)
     custom_css = """
     <style>
         div.block-container {
@@ -38,8 +48,17 @@ def main():
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
-    with open('custom.css') as f:
-        st.write(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    customm = """
+        <style>
+            .app-header {
+                display: none;
+            }
+        </style>
+        """
+
+    # Apply the custom CSS
+    st.markdown(customm, unsafe_allow_html=True)
+
 
     # Auto-refresh interval (in seconds)
     refresh_interval = 600  # 5 minutes
@@ -94,10 +113,10 @@ def main():
 
         # back_image = Image.open('pages/kiyya.jpg')
         st.sidebar.image('pages/kiyya.jpg')
-        username = st.session_state.get("username", "")
-        full_name = st.session_state.get("full_name", "")
-        # st.sidebar.write(f'Welcome, :orange[{full_name}]')
-        st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
+        # username = st.session_state.get("username", "")
+        # full_name = st.session_state.get("full_name", "")
+        # # st.sidebar.write(f'Welcome, :orange[{full_name}]')
+        # st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
         
 
         # col1, col2 = st.sidebar.columns(2)
@@ -107,12 +126,9 @@ def main():
         #     date2 = st.date_input("End Date", combined_end_date, min_value=combined_start_date, max_value=combined_end_date)
 
 
-
-
         # combined_cust_by_crm = combined_cust_by_crm[(combined_cust_by_crm["Disbursed Date"] >= date1) & (combined_cust_by_crm["Disbursed Date"] <= date2)]
         # crm_cust_only = crm_cust_only[(crm_cust_only["registered_date"] >= date1) & (crm_cust_only["registered_date"] <= date2)]
         
-
 
         # Hide the sidebar by default with custom CSS
         hide_sidebar_style = """

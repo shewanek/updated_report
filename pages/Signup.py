@@ -51,11 +51,11 @@ def sign_up():
     </style>
     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-    image = Image.open('pages/michu.png')
+    # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1,0.9])
     with col1:
-        st.image(image)
+        st.image('pages/michu.png')
     html_title = """
         <style>
         .title_dash{

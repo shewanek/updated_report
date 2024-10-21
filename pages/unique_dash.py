@@ -46,8 +46,16 @@ def main():
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
-    with open('custom.css') as f:
-        st.write(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    customm = """
+        <style>
+            .app-header {
+                display: none;
+            }
+        </style>
+        """
+
+    # Apply the custom CSS
+    st.markdown(customm, unsafe_allow_html=True)
 
     
     # Auto-refresh interval (in seconds)
@@ -55,11 +63,11 @@ def main():
     st_autorefresh(interval=refresh_interval * 1000, key="Michu Bot dash")
 
 
-    image = Image.open('pages/michu.png')
+    # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1,0.9])
     with col1:
-        st.image(image, use_column_width=True)
+        st.image('pages/michu.png', use_column_width=True)
     html_title = """
         <style>
         .title_dash{

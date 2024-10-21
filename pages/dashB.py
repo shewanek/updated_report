@@ -79,8 +79,8 @@ def register():
     </style>
     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-    back_image = Image.open('pages/kiyya.jpg')
-    st.sidebar.image(back_image)
+    # back_image = Image.open('pages/kiyya.jpg')
+    st.sidebar.image('pages/kiyya.jpg')
     # st.sidebar.image('pages/michu.png')
     username = st.session_state.get("username", "")
     full_name = st.session_state.get("full_name", "")

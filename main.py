@@ -105,8 +105,16 @@ def main():
     # """
     # st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     # login_bar()
-    # with open('custom.css') as f:
-    #     st.write(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    customm = """
+        <style>
+            .app-header {
+                display: none;
+            }
+        </style>
+        """
+
+    # Apply the custom CSS
+    st.markdown(customm, unsafe_allow_html=True)
 
     # image = Image.open('pages/michu.png')
 
