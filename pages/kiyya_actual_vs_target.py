@@ -1,5 +1,4 @@
 import streamlit as st
-from PIL import Image
 from dependence import load_kiyya_actual_vs_targetdata
 from navigation import make_sidebar1, home_sidebar
 import pandas as pd

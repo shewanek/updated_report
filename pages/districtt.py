@@ -3,7 +3,7 @@ from PIL import Image
 from navigation import login_bar
 from navigation import home_sidebar
 from time import sleep
-from dependence import connect_to_database, get_district_from_db
+from dependence import get_district_from_db
 
 # Main function to handle user sign-up
 def select():
@@ -90,20 +90,14 @@ def select():
             district_options = ['Select District']
         
         
-        mydb = connect_to_database()
-        if mydb is not None:
-            try:
-                cursor = mydb.cursor()
-                dis_from_db = get_district_from_db(cursor)
-                if dis_from_db:
-                    district_options.extend(dis_from_db)
-                cursor.close()
-            except Exception:
-                st.warning("Failed to retrieve district from the database. Please try again later.")
-            finally:
-                mydb.close()
-        else:
-            st.error("Failed to connect to the database.")
+       
+        try:
+            dis_from_db = get_district_from_db()
+            if dis_from_db:
+                district_options.extend(dis_from_db)
+        except Exception:
+            st.warning("Failed to retrieve district from the database. Please try again later.")
+    
         
         district_key = 'district_input'
             # district_options = st.selectbox('Select District', district_options)

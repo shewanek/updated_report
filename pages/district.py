@@ -2,7 +2,7 @@ import streamlit as st
 from PIL import Image
 from navigation import login_bar
 from navigation import home_sidebar
-from dependence import connect_to_database, get_roles_from_db
+from dependence import get_roles_from_db
 
 
 # Main function to handle user sign-up
@@ -82,29 +82,19 @@ def select():
     home_sidebar()
     with st.form(key='Create Account'):
         st.subheader('Select Role ')
-        mydb = connect_to_database()
         roles = ['Select Role']
-        if mydb is not None:
-            cursor = mydb.cursor()
+        try:
             roles = ['Select Role']
-            mydb = connect_to_database()
-            if mydb is not None:
-                try:
-                    cursor = mydb.cursor()
-                    roles_from_db = get_roles_from_db(cursor)
-                    if roles_from_db:
-                        roles.extend(roles_from_db)
-                    cursor.close()
-                except Exception:
-                    st.warning("Failed to retrieve roles from the database. Please try again later.")
-                finally:
-                    mydb.close()
-            else:
-                st.error("Failed to connect to the database.")
+            
+            roles_from_db = get_roles_from_db()
+            if roles_from_db:
+                roles.extend(roles_from_db)
+                 
             
             role_key = 'role_input'
             role = st.selectbox('Role', roles, key=role_key)
-        
+        except Exception as e:
+            st.error(f"An error occurred while loading role: {e}")
         # role_key = 'role_input'
         # role = st.selectbox('Role', ['Select Role', 'Branch User', 'District User', 'Sales Admin', 'Admin'], key=role_key)
         

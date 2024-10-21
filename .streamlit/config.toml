@@ -1,9 +1,33 @@
 [theme]
-base = "dark"
+base = "dark"  # Set dark mode as default
 
 [client]
-showSidebarNavigation = false
+showSidebarNavigation = false  # Hide sidebar hamburger menu
+showErrorDetails = false  # Do not display detailed errors to the user
+toolbarMode = "viewer"  # Show the viewer toolbar
+
+[global]
+disableWidgetStateDuplicationWarning = true  # Suppress duplicate widget state warnings
 
 [server]
-websocket_ping_timeout = 300  # Default is 30 seconds
-websocket_ping_interval = 30  # Default is 20 seconds
+headless = true  # Enable headless mode for cloud or remote deployments
+runOnSave = true  # Reload automatically when the file is saved
+baseUrlPath = "MichuPortal"  # Custom base URL path for your portal
+enableCORS = true  # Enable Cross-Origin Resource Sharing for external domain access
+enableXsrfProtection = true  # Enable Cross-Site Request Forgery protection for added security
+maxUploadSize = 100  # Max upload size in MB
+maxMessageSize = 50_000_000  # Max size for WebSocket messages in bytes (50 MB)
+enableWebsocketCompression = true  # Enable WebSocket compression to save bandwidth
+enableStaticServing = false  # Disable static file serving unless needed
+
+# Set a session timeout for disconnected WebSocket sessions
+# Uncomment and set a value if you notice sessions disconnecting too soon
+# disconnectedSessionTTL = 180  # Increase TTL for disconnected sessions to 180 seconds
+
+# Limit the maximum number of concurrent users (optional)
+# Uncomment if you experience performance issues due to high traffic
+# maxConcurrentUsers = 100
+
+[browser]
+gatherUsageStats = false  # Disable sending usage statistics to Streamlit's servers
+serverAddress = "0.0.0.0"  # Bind server to all network interfaces to allow external access

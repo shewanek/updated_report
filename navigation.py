@@ -3,6 +3,7 @@ from time import sleep
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 from streamlit.source_util import get_pages
 from pages.changepassword import forget_password
+from pages.reset_dash import resetpassword
 
 def get_current_page_name():
     ctx = get_script_run_ctx()
@@ -637,9 +638,10 @@ def report():
 
 def reset():
     st.session_state["logged_in"] = True
-    st.info('go to reset successful!')
-    sleep(0.5)
-    st.switch_page("pages/reset_dash.py")
+    resetpassword()
+    # st.info('go to reset successful!')
+    # sleep(0.5)
+    # st.switch_page("pages/reset_dash.py")
 
 def sales_home():
     st.session_state["logged_in"] = True

@@ -970,7 +970,7 @@ def load_resetpassword():
     return df_combine
 
 
-def insert_user(conn, cursor, fullName, username, district, branch, role, password):
+def insert_user(fullName, username, district, branch, role, password):
     """
     Inserts a new user into the MySQL server database.
 
@@ -984,28 +984,28 @@ def insert_user(conn, cursor, fullName, username, district, branch, role, passwo
     """
     
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    cursor.execute("SELECT branch_code FROM branch_list WHERE branch_name = %s", (branch,))
-    resultt = cursor.fetchone()
+    query1 = "SELECT branch_code FROM branch_list WHERE branch_name = %s"
+    resultt = db_ops.fetch_one(query1, (branch,))
     if resultt is None:
         # st.warning("Branch not found in the database. Setting branch to NULL.")
         branch_code = None
     else:
-        branch_code = resultt[0]
+        branch_code = resultt['branch_code']
 
     # Fetch role_id
-    cursor.execute("SELECT role_Id FROM role_list WHERE role = %s", (role,))
-    result = cursor.fetchone()
+    query2 = "SELECT role_Id FROM role_list WHERE role = %s"
+    result = db_ops.fetch_one(query2, (role,))
     if result is None:
         st.error("Role not found in the database.")
         return False
-    role_id = result[0]
+    role_id = result['role_Id']
 
     try:
-        cursor.execute("""
+        query3 = """
             INSERT INTO user_infos (full_Name, userName, district, branch, role, password)
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (fullName, username, district, branch_code, role_id, hashed_password))
-        conn.commit()
+        """
+        db_ops.insert_data(query3, (fullName, username, district, branch_code, role_id, hashed_password))
         return True
     except Exception as e:
         st.error("Failed to create user")
@@ -1370,7 +1370,7 @@ def get_role_by_crmusername(username):
 
 
 
-def is_branch_registered(cursor, branch):
+def is_branch_registered(branch):
     """
     Checks if the given branch is registered in the `user_infos` table.
     
@@ -1383,24 +1383,24 @@ def is_branch_registered(cursor, branch):
     """
     
     # Fetch branch_code from branch_list
-    cursor.execute("SELECT branch_code FROM branch_list WHERE branch_name = %s", (branch,))
-    result = cursor.fetchone()
+    query1 = "SELECT branch_code FROM branch_list WHERE branch_name = %s"
+    result = db_ops.fetch_one(query1, (branch,))
     if result is None:
         # Branch not found in branch_list
         return []
 
-    branch_code = result[0]
+    branch_code = result['branch_code']
 
     # Check if branch_code is present in user_infos
-    cursor.execute("SELECT DISTINCT branch FROM user_infos WHERE branch = %s", (branch_code,))
-    result2 = cursor.fetchall()
+    query2 = "SELECT DISTINCT branch FROM user_infos WHERE branch = %s"
+    result2 = db_ops.fetch_data(query2, (branch_code,))
     if not result2:
         # No records found for the branch_code in user_infos
         return []
 
     # Fetch branch names corresponding to branch_code
-    cursor.execute("SELECT branch_name FROM branch_list WHERE branch_code = %s", (branch_code,))
-    branches = [row[0] for row in cursor.fetchall() if row[0] is not None]
+    query3 = "SELECT branch_name FROM branch_list WHERE branch_code = %s"
+    branches = [row['branch_name'] for row in db_ops.fetch_data(query3, (branch_code,)) if row['branch_name'] is not None]
 
     return branches
 
@@ -1599,21 +1599,19 @@ def get_fullname_by_crmusername(username):
         return False
     
 
-def get_roles_from_db(cursor):
+def get_roles_from_db():
     # cursor = .cursor()
-    cursor.execute("SELECT role FROM role_list")
-    roles = cursor.fetchall()
-    cursor.close()
-    return [role[0] for role in roles]
+    query = "SELECT role FROM role_list"
+    roles = db_ops.fetch_data(query)
+    return [role['role'] for role in roles]
 
-def get_district_from_db(cursor):
+def get_district_from_db():
     # cursor = .cursor()
-    cursor.execute("SELECT district_name FROM district_list")
-    district = cursor.fetchall()
-    cursor.close()
-    return [dis[0] for dis in district]
+    query = "SELECT district_name FROM district_list"
+    district = db_ops.fetch_data(query)
+    return [dis['district_name'] for dis in district]
 
-def get_branch_from_db(cursor, district):
+def get_branch_from_db(district):
     """
     Fetches branch names from the database for a given district.
 
@@ -1626,16 +1624,16 @@ def get_branch_from_db(cursor, district):
     """
     try:
         # Fetch the district ID
-        cursor.execute("SELECT dis_Id FROM district_list WHERE district_name = %s", (district,))
-        dis_id = cursor.fetchone()
+        query1 = "SELECT dis_Id FROM district_list WHERE district_name = %s"
+        dis_id = db_ops.fetch_one(query1, (district,))
         
         # Check if the district ID is found
         if dis_id:
-            dis_id = dis_id[0]
+            dis_id = dis_id['dis_Id']
             # Fetch branch names for the district ID
-            cursor.execute("SELECT branch_name FROM branch_list WHERE dis_Id = %s", (dis_id,))
-            branches = cursor.fetchall()
-            return [branch[0] for branch in branches]
+            query2 = "SELECT branch_name FROM branch_list WHERE dis_Id = %s"
+            branches = db_ops.fetch_data(query2, (dis_id,))
+            return [branch['branch_name'] for branch in branches]
         else:
             # Return an empty list if no district ID is found
             return []
@@ -3102,7 +3100,7 @@ def load_kiyya_actual_vs_targetdata(role, username):
             crm_user_query = """
                 SELECT DISTINCT dr.crm_id, br.full_name, br.sub_process, br.employe_id 
                 FROM crm_list br
-                JOIN crm_user dr ON br.employe_id = dr.employe_id
+                LEFT JOIN crm_user dr ON br.employe_id = dr.employe_id
                 """
             crm_user_list = pd.DataFrame(db_ops.fetch_data(crm_user_query))
             # st.write(crm_user_list)

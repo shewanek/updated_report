@@ -1,6 +1,5 @@
 import streamlit as st
-from dependence import connect_to_database, validate_username, get_usernames, insert_user, is_branch_registered, get_branch_from_db
-from PIL import Image
+from dependence import validate_username, get_usernames, insert_user, is_branch_registered, get_branch_from_db
 from time import sleep  # Assuming dash.py contains your dashboard layout
 import json 
 from navigation import login_bar
@@ -104,21 +103,14 @@ def sign_up():
         
         
         # Branch options depend on the selected district
-        mydb = connect_to_database()
         if role != 'Admin' and role != 'District User' and role != 'Sales Admin' and role != 'Data Uploader' and role != 'collection_admin' and role != 'collection_user' and role != 'under_admin':
             branch_options = ['Select Branch']
-            if mydb is not None:
-                try:
-                    cursor = mydb.cursor()
-                    br_from_db = get_branch_from_db(cursor,district)
-                    if br_from_db:
-                        branch_options.extend(br_from_db)
-                    cursor.close()
-                except Exception:
-                    st.warning("Failed to retrieve branch from the database. Please try again later.")
-                
-            else:
-                st.error("Failed to connect to the database.")
+            try:
+                br_from_db = get_branch_from_db(district)
+                if br_from_db:
+                    branch_options.extend(br_from_db)
+            except Exception:
+                st.warning("Failed to retrieve branch from the database. Please try again later.")
             
             branch = st.selectbox('Branch', branch_options, key=branch_key)
         else:
@@ -131,30 +123,26 @@ def sign_up():
 
         with col1:
             if st.form_submit_button(':orange[Register]'):
-                # mydb = connect_to_database()
-                if mydb is not None:
-                    try:
-                        cursor = mydb.cursor()
-                        if branch == 'Select Branch':
-                            st.warning('Please select a branch.')
-                        elif not validate_username(username):
-                            st.warning('Please enter a valid username (use alphanumeric characters, at least 2 characters long).')
-                        elif branch in is_branch_registered(cursor, branch):
-                            st.warning(f"The branch {branch} is already registered. Please select a different branch.")
-                        elif username in get_usernames(cursor):
-                            st.warning('Username already exists. Please choose a different username.')
-                        elif len(password1) < 6:
-                            st.warning('Password must be at least 6 characters long.')
-                        elif password1 != password2:
-                            st.warning('Passwords do not match. Please re-enter your password.')
-                        else:
-                            if insert_user(mydb, cursor, name, username, district_json, branch, role, password1):
-                                st.success(f"User, {name} has been successfully registered!")
-                    except Exception as e:
-                        st.error(f"Failed to register user: {e}")
-                    finally:
-                        cursor.close()
-                        mydb.close()
+                try:
+                    if branch == 'Select Branch':
+                        st.warning('Please select a branch.')
+                    elif not validate_username(username):
+                        st.warning('Please enter a valid username (use alphanumeric characters, at least 2 characters long).')
+                    elif branch in is_branch_registered(branch):
+                        st.warning(f"The branch {branch} is already registered. Please select a different branch.")
+                    elif username in get_usernames():
+                        st.warning('Username already exists. Please choose a different username.')
+                    elif len(password1) < 6:
+                        st.warning('Password must be at least 6 characters long.')
+                    elif password1 != password2:
+                        st.warning('Passwords do not match. Please re-enter your password.')
+                    else:
+                        if insert_user(name, username, district_json, branch, role, password1):
+                            st.success(f"User, {name} has been successfully registered!")
+                except Exception as e:
+                    st.error(f"Failed to register user: {e}")
+
+
         if role == 'Admin' or role == 'Data Uploader' or role == 'collection_admin' or role == 'under_admin':
             with col2:
                 st.write('change role')
