@@ -25,6 +25,7 @@ class DatabaseOperations:
             cursor = connection.cursor(dictionary=True)
             cursor.execute(query, params)
             result = cursor.fetchall()
+
             return result
         except Exception as e:
             st.error("connection error")
@@ -42,7 +43,7 @@ class DatabaseOperations:
             cursor.execute(query, params)
             return cursor.fetchone()
         except Exception as e:
-            st.error("connection error")
+            st.error(f"connection error {e}")
             # st.exception(e)
         finally:
             if cursor:

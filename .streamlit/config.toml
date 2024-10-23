@@ -17,8 +17,10 @@ enableCORS = true  # Enable Cross-Origin Resource Sharing for external domain ac
 enableXsrfProtection = true  # Enable Cross-Site Request Forgery protection for added security
 maxUploadSize = 100  # Max upload size in MB
 maxMessageSize = 50_000_000  # Max size for WebSocket messages in bytes (50 MB)
-enableWebsocketCompression = true  # Enable WebSocket compression to save bandwidth
+enableWebsocketCompression = false  # Enable WebSocket compression to save bandwidth
 enableStaticServing = false  # Disable static file serving unless needed
+
+# websocket_keep_alive = true  # Keep WebSocket connection alive
 
 # Set a session timeout for disconnected WebSocket sessions
 # Uncomment and set a value if you notice sessions disconnecting too soon

@@ -4,7 +4,6 @@ from mysql.connector import Error
 class DatabaseSingleton:
     _instance = None
     _connection = None
-
     def __new__(cls, config):
         if cls._instance is None:
             cls._instance = super(DatabaseSingleton, cls).__new__(cls)

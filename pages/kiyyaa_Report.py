@@ -102,7 +102,7 @@ def main():
 
 
 
-        kiyya_customer, kiyya_customer_today = load_kiyya_report_data()
+        kiyya_customer, kiyya_customer_today, formal_customer, formal_customer_today = load_kiyya_report_data()
 
 
 
@@ -151,11 +151,18 @@ def main():
         # )
          # df_combine
          
-
+        st.markdown('<h5><span style="color: #e38524;">Infromal Registered Customer </span> 👇🏻</h5>', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         # col2.markdown('<style>div.block-container{padding-top:0.0002rem;}</style>', unsafe_allow_html=True)
-        col1.metric(label="**Total Rigister Customer till now**", value=kiyya_customer, delta="Customer")
-        col2.metric(label="**Total Rigister Customer of Today**", value=kiyya_customer_today, delta="Today Customer")
+        col1.metric(label="**Total Informal Rigistered Customer**", value=kiyya_customer, delta="Customer")
+        col2.metric(label="**Total Informal Rigister Customer of Today**", value=kiyya_customer_today, delta="Today Customer")
+        style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
+
+        st.markdown('<h5><span style="color: #e38524;">Formal Registered Customer  </span> 👇🏻</h5>', unsafe_allow_html=True)
+        col3, col4 = st.columns(2)
+        # col2.markdown('<style>div.block-container{padding-top:0.0002rem;}</style>', unsafe_allow_html=True)
+        col3.metric(label="**Total Formal Rigister Customer**", value=formal_customer, delta="Customer")
+        col4.metric(label="**Total Formal Rigister Customer of Today**", value=formal_customer_today, delta="Today Customer")
         style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
         # # Display combined data in a table
         # st.write(":orange[Michu Women Targeted Customer List 👇🏻]")

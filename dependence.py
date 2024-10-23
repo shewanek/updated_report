@@ -2449,59 +2449,67 @@ def check_durationunique_account(account):
 
 
 
-def load_women_data(mydb):
+def load_women_data():
     # Access the username from session state
     username = st.session_state.get("username", "")
     role = st.session_state.get("role", "")
 
-    # Fetch userId based on username
-    if role == "CRM":
-        crm_id_query = f"SELECT crm_id FROM crm_user WHERE username = '{username}'"
-        crm_id_result = db_ops.fetch_data(crm_id_query)
-    else:
-        crm_id_query = f"SELECT userId FROM user_infos WHERE username = '{username}'"
-        crm_id_result = db_ops.fetch_data(crm_id_query)
+    try:
+        # Fetch userId based on username
+        if role == "CRM":
+            crm_id_query = "SELECT crm_id FROM crm_user WHERE username = %s"
+            crm_id_result = db_ops.fetch_data(crm_id_query, (username,))
+        else:
+            crm_id_query = "SELECT userId FROM user_infos WHERE username = %s"
+            crm_id_result = db_ops.fetch_data(crm_id_query, (username,))
 
-    # Check if crm_id_result is empty
-    if not crm_id_result:
-        st.warning("No CRM ID found for the current user.")
-        return pd.DataFrame(), pd.DataFrame()
+        # Check if crm_id_result is empty
+        if not crm_id_result:
+            st.warning("No user ID found for the current user.")
+            return pd.DataFrame(), pd.DataFrame()
 
-    dureti_customer_query = f"SELECT * FROM women_product_customer WHERE crm_id = '{crm_id_result[0][0]}'and `registered_date` >= '2024-10-01'"
-    # st.write(dureti_customer_query)
-    unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
-    conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+        # Get the id based on the role
+        id = crm_id_result[0]['crm_id'] if role == "CRM" else crm_id_result[0]['userId']
+
+        dureti_customer_query = "SELECT * FROM women_product_customer WHERE crm_id = %s and `registered_date` >= '2024-10-01'"
+        # st.write(dureti_customer_query)
+        unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+        conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
 
 
-    dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query), 
-                                   columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date'])
+        dureti_customer_data = db_ops.fetch_data(dureti_customer_query, (id,)) 
+        columns = ['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date']  
+        dureti_customer = pd.DataFrame(dureti_customer_data, columns = columns)
+        # dureti_customer.columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date']                            
+        # st.write(dureti_customer)
+        unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
+        unique_customer.columns = ['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
 
-    unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query), 
-                                   columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+        conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query))
+        conversion_customer.columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
 
-    conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query), 
-                                       columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+        # Merge DataFrames on 'Saving Account'
+        unique_by_crm = pd.merge(dureti_customer, unique_customer, on='Saving Account', how='inner')
+        conv_by_crm = pd.merge(dureti_customer, conversion_customer, on='Saving Account', how='inner')
 
-    # Merge DataFrames on 'Saving Account'
-    unique_by_crm = pd.merge(dureti_customer, unique_customer, on='Saving Account', how='inner')
-    conv_by_crm = pd.merge(dureti_customer, conversion_customer, on='Saving Account', how='inner')
+        # Select and concatenate the required columns
+        unique_cust_by_crm = unique_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
+        conv_cust_by_crm = conv_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
 
-    # Select and concatenate the required columns
-    unique_cust_by_crm = unique_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
-    conv_cust_by_crm = conv_by_crm[['wpc_id', 'crm_id', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'remark', 'Disbursed Date']]
+        combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
+        # st.write(combined_cust_by_crm)
 
-    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
-    # st.write(combined_cust_by_crm)
+        # Perform a left join to identify customers only in dureti_customer
+        merged_df = pd.merge(dureti_customer, combined_cust_by_crm, on= ['wpc_id', 'crm_id','Phone Number', 'Saving Account', 'remark'], how='left', indicator=True)
+        # st.write(merged_df)
 
-    # Perform a left join to identify customers only in dureti_customer
-    merged_df = pd.merge(dureti_customer, combined_cust_by_crm, on= ['wpc_id', 'crm_id','Phone Number', 'Saving Account', 'remark'], how='left', indicator=True)
-    # st.write(merged_df)
+        # Filter to keep only rows that are in dureti_customer but not in combined_cust_by_crm
+        crm_only = merged_df[merged_df['_merge'] == 'left_only']
+        crm_cust_only = crm_only[['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date']]
 
-    # Filter to keep only rows that are in dureti_customer but not in combined_cust_by_crm
-    crm_only = merged_df[merged_df['_merge'] == 'left_only']
-    crm_cust_only = crm_only[['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date']]
-
-    return combined_cust_by_crm, crm_cust_only
+        return combined_cust_by_crm, crm_cust_only
+    except Exception as e:
+        st.error(f"An error occurred while fetching data: {e}")
 
 @st.cache_data
 def load_all_women_data(username):
@@ -2676,54 +2684,78 @@ def load_kiyya_data():
     username = st.session_state.get("username", "")
     role = st.session_state.get("role", "")
 
-    # Fetch userId based on username
-    if role == "CRM":
-        crm_id_query = f"SELECT crm_id FROM crm_user WHERE username = '{username}'"
-        crm_id_result = db_ops.fetch_data(crm_id_query)
-    else:
-        crm_id_query = f"SELECT userId FROM user_infos WHERE username = '{username}'"
-        crm_id_result = db_ops.fetch_data(crm_id_query)
+    try:
+        # Fetch userId based on username
+        if role == "CRM":
+            crm_id_query = "SELECT crm_id FROM crm_user WHERE username = %s"
+            crm_id_result = db_ops.fetch_data(crm_id_query, (username,))
+        else:
+            crm_id_query = "SELECT userId FROM user_infos WHERE username = %s"
+            crm_id_result = db_ops.fetch_data(crm_id_query, (username,))
 
-    # Check if crm_id_result is empty
-    if not crm_id_result:
-        st.warning("No CRM ID found for the current user.")
-        return pd.DataFrame(), pd.DataFrame()
+        # Check if crm_id_result is empty
+        if not crm_id_result:
+            st.warning("No user ID found for the current user.")
+            return pd.DataFrame(), pd.DataFrame()
 
-    dureti_customer_query = f"SELECT * FROM kiyya_customer WHERE userId = '{crm_id_result[0][0]}' and `registered_date` >= '2024-10-01'"
-    unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
-    conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+        # Get the id based on the role
+        id = crm_id_result[0]['crm_id'] if role == "CRM" else crm_id_result[0]['userId']
+        # st.write(id)
+        # Query for dureti_customer based on userId and registered_date
+        dureti_customer_query = """
+            SELECT * FROM kiyya_customer 
+            WHERE userId = %s 
+            AND registered_date >= '2024-10-01'
+        """
+        
+        dureti_customer_data = db_ops.fetch_data(dureti_customer_query, (id,))
 
+        # Define the expected column names
+        columns = ['kiyya_id', 'userId', 'Full Name', 'Phone Number', 
+                'Saving Account', 'Customer Identification Type', 'Gender', 
+                'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 
+                'Woreda', 'Educational Level', 'Business Sector', 
+                'Line of Business', 'Initial Working Capital', 
+                'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 
+                'Register Date']
+        dureti_customer = pd.DataFrame(dureti_customer_data, columns=columns)
+        
+        unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
+        conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
 
-    dureti_customer = pd.DataFrame(db_ops.fetch_data(dureti_customer_query), 
-                                   columns = ['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date'])
+        
+        # dureti_customer.columns =  ['kiyya_id', 'userId', 'Full Name','Phone Number', 'Saving Account', 'Customer Identification  Type', 'Gender', 'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 'Woreda', 'Educational Level', 'Business Sector', 'Line of Business', 'Initial Working Capital', 'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 'Register Date']
+        # st.write(dureti_customer)
+        
+        unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
+        unique_customer.columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
 
-    unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query), 
-                                   columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+        conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query))
+        conversion_customer.columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
 
-    conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query), 
-                                       columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date'])
+        # Merge DataFrames on 'Saving Account'
+        unique_by_crm = pd.merge(dureti_customer, unique_customer, on='Saving Account', how='inner')
+        conv_by_crm = pd.merge(dureti_customer, conversion_customer, on='Saving Account', how='inner')
 
-    # Merge DataFrames on 'Saving Account'
-    unique_by_crm = pd.merge(dureti_customer, unique_customer, on='Saving Account', how='inner')
-    conv_by_crm = pd.merge(dureti_customer, conversion_customer, on='Saving Account', how='inner')
+        # Select and concatenate the required columns
+        unique_cust_by_crm = unique_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount',  'Disbursed Date']]
+        conv_cust_by_crm = conv_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'Disbursed Date']]
 
-    # Select and concatenate the required columns
-    unique_cust_by_crm = unique_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount',  'Disbursed Date']]
-    conv_cust_by_crm = conv_by_crm[['kiyya_id', 'userId', 'Customer Name', 'Product Type', 'Phone Number', 'Saving Account', 'Disbursed Amount', 'Disbursed Date']]
+        combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
+        # st.write(combined_cust_by_crm)
 
-    combined_cust_by_crm = pd.concat([unique_cust_by_crm, conv_cust_by_crm], axis=0).drop_duplicates()
-    # st.write(combined_cust_by_crm)
+        # Perform a left join to identify customers only in dureti_customer
+        merged_df = pd.merge(dureti_customer, combined_cust_by_crm, on= ['kiyya_id', 'userId','Phone Number', 'Saving Account'], how='left', indicator=True)
+        # st.write(merged_df)
 
-    # Perform a left join to identify customers only in dureti_customer
-    merged_df = pd.merge(dureti_customer, combined_cust_by_crm, on= ['kiyya_id', 'userId','Phone Number', 'Saving Account'], how='left', indicator=True)
-    # st.write(merged_df)
-
-    # Filter to keep only rows that are in dureti_customer but not in combined_cust_by_crm
-    crm_only = merged_df[merged_df['_merge'] == 'left_only']
-    crm_cust_only = crm_only[['kiyya_id', 'userId', 'Full Name', 'Phone Number', 'Saving Account', 'Region', 'Zone/Subcity', 'Woreda', 'Register Date']]
-
-    return combined_cust_by_crm, crm_cust_only
-
+        # Filter to keep only rows that are in dureti_customer but not in combined_cust_by_crm
+        crm_only = merged_df[merged_df['_merge'] == 'left_only']
+        crm_cust_only = crm_only[['kiyya_id', 'userId', 'Full Name', 'Phone Number', 'Saving Account', 'Region', 'Zone/Subcity', 'Woreda', 'Register Date']]
+        # st.write(combined_cust_by_crm)
+        # st.write(crm_cust_only)
+        return combined_cust_by_crm, crm_cust_only
+    except Exception as e:
+            st.error(f"An error occurred while fetching data: {e}")
 
 def load_kiyya_branch_data():
     # Access the username from session state
@@ -3073,15 +3105,25 @@ def load_kiyya_report_data():
     kiyya_customer_query = f"""
         SELECT COUNT(kiyya_id) as total
         FROM kiyya_customer 
-        WHERE DATE(registered_date) = '{today_date}'
+        WHERE DATE(registered_date) >= '{today_date}'
     """
     
     # Fetch data and extract the counts
     kiyya_customer = db_ops.fetch_data(keyya_customer_query)[0]['total']  # Extract the count value
     kiyya_customer_today = db_ops.fetch_data(kiyya_customer_query)[0]['total']  # Extract the count value
+
+    formal_women_query = f"SELECT count(wpc_id) as total FROM women_product_customer"
+    formaltodays_query = f"""
+        SELECT COUNT(wpc_id) as total
+        FROM women_product_customer 
+        WHERE DATE(registered_date) = '{today_date}'
+    """
+    # Fetch data and extract the counts
+    formal_customer = db_ops.fetch_data(formal_women_query)[0]['total']  # Extract the count value
+    formal_customer_today = db_ops.fetch_data(formaltodays_query)[0]['total']  # Extract the count value
     
 
-    return kiyya_customer, kiyya_customer_today
+    return kiyya_customer, kiyya_customer_today, formal_customer, formal_customer_today
 
 
 
@@ -3541,8 +3583,10 @@ def load_kiyya_actual_vs_targetdata(role, username):
             combined_user.columns=['user_Id', 'Recruited by', 'Sub Process', 'branch_code']
             # Fetching customer data for informal customers
             # st.write(combined_user)
-            informal_customer = pd.DataFrame(db_ops.fetch_data(in_customer_query, ('1cc2ceef-fc07-44b9-9696-86d734d1dd59', user_id)))
-            informal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+            informal_customer_data = db_ops.fetch_data(in_customer_query, ('1cc2ceef-fc07-44b9-9696-86d734d1dd59', user_id))
+            inf_columns = ['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+            informal_customer = pd.DataFrame(informal_customer_data, columns= inf_columns)
+            # informal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
 
             # Add product_type column as 'Informal' for informal_customer
             informal_customer['product_type'] = 'Women Informal'
@@ -3552,17 +3596,21 @@ def load_kiyya_actual_vs_targetdata(role, username):
             informal_customer['Register Date'] = pd.to_datetime(informal_customer['Register Date']).dt.strftime('%Y-%m-%d')
 
             # Fetching customer data for formal customers
-            formal_customer = pd.DataFrame(db_ops.fetch_data(formal_customer_query, (user_id,)))
-            formal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+            formal_customer_data = db_ops.fetch_data(formal_customer_query, (user_id,))
+            f_columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+            formal_customer = pd.DataFrame(formal_customer_data, columns=f_columns)
+            # formal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
 
             # Add product_type column as 'Formal' for formal_customer
             formal_customer['product_type'] = 'Women Formal'
             params = account_numbers_tuple + account_query_tuple + (branch_code,)
-            unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query, params))
-            unique_customer.columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+            unique_customer_data = db_ops.fetch_data(unique_customer_query, params)
+            u_columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+            unique_customer = pd.DataFrame(unique_customer_data, columns=u_columns)
 
-            conversion_customer = pd.DataFrame(db_ops.fetch_data(conversion_customer_query, params))
-            conversion_customer.columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+            conversion_customer_data = db_ops.fetch_data(conversion_customer_query, params)
+            c_columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+            conversion_customer = pd.DataFrame(conversion_customer_data, columns=c_columns)
             
             # Merge DataFrames on 'Saving Account'
             unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)

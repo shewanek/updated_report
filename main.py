@@ -136,7 +136,8 @@ def main():
         st.markdown(html_title, unsafe_allow_html=True)
     # login_bar()
     role = st.session_state.get('selected_role', 'Select Role')
-    with st.form(key='login', clear_on_submit= True):
+    
+    with st.form(key='login', clear_on_submit= True, border=True):
         st.subheader('Login Here')
         # Custom CSS to change the border color when the input field is focused
         custom_ss = """
@@ -162,7 +163,7 @@ def main():
 
         with col1:
             # Log In button
-            if st.form_submit_button('Log In'):
+            if st.form_submit_button(label='Log In', help = ' Click here after you fill Your username & Password'):
                 try:
                     # Username validation
                     if not username.strip():
@@ -223,14 +224,16 @@ def main():
         with col3:
             st.write("Don't have an account?")
         with col4:
-            if st.form_submit_button('Sign Up'):
+            if st.form_submit_button('Sign Up', help = 'Click here to Sign up'):
                 sign_up()
         with col5:
-            if st.form_submit_button('Forgot Password?'):
+            if st.form_submit_button('Forgot Password?', help= 'Click here to submit your password reset request.'):
                 # sleep(0.5)
                 # st.switch_page("pages/forgetps.py")
                 register()
-   
+    
+
+    
 
 if __name__ == '__main__':
     # login_bar()
