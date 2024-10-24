@@ -2479,8 +2479,11 @@ def load_women_data():
 
         dureti_customer_data = db_ops.fetch_data(dureti_customer_query, (id,)) 
         columns = ['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date']  
-        dureti_customer = pd.DataFrame(dureti_customer_data, columns = columns)
-        # dureti_customer.columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date']                            
+        if not dureti_customer_data:
+            dureti_customer = pd.DataFrame(dureti_customer_data, columns = columns)
+        else:
+            dureti_customer = pd.DataFrame(dureti_customer_data)
+            dureti_customer.columns=['wpc_id', 'crm_id', 'Full Name', 'Phone Number', 'Saving Account', 'disbursed_amount', 'remark', 'registered_date']                            
         # st.write(dureti_customer)
         unique_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
         unique_customer.columns = ['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
@@ -2709,16 +2712,26 @@ def load_kiyya_data():
         """
         
         dureti_customer_data = db_ops.fetch_data(dureti_customer_query, (id,))
-
-        # Define the expected column names
-        columns = ['kiyya_id', 'userId', 'Full Name', 'Phone Number', 
-                'Saving Account', 'Customer Identification Type', 'Gender', 
-                'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 
-                'Woreda', 'Educational Level', 'Business Sector', 
-                'Line of Business', 'Initial Working Capital', 
-                'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 
-                'Register Date']
-        dureti_customer = pd.DataFrame(dureti_customer_data, columns=columns)
+        if not dureti_customer_data:
+            # Define the expected column names
+            columns = ['kiyya_id', 'userId', 'Full Name', 'Phone Number', 
+                    'Saving Account', 'Customer Identification Type', 'Gender', 
+                    'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 
+                    'Woreda', 'Educational Level', 'Business Sector', 
+                    'Line of Business', 'Initial Working Capital', 
+                    'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 
+                    'Register Date']
+            dureti_customer = pd.DataFrame(dureti_customer_data, columns=columns)
+        else:
+            dureti_customer = pd.DataFrame(dureti_customer_data)
+            dureti_customer.columns = ['kiyya_id', 'userId', 'Full Name', 'Phone Number', 
+                    'Saving Account', 'Customer Identification Type', 'Gender', 
+                    'Marital Status', 'Date of Birth', 'Region', 'Zone/Subcity', 
+                    'Woreda', 'Educational Level', 'Business Sector', 
+                    'Line of Business', 'Initial Working Capital', 
+                    'Source of Initial Capital', 'Daily Sales', 'Purpose of the loan', 
+                    'Register Date']
+            # st.write(dureti_customer)
         
         unique_customer_query = "SELECT * FROM unique_intersection WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
         conversion_customer_query = f"SELECT * FROM conversiondata WHERE product_type = 'Women Informal' OR product_type = 'Women Formal'"
@@ -3813,7 +3826,7 @@ def upload_to_unique(df):
                 
                 women_customer_df = pd.DataFrame(db_ops.fetch_data(query))
                 women_customer_df.columns=['Saving_Account', 'userId']
-                st.write(women_customer_df)
+                # st.write(women_customer_df)
 
         # Fetch branchcustomer data
         querry1 = "SELECT Saving_Account, userId FROM branchcustomer"

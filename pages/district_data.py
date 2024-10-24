@@ -1,7 +1,6 @@
 import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
-from PIL import Image
 from dependence import load_districtuniquedata, load_customer_detail
 from navigation import make_sidebar1
 

@@ -101,7 +101,7 @@ def register():
     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     st.sidebar.image('pages/michu.png')
-    username = st.session_state.get("username", "")
+    # username = st.session_state.get("username", "")
     full_name = st.session_state.get("full_name", "")
     # st.sidebar.write(f'Welcome, :orange[{full_name}]')
     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)

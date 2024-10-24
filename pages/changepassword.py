@@ -1,9 +1,5 @@
 import streamlit as st
 from dependence import update_password
-# from PIL import Image
-from time import sleep  # Assuming dash.py contains your dashboard layout
-# from navigation import login_bar
-
 
 # Main function to handle user sign-up
 @st.dialog("Change your Password")

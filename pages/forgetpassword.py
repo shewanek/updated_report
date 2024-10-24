@@ -1,6 +1,5 @@
 import streamlit as st
 from dependence import insert_resetpuser, validate_full_name, validate_email, has_user_sent_request_today
-from time import sleep
 
 
 

@@ -1,5 +1,4 @@
 import streamlit as st
-from PIL import Image
 from time import sleep  # Assuming dash.py contains your dashboard layout
 from navigation import make_sidebar
            

@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from PIL import Image
 from streamlit_extras.metric_cards import style_metric_cards
 from navigation import make_sidebar
 from pages.dureati_reg import registerr
@@ -104,6 +103,8 @@ def register():
         # crm_cust_only['wpc_id'].nunique()
         # # combined_cust_by_crm, crm_cust_only = load_women_data()
         combined_cust_by_crm, crm_cust_only = load_kiyya_data()
+        # st.write(combined_cust_by_crm)
+        # st.write(crm_cust_only)
         f_combined_cust_by_crm, f_crm_cust_only = load_women_data()
 
         start_dates = []

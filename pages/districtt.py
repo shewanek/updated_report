@@ -1,5 +1,4 @@
 import streamlit as st
-from PIL import Image
 from navigation import login_bar
 from navigation import home_sidebar
 from time import sleep

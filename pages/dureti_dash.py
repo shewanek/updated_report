@@ -1,7 +1,6 @@
 import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
-from PIL import Image
 from dependence import load_all_women_data, load_all_kiyya_data
 from navigation import home_sidebar
 import pandas as pd
