@@ -3550,12 +3550,14 @@ def load_kiyya_actual_vs_targetdata(role, username):
             # st.write(account_result)
             account_query_f = db_ops.fetch_data(account_query_formal, (user_id,))
 
-            # Convert the list of account numbers to a tuple for parameterized queries
-            account_numbers_tuple = tuple([row['account_number'] for row in account_result])
-            account_query_tuple = tuple([row['account_no'] for row in account_query_f])
-            # st.write(account_numbers_tuple)
-            placeholders2 = ', '.join(['%s'] * len(account_numbers_tuple))
-            placeholders3 = ', '.join(['%s'] * len(account_query_tuple))
+            # Check if the results are empty and set to an empty tuple if they are
+            account_numbers_tuple = tuple([row['account_number'] for row in account_result]) if account_result else ()
+            account_query_tuple = tuple([row['account_no'] for row in account_query_f]) if account_query_f else ()
+
+            # Generate placeholders for SQL query
+            placeholders2 = ', '.join(['%s'] * len(account_numbers_tuple)) if account_numbers_tuple else '%s'
+            placeholders3 = ', '.join(['%s'] * len(account_query_tuple)) if account_query_tuple else '%s'
+
 
 
             # Unique customer query for disbursements after October 1st, 2024
@@ -3597,9 +3599,12 @@ def load_kiyya_actual_vs_targetdata(role, username):
             # Fetching customer data for informal customers
             # st.write(combined_user)
             informal_customer_data = db_ops.fetch_data(in_customer_query, ('1cc2ceef-fc07-44b9-9696-86d734d1dd59', user_id))
-            inf_columns = ['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
-            informal_customer = pd.DataFrame(informal_customer_data, columns= inf_columns)
-            # informal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+            if not informal_customer_data:
+                inf_columns = ['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+                informal_customer = pd.DataFrame(informal_customer_data, columns= inf_columns)
+            else:
+                informal_customer = pd.DataFrame(informal_customer_data)
+                informal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
 
             # Add product_type column as 'Informal' for informal_customer
             informal_customer['product_type'] = 'Women Informal'
@@ -3610,20 +3615,32 @@ def load_kiyya_actual_vs_targetdata(role, username):
 
             # Fetching customer data for formal customers
             formal_customer_data = db_ops.fetch_data(formal_customer_query, (user_id,))
-            f_columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
-            formal_customer = pd.DataFrame(formal_customer_data, columns=f_columns)
-            # formal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+            if not formal_customer_data:
+                f_columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
+                formal_customer = pd.DataFrame(formal_customer_data, columns=f_columns)
+            else:
+                formal_customer = pd.DataFrame(formal_customer_data)
+                formal_customer.columns=['kiyya_id', 'user_Id', 'Full Name', 'Phone Number', 'Saving Account', 'Register Date']
 
             # Add product_type column as 'Formal' for formal_customer
             formal_customer['product_type'] = 'Women Formal'
             params = account_numbers_tuple + account_query_tuple + (branch_code,)
             unique_customer_data = db_ops.fetch_data(unique_customer_query, params)
-            u_columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
-            unique_customer = pd.DataFrame(unique_customer_data, columns=u_columns)
+            if not unique_customer_data:
+                u_columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+                unique_customer = pd.DataFrame(unique_customer_data, columns=u_columns)
+            else:
+                unique_customer = pd.DataFrame(unique_customer_data)
+                unique_customer.columns=['uniqId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
 
             conversion_customer_data = db_ops.fetch_data(conversion_customer_query, params)
-            c_columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
-            conversion_customer = pd.DataFrame(conversion_customer_data, columns=c_columns)
+            if not conversion_customer_data:
+                c_columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
+                conversion_customer = pd.DataFrame(conversion_customer_data, columns=c_columns)
+
+            else:
+                conversion_customer = pd.DataFrame(conversion_customer_data)
+                conversion_customer.columns=['conId', 'branch_code', 'Customer Number', 'Customer Name', 'Saving Account', 'Product Type', 'Disbursed Amount', 'Disbursed Date', 'Upload Date']
             
             # Merge DataFrames on 'Saving Account'
             unique_conversation = pd.concat([unique_customer, conversion_customer], axis=0).drop_duplicates(subset=['Saving Account'], keep='first').reset_index(drop=True).rename(lambda x: x + 1)
@@ -3649,6 +3666,7 @@ def load_kiyya_actual_vs_targetdata(role, username):
             full_disb = unique_conversation.merge(informal_formal_code, on='Saving Account', how='left').drop_duplicates(subset=['Saving Account'], keep='first')
             # st.write(full_disb)
 
+       
             
             
             # st.write(merged_df)
