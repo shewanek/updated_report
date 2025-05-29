@@ -61,11 +61,13 @@ def run_daily_cleanup():
             success = delete_recommendationabove8()
             if success:
                 st.session_state.last_cleanup_date = today
-                st.success("Daily cleanup completed")
+                # st.success("Daily cleanup completed")
             else:
-                st.warning("Cleanup completed with some errors")
+                pass
+                    # st.warning("Cleanup completed with some errors")
     else:
-        st.info("Cleanup already ran today")
+        pass
+        # st.info("Cleanup already ran today")
     
 
 
@@ -297,10 +299,10 @@ def main():
                             if check_rec_acc_exist(customer_account):
                                 st.error("No Need Recommendation for this customer")
                                 return
-                            # from dependence import check_rec_register
-                            # if not check_rec_register(customer_phone, customer_account):
-                            #     st.error("Action denied. You must be registered before submitting a recommendation letter.")
-                            #     return
+                            from dependence import check_rec_register
+                            if not check_rec_register(customer_phone, customer_account):
+                                st.error("Action denied. You must be registered before submitting a recommendation letter.")
+                                return
 
                                 
                             # Save file and get metadata
@@ -1782,7 +1784,7 @@ def main():
             traceback.print_exc()
       
     # Run cleanup at startup
-    # run_daily_cleanup()
+    run_daily_cleanup()
 
 
         

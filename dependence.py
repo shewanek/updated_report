@@ -10215,9 +10215,28 @@ def get_overdue_pending() -> List[Tuple[str, str]]:
             AND register_date < DATE_SUB(CURRENT_DATE(), INTERVAL 8 DAY)
         """
         result = db_ops.fetch_data(query)
-        if result:
-            return [(row['rec_id'], row['document_path']) for row in result] if isinstance(result[0], dict) else result
-        return []
+        if not result:
+            return []
+        overdue_items = [(row['rec_id'], row['document_path']) for row in result] if isinstance(result[0], dict) else result
+        # Store in total_removed table
+        try:
+            insert_query = """
+                INSERT INTO total_removed (rec_id, document_path, removal_date, removal_reason)
+                VALUES (%s, %s, CURRENT_DATE(), 'Overdue Pending Recommendation')
+                ON DUPLICATE KEY UPDATE
+                    removal_date = CURRENT_DATE(),
+                    removal_reason = VALUES(removal_reason)
+            """
+            
+            # Insert all records at once
+            params = [(item[0], item[1]) for item in overdue_items]
+            db_ops.insert_many(insert_query, params)
+            
+        except Exception as insert_error:
+            st.error(f"Failed to log removed items: {str(insert_error)}")
+            # Continue even if logging fails
+        
+        return overdue_items
     except Exception as e:
         st.error(f"Error fetching overdue recommendations: {str(e)}")
         return []
