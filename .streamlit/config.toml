@@ -1,0 +1,46 @@
+[theme]
+base = "dark"  # Set dark mode as default
+
+[client]
+showSidebarNavigation = false  # Hide sidebar hamburger menu
+showErrorDetails = false  # Do not display detailed errors to the user
+toolbarMode = "viewer"  # Show the viewer toolbar
+#keepAliveInterval = 30000  # 30 seconds; ensures a periodic ping to keep the WebSocket alive
+
+[global]
+disableWidgetStateDuplicationWarning = true  # Suppress duplicate widget state warnings
+
+[server]
+headless = true  # Enable headless mode for cloud or remote deployments
+runOnSave = true  # Reload automatically when the file is saved
+baseUrlPath = "MichuPortal"  # Custom base URL path for your portal
+enableCORS = true  # Enable Cross-Origin Resource Sharing for external domain access
+enableXsrfProtection = true  # Enable Cross-Site Request Forgery protection for added security
+maxUploadSize = 100  # Max upload size in MB
+
+# Increase maxMessageSize slightly to handle large WebSocket messages, but avoid excessive values
+maxMessageSize = 600_000_000  # Increased WebSocket message size limit to 60 MB
+
+# Enable WebSocket compression for efficient data handling on slow or limited bandwidth connections
+enableWebsocketCompression = true  # Enable WebSocket compression
+
+# Enable static serving if you have static assets (like CSS/JS files) your app relies on
+enableStaticServing = true  # Enable static file serving if you use external static files
+
+# Timeout settings can help handle WebSocket disconnections better
+#websocketTimeout = 60  # Timeout in seconds; adjust based on your network conditions
+
+
+# websocket_keep_alive = true  # Keep WebSocket connection alive
+
+# Set a session timeout for disconnected WebSocket sessions
+# Uncomment and set a value if you notice sessions disconnecting too soon
+# disconnectedSessionTTL = 180  # Increase TTL for disconnected sessions to 180 seconds
+
+# Limit the maximum number of concurrent users (optional)
+# Uncomment if you experience performance issues due to high traffic
+# maxConcurrentUsers = 100
+
+[browser]
+gatherUsageStats = false  # Disable sending usage statistics to Streamlit's servers
+serverAddress = "0.0.0.0"  # Bind server to all network interfaces to allow external access

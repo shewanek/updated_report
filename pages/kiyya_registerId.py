@@ -1,0 +1,174 @@
+import streamlit as st
+# from dependence import validate_full_name
+from navigation import login_bar
+from navigation import make_sidebar1
+import requests
+
+
+def set_session_state(transactionID, national_id, phone_nmuber):
+    st.session_state.logged_in = True
+    st.session_state['transactionID'] = transactionID
+    st.session_state['national_id'] = national_id
+    st.session_state['phone_nmuber'] = phone_nmuber
+
+
+# Main function to handle user sign-up
+def register():
+    """
+    Handles user sign-up process and form interactions.
+    Switches page based on the API response.
+    """
+    st.set_page_config(page_title="Michu form", page_icon=":bar_chart:", layout="wide")
+    custom_css = """
+    <style>
+        div.block-container {
+            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+        }
+        #MainMenu { visibility: hidden; }
+        .stDeployButton { visibility: hidden; }
+        .stButton button {
+            background-color: #000000;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .stButton button:hover {
+            background-color: #00bfff; /* Cyan blue on hover */
+            color: white; /* Change text color to white on hover */
+        }
+    </style>
+    """
+    st.markdown(custom_css, unsafe_allow_html=True)
+    login_bar()
+
+    col1, col2 = st.columns([0.1, 0.9])
+    with col1:
+        st.image('pages/coopbanck.gif') 
+        
+    html_title = """
+        <style>
+        .title_dash {
+            font-weight: bold;
+            padding: 1px;
+            border-radius: 6px;
+        }
+        </style>
+        <center><h3 class="title_dash">Kiyya Informal Customer Registeration Form</h3></center>
+    """
+    with col2:
+        st.markdown(html_title, unsafe_allow_html=True)
+
+    # Sidebar
+    st.sidebar.image("pages/michu.png")
+    username = st.session_state.get("username", "")
+    full_name = st.session_state.get("full_name", "")
+    st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
+    make_sidebar1()
+
+    # Main form for national ID input
+    # Main container
+    with st.container():
+        
+
+        # Form header
+        st.markdown(
+            """
+            <div style="background-color:#f5f5f5; padding:10px; border-radius:10px; text-align:center; margin-bottom:20px;">
+                <h2 style="color:#333;">National ID Verification</h2>
+                <p style="color:#666;">Please provide your National ID and Phone Number to proceed.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        col1, col2, col3 = st.columns([1, 3, 1])
+        with col2:   
+            # Create form
+            with st.form(key="national_form", clear_on_submit=True):
+                # Input fields
+                national_key = "national_input"
+                phone_key = "phone_input"
+
+                national_id = st.number_input(
+                    "National ID",
+                    key=national_key,
+                    value=None,
+                    step=1.0,
+                    placeholder="Enter national ID (FIN)",
+                    help="Provide your 12-digit National ID number."
+                )
+
+                phone_number = st.text_input(
+                    "Phone Number",
+                    key=phone_key,
+                    placeholder="Enter phone number",
+                    help="Provide your mobile phone number (e.g., 09XXXXXXXX)."
+                ).strip()
+
+                # Submit button
+                submit_button = st.form_submit_button("Proceed")
+
+                # Handle form submission
+                if submit_button:
+                    from dependence import validate_phone, get_unquiedureatphone, get_unquiedkiyyaphone, get_natinal_id
+                    try:
+                        # Validate form input
+                        if not national_id:
+                            st.error("Please enter a valid National ID.")
+                            st.stop()
+                        elif not validate_phone(phone_number):
+                            st.error('Please enter a valid phone number (use this format 09... or 07...)')
+                            st.stop()
+                        elif get_natinal_id(national_id):
+                            st.error('The national id already exist, please enter correct national id (yours)')
+                            st.stop()
+                        elif phone_number in get_unquiedureatphone():
+                            st.error('The phone number already exist, please enter correct phone number(new)')
+                            st.stop()
+                        elif phone_number in get_unquiedkiyyaphone():
+                            st.error('The phone number already exist, please enter correct phone number(new)')
+                            st.stop()
+
+                        else:
+
+                            # Prepare API request
+                            headers = {"Content-Type": "application/json"}
+                            payload = {"nationalId": national_id}
+                            response = requests.post(
+                                "https://faydaintegration.dev.kifiya.et/getRequestData",
+                                headers=headers,
+                                json=payload
+                            )
+
+                            # Handle API response
+                            if response.status_code == 200:
+                                data = response.json()
+                                if data.get("response") is not None:
+                                    # Set session state and print details
+                                    st.session_state.transaction_id = data.get("transactionID")
+                                    st.session_state.national_id = national_id
+                                    st.session_state.phone_number = phone_number
+
+                                    print(data.get("id"))
+                                    print(data.get("version"))
+                                    print(data.get("transactionID"))
+                                    print(data.get("response"))
+                                    print(data.get("response").get("maskedMobile"))
+                                    
+                                    # Switch to OTP page
+                                    st.success("Redirecting to OTP page...")
+                                    st.switch_page("pages/kiyya_otp.py")
+                                else:
+                                    st.error(data.get("errors") or "Failed to verify the National ID.")
+                            else:
+                                st.error(f"Failed to fetch data. HTTP Status Code: {response.status_code}")
+                    except requests.exceptions.RequestException as e:
+                        st.error(f"An error occurred while fetching data: {str(e)}")
+
+                # Display error message if available
+                if 'error_message' in st.session_state:
+                    st.error(st.session_state.error_message)
+                    del st.session_state.error_message
+if __name__ == "__main__":
+    register()
