@@ -183,11 +183,19 @@ def register():
         # st.markdown('</div>', unsafe_allow_html=True)
     
     with st.form(key = 'upload_recomadationn', clear_on_submit=True):
-        
-        if st.form_submit_button("Recomadation Letter"):
+        col11, col22 = st.columns([0.5, 0.5])
+        with col11:
+            if st.form_submit_button("Recomadation Letter"):
                 sleep(0.5)
                 # st.write("under development")
                 st.switch_page('pages/upload_letter.py')
+        with col22:
+            if st.form_submit_button("Similarity Check"):
+                sleep(0.5)
+                # st.write("under development")
+                st.switch_page('pages/similaritycheck.py')
+        
+        
     
 
     # Footer implementation

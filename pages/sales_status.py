@@ -5,7 +5,7 @@ from navigation import home_sidebar
 import plotly.graph_objects as go
 import pandas as pd
 from dependence import load_sales_detail, update_rejected_customers
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
 
 

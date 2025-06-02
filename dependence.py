@@ -193,6 +193,10 @@ def load_unquie(role, usrname):
     return df_combine
 
 
+
+
+
+
 # @handle_session
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
@@ -9277,6 +9281,149 @@ def upload_coll(df):
         return False
 
 
+def upload_dueloans(df):
+    try:
+        # Display the Saving_Account as list where product_type is 'Women Informal'
+        informal_accounts = df[df['product_type'] == 'Michu-Kiyya Informal']['saving_account'].tolist()
+
+        # Display the collected_from as list where product_type is 'Women Formal'
+        formal_accounts = df[df['product_type'] == 'Michu Kiyya - Formal']['saving_account'].tolist()
+        # st.write(informal_accounts)
+        # st.write(formal_accounts)
+
+        # Initialize the dataframes to avoid referencing issues
+        kiyya_customer_df = pd.DataFrame(columns=['Saving_Account', 'userId'])
+        women_customer_df = pd.DataFrame(columns=['Saving_Account', 'userId'])
+
+        
+        # Prepare placeholders for informal_accounts in the query
+        if informal_accounts:
+            # Convert the list to tuple format
+            informal_accounts_tuple = tuple(informal_accounts)
+            
+            if informal_accounts_tuple:
+                # Handle case where there is only one element in the tuple
+                if len(informal_accounts_tuple) == 1:
+                    informal_accounts_tuple = f"('{informal_accounts_tuple[0]}')"
+                else:
+                    informal_accounts_tuple = str(informal_accounts_tuple)
+
+                # Fetch kiyya_customer data for accounts in informal_accounts
+                query = f"""
+                    SELECT account_number, userId 
+                    FROM kiyya_customer 
+                    WHERE account_number IN {informal_accounts_tuple}
+                        AND userId IN (SELECT userId FROM user_infos)
+                """
+                
+                # kiyya_customer_data = db_ops.fetch_data(query)
+                kiyya_customer_df = pd.DataFrame(db_ops.fetch_data(query))
+                
+                kiyya_customer_df.columns=['Saving_Account', 'userId']
+                # st.write(kiyya_customer_df)
+        # st.write(formal_accounts)
+        if formal_accounts:
+            formal_accounts_tuple = tuple(formal_accounts)
+            
+            # Ensure the tuple is not empty
+            if formal_accounts_tuple:
+                
+                # Convert to a string format compatible with SQL, especially for single elements
+                if len(formal_accounts_tuple) == 1:
+                    formal_accounts_tuple = f"('{formal_accounts_tuple[0]}')"
+                else:
+                    formal_accounts_tuple = str(formal_accounts_tuple)
+                
+                query = f"""
+                    SELECT account_no, crm_id 
+                    FROM women_product_customer 
+                    WHERE account_no IN {formal_accounts_tuple}
+                        AND crm_id IN (SELECT userId FROM user_infos)
+                """
+                w_customer_df = db_ops.fetch_data(query)
+                if not w_customer_df:
+                    columns = ['Saving_Account', 'userId']
+                    women_customer_df = pd.DataFrame(w_customer_df,columns=columns)
+                else:
+                    women_customer_df = pd.DataFrame(w_customer_df)
+                    women_customer_df.columns=['Saving_Account', 'userId']
+                # st.write(women_customer_df)
+
+        # Fetch branchcustomer data
+        querry1 = "SELECT Saving_Account, userId FROM branchcustomer"
+        branchcustomer_df = pd.DataFrame(db_ops.fetch_data(querry1))
+        branchcustomer_df.columns=['Saving_Account', 'userId']
+
+        # Fetch all user_info data
+        querry2 = "SELECT userId, branch FROM user_infos where branch like 'ET%'"
+        user_info_df = pd.DataFrame(db_ops.fetch_data(querry2))
+        user_info_df.columns=['userId', 'branch_code']
+
+      
+
+        # Concatenate customer data in reverse order to prioritize kiyya_customer and women_customer
+        combined_customer_df = pd.concat([branchcustomer_df, women_customer_df, kiyya_customer_df], ignore_index=True)
+        combined_customer_df = combined_customer_df.drop_duplicates(subset=['Saving_Account'], keep='last')
+
+        # # Close cursor after data fetching
+        # cursor.close()
+
+        # Merge combined customer data with user_info
+        merged_df = combined_customer_df.merge(user_info_df, on='userId', how='left')
+
+        # Merge the original df with merged_df on 'Saving_Account'
+        df['saving_account'] = df['saving_account'].astype(str)
+        merged_df['Saving_Account'] = merged_df['Saving_Account'].astype(str)
+
+        final_merged_df = df.merge(merged_df, left_on='saving_account', right_on='Saving_Account', how='left')
+        # st.write(final_merged_df)
+        # Replace the branch_code in df with the correct merged branch_code if saving_account matches
+        final_merged_df['branch_code'] = final_merged_df.apply(
+            lambda row: row['branch_code_y'] if pd.notna(row['branch_code_y']) else row['branch_code_x'], axis=1
+        )
+        # st.write(final_merged_df)
+
+        # Prepare data for insertion
+        # data_to_insert = final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date']].values.tolist()
+        # Prepare data for insertion
+        data_to_insert = [tuple(x) for x in final_merged_df[['loan_id', 'branch_code', 'customer_name', 'customer_number', 'phone_number', 'saving_account', 'approved_amount', 'product_type', 'approved_date', 'maturity_date', 'outstanding_balance', 'due_principal', 'due_interest', 'due_penalty', 'total_due_amount', 'arrears_start_date']].values.tolist()]
+        # st.write(data_to_insert)
+        # # Prepare data for insertion
+        # data_to_insert = final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date']].values.tolist()
+
+        # Insert data into unique_intersection table Error: "['total_dueAmount'] not in index"
+        try:
+            insert_query = """
+                INSERT INTO due_loan_datas (loan_id, branch_code, customer_name, customer_number, phone_number, saving_account, approved_amount, product_type, approved_date, maturity_date, outstanding_balance, due_principal, due_interest, due_penalty, total_dueAmount, arrears_start_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            
+             # Ensure data_to_insert is not empty
+            if data_to_insert:
+                # Make sure data_to_insert is a list of tuples
+                if all(isinstance(item, tuple) for item in data_to_insert):
+                    rows_inserted = db_ops.insert_many(insert_query, data_to_insert)
+                    st.success(f"{rows_inserted} rows uploaded successfully.")
+                
+                    return True
+                else:
+                    st.error("Data to insert should be a list of tuples.")
+            else:
+                st.warning("No data to insert into the unique_intersection table.")
+        except Exception as e:
+            st.error(f"Error can't upload data: ")
+            print("Database fetch error:", e)
+            traceback.print_exc()  
+            
+
+    except Exception as e:
+        st.error(f"Error: {e}")
+        traceback.print_exc()   # Rollback in case of error
+        return False
+
+
+
+
 # Check if any target_date from the uploaded file already exists in the target table
 def any_actula_coll_exists(df):
     # Format the dates using the format_target_date function
@@ -9290,6 +9437,23 @@ def any_actula_coll_exists(df):
         # Multiple dates case, dynamically generate placeholders
         placeholders = ', '.join(['%s'] * len(formatted_dates))
         query = f"SELECT collection_date FROM actual_coll WHERE collection_date IN ({placeholders})"
+        result = db_ops.fetch_data(query, formatted_dates)
+
+    return len(result) > 0
+
+# Check if any target_date from the uploaded file already exists in the target table
+def any_loan_id_exists(df):
+    # Format the dates using the format_target_date function
+    formatted_dates = tuple(df['loan_id'].tolist())
+    
+    if len(formatted_dates) == 1:
+        # Single date case
+        query = "SELECT loan_id FROM due_loan_datas WHERE loan_id = %s"
+        result = db_ops.fetch_data(query, (formatted_dates[0],))  # Access the first date
+    else:
+        # Multiple dates case, dynamically generate placeholders
+        placeholders = ', '.join(['%s'] * len(formatted_dates))
+        query = f"SELECT loan_id FROM due_loan_datas WHERE loan_id IN ({placeholders})"
         result = db_ops.fetch_data(query, formatted_dates)
 
     return len(result) > 0
@@ -10352,6 +10516,217 @@ def get_by_user_id(phone):
         raise RuntimeError(f"Error fetching recommendation data: {str(e)}")
 
 
+@st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
+def get_customer_names():
+    query = "SELECT fullName FROM kiyya_customer WHERE fullName IS NOT NULL LIMIT 1000"  # Filter at database level
+    results = db_ops.fetch_data(query)
+    return [row['fullName'] for row in results if row['fullName']] if results else []  # Additional Python-level filtering
+
+
+
+def get_officerreject():
+    """
+    Fetches officer performance based on their assigned districts.
+    Returns a list of dictionaries with 'Officer', 'Total Rejected', and 'Total Active' keys.
+    """
+    query = """
+    WITH RECURSIVE seq AS (
+        SELECT 1 AS n
+        UNION ALL
+        SELECT n + 1 FROM seq WHERE n < 10
+    ),
+    cleaned_user_infos AS (
+        SELECT 
+            userId,
+            full_Name AS Officer,
+            REPLACE(REPLACE(REPLACE(district, '[', ''), ']', ''), '"', '') AS clean_district
+        FROM 
+            user_infos
+        WHERE 
+            role = 3
+    ),
+    officer_districts AS (
+        SELECT 
+            u.userId,
+            u.Officer,
+            TRIM(
+                SUBSTRING_INDEX(
+                    SUBSTRING_INDEX(u.clean_district, ',', n),
+                    ',', -1
+                )
+            ) AS District
+        FROM 
+            cleaned_user_infos u
+        JOIN 
+            seq ON n <= 1 + LENGTH(u.clean_district) - LENGTH(REPLACE(u.clean_district, ',', ''))
+    )
+    SELECT 
+        o.Officer,
+        COUNT(r.michu_id) AS `Total Rejected`,
+        SUM(CASE WHEN r.statuss = 'active' THEN 1 ELSE 0 END) AS `Total Active`,
+        CONCAT(
+            ROUND(
+                IF(COUNT(r.michu_id) = 0, 0, 
+                    (SUM(CASE WHEN r.statuss = 'active' THEN 1 ELSE 0 END) / COUNT(r.michu_id)) * 100
+                ),
+                2
+            ),
+            '%'
+        ) AS `Active %`
+    FROM 
+        rejected_customer r
+    JOIN 
+        branch_list b ON b.branch_code = r.branch_code
+    JOIN 
+        district_list d ON d.dis_Id = b.dis_Id
+    JOIN 
+        officer_districts o ON o.District = d.district_name
+    GROUP BY 
+        o.Officer;
+    """
+    
+    # Fetch data using your db_ops.fetch_data method
+    result = db_ops.fetch_data(query)
+    
+    # Return empty list if result is None (in case of error), else return the fetched data
+    return result if result is not None else []
+
+
+
+def get_officerclosed():
+    """
+    Fetches officer performance based on their assigned districts.
+    Returns a list of dictionaries with 'Officer', 'Total Rejected', and 'Total Active' keys.
+    """
+    query = """
+    WITH RECURSIVE seq AS (
+        SELECT 1 AS n
+        UNION ALL
+        SELECT n + 1 FROM seq WHERE n < 10
+    ),
+    cleaned_user_infos AS (
+        SELECT 
+            userId,
+            full_Name AS Officer,
+            REPLACE(REPLACE(REPLACE(district, '[', ''), ']', ''), '"', '') AS clean_district
+        FROM 
+            user_infos
+        WHERE 
+            role = 3
+    ),
+    officer_districts AS (
+        SELECT 
+            u.userId,
+            u.Officer,
+            TRIM(
+                SUBSTRING_INDEX(
+                    SUBSTRING_INDEX(u.clean_district, ',', n),
+                    ',', -1
+                )
+            ) AS District
+        FROM 
+            cleaned_user_infos u
+        JOIN 
+            seq ON n <= 1 + LENGTH(u.clean_district) - LENGTH(REPLACE(u.clean_district, ',', ''))
+    )
+    SELECT 
+        o.Officer,
+        COUNT(r.loan_id) AS `Total Closed`,
+        SUM(CASE WHEN r.statuss = 'active' THEN 1 ELSE 0 END) AS `Total Active`,
+        CONCAT(
+            ROUND(
+                IF(COUNT(r.loan_id) = 0, 0, 
+                    (SUM(CASE WHEN r.statuss = 'active' THEN 1 ELSE 0 END) / COUNT(r.loan_id)) * 100
+                ),
+                2
+            ),
+            '%'
+        ) AS `Active %`
+    FROM 
+        closed r
+    JOIN 
+        branch_list b ON b.branch_code = r.branch_code
+    JOIN 
+        district_list d ON d.dis_Id = b.dis_Id
+    JOIN 
+        officer_districts o ON o.District = d.district_name
+    GROUP BY 
+        o.Officer;
+    """
+    
+    # Fetch data using your db_ops.fetch_data method
+    result = db_ops.fetch_data(query)
+    
+    # Return empty list if result is None (in case of error), else return the fetched data
+    return result if result is not None else []
+
+
+def get_officerprospect():
+    """
+    Fetches officer performance based on their assigned districts.
+    Returns a list of dictionaries with 'Officer', 'Total Rejected', and 'Total Active' keys.
+    """
+    query = """
+    WITH RECURSIVE seq AS (
+        SELECT 1 AS n
+        UNION ALL
+        SELECT n + 1 FROM seq WHERE n < 10
+    ),
+    cleaned_user_infos AS (
+        SELECT 
+            userId,
+            full_Name AS Officer,
+            REPLACE(REPLACE(REPLACE(district, '[', ''), ']', ''), '"', '') AS clean_district
+        FROM 
+            user_infos
+        WHERE 
+            role = 3
+    ),
+    officer_districts AS (
+        SELECT 
+            u.userId,
+            u.Officer,
+            TRIM(
+                SUBSTRING_INDEX(
+                    SUBSTRING_INDEX(u.clean_district, ',', n),
+                    ',', -1
+                )
+            ) AS District
+        FROM 
+            cleaned_user_infos u
+        JOIN 
+            seq ON n <= 1 + LENGTH(u.clean_district) - LENGTH(REPLACE(u.clean_district, ',', ''))
+    )
+    SELECT 
+        o.Officer,
+        COUNT(r.customer_id_michu) AS `Total Prospect`,
+        SUM(CASE WHEN r.statuss = 'active' THEN 1 ELSE 0 END) AS `Total Active`,
+        CONCAT(
+            ROUND(
+                IF(COUNT(r.customer_id_michu) = 0, 0, 
+                    (SUM(CASE WHEN r.statuss = 'active' THEN 1 ELSE 0 END) / COUNT(r.customer_id_michu)) * 100
+                ),
+                2
+            ),
+            '%'
+        ) AS `Active %`
+    FROM 
+        prospect_data r
+    JOIN 
+        branch_list b ON b.branch_code = r.branch_code
+    JOIN 
+        district_list d ON d.dis_Id = b.dis_Id
+    JOIN 
+        officer_districts o ON o.District = d.district_name
+    GROUP BY 
+        o.Officer;
+    """
+    
+    # Fetch data using your db_ops.fetch_data method
+    result = db_ops.fetch_data(query)
+    
+    # Return empty list if result is None (in case of error), else return the fetched data
+    return result if result is not None else []
 
 
 
