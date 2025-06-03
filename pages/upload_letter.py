@@ -1006,6 +1006,8 @@ def main():
                                     # Validate notes for non-approved actions
                                     elif new_status != "Approved" and not notes_stripped:
                                         st.warning("Please provide review notes for non-Approved actions.")
+                                    elif role == "recomandation":
+                                        st.warning("You do not have permission to update the status of this recommendation.")
                                     
                                     else:
                                         try:
@@ -1177,6 +1179,8 @@ def main():
                                                 st.info("Status unchanged - no update needed")
                                             elif new_status == "Rejected" and not notes_stripped:
                                                 st.warning("Please provide notes when rejecting")
+                                            elif role == "recomandation":
+                                                st.warning("You do not have permission to update the status of this recommendation.")
                                             else:
                                                 try:
                                                     from dependence import update_recommendation_status

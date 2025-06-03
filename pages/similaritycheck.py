@@ -1,162 +1,256 @@
 import streamlit as st
 import pandas as pd
-from difflib import SequenceMatcher
-from collections import defaultdict
+import numpy as np
+from datasketch import MinHash, MinHashLSH
+from rapidfuzz import fuzz
 import io
+import time
+from concurrent.futures import ThreadPoolExecutor
 
-def similarity_ratio(a, b):
-    """Calculate similarity between two strings (0-1)"""
-    if pd.isna(a) or pd.isna(b) or not a or not b:
-        return 0.0
-    return SequenceMatcher(None, str(a).lower().strip(), str(b).lower().strip()).ratio()
+# Configuration
+MAX_ROWS_TO_PROCESS = 300000  # Increased limit
+SIMILARITY_THRESHOLD = 0.8
+CHUNK_SIZE = 20000  # Larger chunks for better performance
+MALE_FRAUD_FLAG = True  # Configurable gender-based flagging
 
-def find_similar_names(df, threshold=0.8):
-    """Find groups of similar names with account numbers"""
-    groups = defaultdict(list)
-    names = df['fullName'].tolist()
-    account_numbers = df['accountNumber'].tolist()
+# Initialize session state for progress tracking
+if 'progress' not in st.session_state:
+    st.session_state.progress = 0
+
+def update_progress(step):
+    """Update progress bar"""
+    st.session_state.progress = step
+    # st.rerun()
+
+def preprocess_data(df):
+    """Clean and optimize data for analysis"""
+    # Basic cleaning
+    df = df.dropna(subset=['fullName']).copy()
     
-    for i, (name1, acc1) in enumerate(zip(names, account_numbers)):
-        group = {
-            'name': name1,
-            'accounts': [acc1],
-            'similar_names': []
-        }
+    # Handle gender if column exists
+    if 'gender' in df.columns:
+        df['gender'] = df['gender'].str.lower().str.strip().fillna('unknown')
+        df['gender'] = np.where(df['gender'].isin(['male', 'female', 'other']), 
+                              df['gender'], 'unknown')
+    
+    # Standardize text fields
+    df['accountNumber'] = df['accountNumber'].astype(str).str.strip()
+    df['name_lower'] = df['fullName'].str.lower().str.strip()
+    
+    # Deduplicate identical records
+    df = df.drop_duplicates(subset=['name_lower', 'accountNumber'])
+    
+    return df
+
+def create_minhash(text, num_perm=64):
+    """Create MinHash signature for a text (optimized with fewer permutations)"""
+    mh = MinHash(num_perm=num_perm)
+    # Use first 3 words for faster hashing (adjust based on your name patterns)
+    for word in text.split()[:3]:
+        mh.update(word.encode('utf8'))
+    return mh
+
+def build_lsh_index(df, threshold):
+    """Build LSH index for fast approximate matching"""
+    lsh = MinHashLSH(threshold=threshold, num_perm=64)
+    minhashes = {}
+    
+    # Build index in chunks
+    for i in range(0, len(df), CHUNK_SIZE):
+        chunk = df.iloc[i:i+CHUNK_SIZE]
+        for idx, row in chunk.iterrows():
+            mh = create_minhash(row['name_lower'])
+            minhashes[idx] = mh
+            lsh.insert(idx, mh)
+        update_progress(i/len(df)*50)  # 50% of progress for indexing
+    
+    return lsh, minhashes
+
+def verify_matches(df, lsh, minhashes, threshold):
+    """Verify matches with exact similarity calculation"""
+    results = []
+    total = len(df)
+    
+    for i, (idx, row) in enumerate(df.iterrows()):
+        # Get approximate matches from LSH
+        matches = lsh.query(minhashes[idx])
         
-        for j, (name2, acc2) in enumerate(zip(names[i+1:], account_numbers[i+1:]), start=i+1):
-            # Check for both name similarity AND matching account numbers
-            if similarity_ratio(name1, name2) >= threshold or acc1 == acc2:
-                group['similar_names'].append({
-                    'name': name2,
-                    'account': acc2,
-                    'similarity': similarity_ratio(name1, name2),
-                    'same_account': acc1 == acc2
-                })
+        # Detailed verification only for potential matches
+        for match_idx in matches:
+            if match_idx != idx:  # Skip self-matches
+                match_row = df.loc[match_idx]
                 
-        if group['similar_names']:
-            groups[name1] = group
-            
-    return groups
+                # Calculate exact similarity
+                similarity = fuzz.ratio(row['name_lower'], match_row['name_lower'])/100
+                same_account = row['accountNumber'] == match_row['accountNumber']
+                
+                # Apply threshold
+                if similarity >= threshold or same_account:
+                    risk_score = min(100, int(
+                        (similarity * 40) + 
+                        (60 if same_account else 0) + 
+                        (80 if MALE_FRAUD_FLAG and row.get('gender') == 'male' else 0))
+                    )
+                    
+                    results.append({
+                        'original_id': idx,
+                        'original_name': row['fullName'],
+                        'original_account': row['accountNumber'],
+                        'original_gender': row.get('gender', 'unknown'),
+                        'match_name': match_row['fullName'],
+                        'match_account': match_row['accountNumber'],
+                        'match_gender': match_row.get('gender', 'unknown'),
+                        'similarity': similarity,
+                        'same_account': same_account,
+                        'risk_score': risk_score,
+                        'fraud_reasons': ', '.join(filter(None, [
+                            f"Name similarity ({similarity:.0%})" if similarity >= threshold else None,
+                            "Same account" if same_account else None,
+                            "Male applicant" if MALE_FRAUD_FLAG and row.get('gender') == 'male' else None
+                        ]))
+                    })
+        
+        # Update progress
+        if i % 1000 == 0:
+            update_progress(50 + (i/total)*50)  # Second 50% of progress
+    
+    return pd.DataFrame(results)
+
+def process_data(df, threshold):
+    """End-to-end optimized processing pipeline"""
+    # Step 1: Preprocessing
+    update_progress(0)
+    df = preprocess_data(df)
+    
+    # Step 2: Build LSH index
+    lsh, minhashes = build_lsh_index(df, threshold)
+    
+    # Step 3: Verify matches
+    results = verify_matches(df, lsh, minhashes, threshold)
+    
+    update_progress(100)
+    return results
 
 def main():
-    st.set_page_config(page_title="Loan Fraud Detection", page_icon="🔍", layout="wide")
+    st.set_page_config(
+        page_title="Ultra-Fast Fraud Detection", 
+        page_icon="⚡", 
+        layout="wide"
+    )
     
-    # Custom CSS
+    # Custom CSS for performance (avoids rerendering)
     st.markdown("""
     <style>
         div.block-container { padding-top: 1rem; }
         #MainMenu, .stDeployButton { visibility: hidden; }
-        .stButton button {
-            background-color: #000000;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 8px 16px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .stButton button:hover {
-            background-color: #00bfff;
-            color: white;
-        }
+        .stProgress > div > div > div { background-color: #2563eb; }
+        [data-testid="stStatusWidget"] { display: none; }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("🔍 Loan Application Fraud Detection")
-    st.subheader("Upload customer data to detect similar names and matching account numbers")
-
+    st.title("⚡ Ultra-Fast Loan Fraud Detection")
+    st.caption("Optimized for large datasets (200K+ rows)")
+    
     # File upload
     uploaded_file = st.file_uploader(
         "Upload Customer Data (CSV or Excel)",
         type=['csv', 'xlsx'],
-        help="File should contain 'fullName' and 'accountNumber' columns"
+        help="Requires 'fullName' and 'accountNumber' columns. 'gender' column optional."
     )
 
     if not uploaded_file:
         st.info("👆 Please upload a file to begin analysis")
         return
 
-    # Read file
-    try:
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
-        
-        # Validate required columns
-        if 'fullName' not in df.columns or 'accountNumber' not in df.columns:
-            st.error("❌ File must contain both 'fullName' and 'accountNumber' columns")
-            return
-            
-    except Exception as e:
-        st.error(f"Error reading file: {str(e)}")
-        return
-
-    # Clean data
-    df = df.dropna(subset=['fullName']).copy()
-    df['accountNumber'] = df['accountNumber'].astype(str).str.strip()
-
     # User controls
-    col1, col2 = st.columns(2)
-    with col1:
-        threshold = st.slider("Name similarity threshold", 0.5, 1.0, 0.8, 0.05,
-                            help="Higher values require closer name matches")
-    with col2:
-        show_all = st.checkbox("Show all potential matches", False,
-                             help="Include cases with just matching account numbers")
-
-    # Process data
-    similar_groups = find_similar_names(df, threshold)
-
-    # Display results
-    if not similar_groups:
-        st.success("✅ No potential fraud matches found")
-    else:
-        st.warning(f"🚨 Found {len(similar_groups)} potential fraud cases")
-        
-        for group_name, group_data in similar_groups.items():
-            with st.expander(f"Potential Fraud Group: {group_name}", expanded=False):
-                # Create results table
-                results = [{
-                    'Name': group_name,
-                    'Account': group_data['accounts'][0],
-                    'Similarity': '100%',
-                    'Same Account': 'Original'
-                }]
-                
-                for match in group_data['similar_names']:
-                    if show_all or match['similarity'] >= threshold:
-                        results.append({
-                            'Name': match['name'],
-                            'Account': match['account'],
-                            'Similarity': f"{match['similarity']*100:.1f}%",
-                            'Same Account': '✅' if match['same_account'] else '❌'
-                        })
-                
-                st.dataframe(pd.DataFrame(results), hide_index=True)
-
-    # Export functionality
-    if similar_groups:
-        if st.button("📝 Export Results to CSV"):
-            export_data = []
-            for group_name, group_data in similar_groups.items():
-                for match in group_data['similar_names']:
-                    export_data.append({
-                        'Original Name': group_name,
-                        'Original Account': group_data['accounts'][0],
-                        'Matched Name': match['name'],
-                        'Matched Account': match['account'],
-                        'Name Similarity': match['similarity'],
-                        'Accounts Match': match['same_account']
-                    })
-            
-            output = io.StringIO()
-            pd.DataFrame(export_data).to_csv(output, index=False)
-            st.download_button(
-                label="⬇️ Download CSV",
-                data=output.getvalue(),
-                file_name="fraud_matches.csv",
-                mime="text/csv"
+    with st.expander("⚙️ Settings", expanded=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            threshold = st.slider(
+                "Name similarity threshold", 
+                0.5, 1.0, SIMILARITY_THRESHOLD, 0.05,
+                help="Higher values require closer name matches"
             )
+        with col2:
+            min_risk = st.slider(
+                "Minimum risk score", 
+                0, 100, 50,
+                help="Filter out lower-risk matches"
+            )
+    
+    # Process data when button clicked
+    if st.button("🚀 Start Analysis", type="primary"):
+        # Read file
+        try:
+            st.info("Reading file...")
+            if uploaded_file.name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_excel(uploaded_file)
+            
+            # Validate columns
+            if 'fullName' not in df.columns or 'accountNumber' not in df.columns:
+                st.error("❌ File must contain 'fullName' and 'accountNumber' columns")
+                return
+                
+            # Limit rows if needed
+            if len(df) > MAX_ROWS_TO_PROCESS:
+                st.warning(f"⚠️ Processing first {MAX_ROWS_TO_PROCESS:,} rows of {len(df):,}")
+                df = df.iloc[:MAX_ROWS_TO_PROCESS]
+            
+            # Initialize progress
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            # Process data
+            start_time = time.time()
+            results = process_data(df, threshold)
+            processing_time = time.time() - start_time
+            
+            # Display results
+            st.success(f"✅ Processed {len(df):,} records in {processing_time:.1f} seconds")
+            progress_bar.empty()
+            
+            if results.empty:
+                st.success("✅ No potential fraud matches found")
+            else:
+                # Summary stats
+                st.warning(f"🚨 Found {len(results):,} potential fraud matches")
+                
+                # Show top high-risk matches
+                high_risk = results[results['risk_score'] >= min_risk]
+                if not high_risk.empty:
+                    st.dataframe(
+                        high_risk.sort_values('risk_score', ascending=False).head(50),
+                        column_config={
+                            "risk_score": st.column_config.ProgressColumn(
+                                "Risk Score",
+                                format="%d",
+                                min_value=0,
+                                max_value=100,
+                            )
+                        },
+                        hide_index=True,
+                        use_container_width=True
+                    )
+                
+                # Export functionality
+                csv = results.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📥 Download Full Results",
+                    data=csv,
+                    file_name="fraud_matches.csv",
+                    mime="text/csv"
+                )
+                
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+            return
+
+    # Progress updates
+    if st.session_state.progress > 0:
+        st.progress(st.session_state.progress)
+        st.caption(f"Processing: {st.session_state.progress:.0f}% complete")
 
 if __name__ == "__main__":
     main()
