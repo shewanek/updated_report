@@ -6,7 +6,7 @@ from pages.kiyya_register import kiyya_register
 from pages.dureati_reg import registerr
 from pages.unique_register import unique_register
 # from pages.dureati_reg import registerr
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
 
 
@@ -163,18 +163,22 @@ def register():
                     st.switch_page('pages/sales_status.py')
 
             with coll2:
-                if st.form_submit_button("Collection & Conversion Data Report"):
+                if st.form_submit_button("Upload Recomadation Letter"):
                     sleep(0.5)
                     # st.write("under development")
-                    st.switch_page('pages/conversion_dash.py')
+                    st.switch_page('pages/upload_letter.py')
+                # if st.form_submit_button("Collection & Conversion Data Report"):
+                #     sleep(0.5)
+                #     # st.write("under development")
+                #     st.switch_page('pages/conversion_dash.py')
     
 
-    with st.form(key = 'upload_recomadation', clear_on_submit=True):
+    # with st.form(key = 'upload_recomadation', clear_on_submit=True):
         
-        if st.form_submit_button("Upload Recomadation Letter"):
-                sleep(0.5)
-                # st.write("under development")
-                st.switch_page('pages/upload_letter.py')
+    #     if st.form_submit_button("Upload Recomadation Letter"):
+    #             sleep(0.5)
+    #             # st.write("under development")
+    #             st.switch_page('pages/upload_letter.py')
             
     
    

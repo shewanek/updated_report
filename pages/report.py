@@ -161,15 +161,15 @@ def register():
             st.write("")
             st.write("")
             # st.write("")
-            if st.form_submit_button("Collection & Conversion Data Report"):
-                    sleep(0.5)
-                    # st.write("under development")
-                    st.switch_page('pages/conversion_dash.py')
+            # if st.form_submit_button("Collection & Conversion Data Report"):
+            #         sleep(0.5)
+            #         # st.write("under development")
+            #         st.switch_page('pages/conversion_dash.py')
 
-            # # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
-            # if st.form_submit_button("Target Performance Report of Kiyya(Informal & Formal)"):
-            #     sleep(0.5)
-            #     st.switch_page('pages/kiyya_actual_vs_target.py')
+            # # # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
+            # # if st.form_submit_button("Target Performance Report of Kiyya(Informal & Formal)"):
+            # #     sleep(0.5)
+            # #     st.switch_page('pages/kiyya_actual_vs_target.py')
 
     with st.form(key = 'Create_head_sales', clear_on_submit=True):
         coll1, coll2 = st.columns([0.5, 0.5])

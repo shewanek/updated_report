@@ -156,11 +156,11 @@ def register():
                     # st.write("under development")
                     st.switch_page('pages/sales_status.py')
 
-            with coll2:
-                if st.form_submit_button("Collection & Conversion Data Report"):
-                    sleep(0.5)
-                    # st.write("under development")  
-                    st.switch_page('pages/conversion_dash.py')
+            # with coll2:
+            #     if st.form_submit_button("Collection & Conversion Data Report"):
+            #         sleep(0.5)
+            #         # st.write("under development")  
+            #         st.switch_page('pages/conversion_dash.py')
     
     # with st.form(key = 'actual report', clear_on_submit=True):
     #     col1, col2, col3 = st.columns([0.2, 0.6, 0.2])

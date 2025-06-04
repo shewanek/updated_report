@@ -137,18 +137,18 @@ def register():
 
    
     with st.form(key = 'Create convestion', clear_on_submit=True):
-        col1, col2 = st.columns([0.5, 0.5])
-        with col1:
-            if st.form_submit_button("Conversion Data Report"):
-                sleep(0.5)
-                # st.write("under development")
-                st.switch_page('pages/conversion_dash.py')
-        with col2:
+        # col1, col2 = st.columns([0.5, 0.5])
+        # with col1:
+        #     if st.form_submit_button("Conversion Data Report"):
+        #         sleep(0.5)
+        #         # st.write("under development")
+        #         st.switch_page('pages/conversion_dash.py')
+        # with col2:
 
-            if st.form_submit_button("View Recomadation Letter"):
-                sleep(0.5)
-                # st.write("under development")
-                st.switch_page('pages/upload_letter.py')
+        if st.form_submit_button("View Recomadation Letter"):
+            sleep(0.5)
+            # st.write("under development")
+            st.switch_page('pages/upload_letter.py')
     
 
 if __name__ == '__main__':

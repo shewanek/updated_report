@@ -173,12 +173,12 @@ def register():
                     sleep(0.5)
                     st.switch_page('pages/sales_status.py')
 
-            with coll2:
-                if st.form_submit_button("Collection & Conversion Data Report"):
-                    sleep(0.5)
-                    # st.write("under development")
-                    st.switch_page('pages/conversion_dash.py')
-            # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
+            # with coll2:
+            #     if st.form_submit_button("Collection & Conversion Data Report"):
+            #         sleep(0.5)
+            #         # st.write("under development")
+            #         st.switch_page('pages/conversion_dash.py')
+            # # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
             
         # st.markdown('</div>', unsafe_allow_html=True)
     

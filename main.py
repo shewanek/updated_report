@@ -190,6 +190,14 @@ def main():
                     from pages.forgetps import register
                     register()
 
+            st.write("")
+            st.write("")
+            st.write("")
+            st.subheader("📊 Collection Report")
+            st.write("Access the full collection report by clicking the button below:")
+            st.link_button("Go to Collection Report", "http://10.101.200.140:4050/michu/login")
+
+
     # Footer
     footer = """
     <div class='footer'>
