@@ -101,15 +101,15 @@ def register():
     make_sidebar()
     st.markdown(custom_cs, unsafe_allow_html=True)
     with st.form(key = 'Create Account', clear_on_submit=True):
-        st.write("🤷‍♀️ Nothing to show here at the moment.")
+        # st.write("🤷‍♀️ Nothing to show here at the moment.")
         # col1, col2 = st.columns([0.5, 0.5])
         # with col1:
         #     if st.form_submit_button("Michu Collection & Conversion Detail Report"):
         #         sleep(0.5)
         #         st.switch_page('pages/conversion_dash.py')
         # with col2:
-        #         if st.form_submit_button("Upload Colleaction Data"):
-        #             st.switch_page('pages/upload_coll.py')
+        if st.form_submit_button("Upload Colleaction Data"):
+            st.switch_page('pages/upload_coll.py')
         
 
     # Footer implementation
