@@ -10251,8 +10251,16 @@ def check_rec_register(phone_number,account_number):
         result4 = db_ops.fetch_one(query4, (account_number,))
         query5 = "SELECT phone_number FROM kiyya_customer WHERE phone_number = %s"
         result5 = db_ops.fetch_one(query5, (processed_phone_number,))
+
+        # Retrieve phone number from customer_list table
+        query6 = "SELECT phone_number FROM customer_list WHERE phone_number = %s"
+        result6 = db_ops.fetch_one(query6, (processed_phone_number,))
+        
+        # Retrieve phone number from customer_list_nonecode table
+        query7 = "SELECT phone_number FROM customer_list_nonecode WHERE phone_number = %s"
+        result7 = db_ops.fetch_one(query7, (processed_phone_number,))
        
-        return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None
+        return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None or result6 is not None or result7 is not None
     except Exception as e:
         st.error("Failed to search phone number")
         st.exception(e)
