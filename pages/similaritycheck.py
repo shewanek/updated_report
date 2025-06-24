@@ -67,15 +67,16 @@ def build_lsh_index(df, threshold):
     return lsh, minhashes
 
 def verify_matches(df, lsh, minhashes, threshold):
-    """Verify matches with exact similarity calculation"""
+    """Verify matches with exact similarity calculation and consolidate same-name matches"""
     results = []
     total = len(df)
-    
+    # Dictionary to store consolidated matches
+    consolidated_matches = {}
+
     for i, (idx, row) in enumerate(df.iterrows()):
         # Get approximate matches from LSH
         matches = lsh.query(minhashes[idx])
         
-        # Detailed verification only for potential matches
         for match_idx in matches:
             if match_idx != idx:  # Skip self-matches
                 match_row = df.loc[match_idx]
@@ -86,33 +87,58 @@ def verify_matches(df, lsh, minhashes, threshold):
                 
                 # Apply threshold
                 if similarity >= threshold or same_account:
-                    risk_score = min(100, int(
-                        (similarity * 40) + 
-                        (60 if same_account else 0) + 
-                        (80 if MALE_FRAUD_FLAG and row.get('gender') == 'male' else 0))
-                    )
+                    # Create a unique key for this name pair (sorted to handle both directions)
+                    name_key = tuple(sorted([row['fullName'], match_row['fullName']]))
                     
-                    results.append({
-                        'original_id': idx,
-                        'original_name': row['fullName'],
-                        'original_account': row['accountNumber'],
-                        'original_gender': row.get('gender', 'unknown'),
-                        'match_name': match_row['fullName'],
-                        'match_account': match_row['accountNumber'],
-                        'match_gender': match_row.get('gender', 'unknown'),
-                        'similarity': similarity,
-                        'same_account': same_account,
-                        'risk_score': risk_score,
-                        'fraud_reasons': ', '.join(filter(None, [
-                            f"Name similarity ({similarity:.0%})" if similarity >= threshold else None,
-                            "Same account" if same_account else None,
-                            "Male applicant" if MALE_FRAUD_FLAG and row.get('gender') == 'male' else None
-                        ]))
-                    })
+                    if name_key not in consolidated_matches:
+                        # First time seeing this name pair
+                        risk_score = min(100, int(
+                            (similarity * 40) + 
+                            (60 if same_account else 0) + 
+                            (80 if MALE_FRAUD_FLAG and row.get('gender') == 'male' else 0))
+                        )
+                        
+                        consolidated_matches[name_key] = {
+                            'original_id': idx,
+                            'original_name': row['fullName'],
+                            'original_account': row['accountNumber'],
+                            'original_gender': row.get('gender', 'unknown'),
+                            'match_name': match_row['fullName'],
+                            'match_account': [match_row['accountNumber']],  # Store as list
+                            'match_gender': match_row.get('gender', 'unknown'),
+                            'similarity': similarity,
+                            'same_account': same_account,
+                            'risk_score': risk_score,
+                            'fraud_reasons': ', '.join(filter(None, [
+                                f"Name similarity ({similarity:.0%})" if similarity >= threshold else None,
+                                "Same account" if same_account else None,
+                                "Male applicant" if MALE_FRAUD_FLAG and row.get('gender') == 'male' else None
+                            ]))
+                        }
+                    else:
+                        # Additional account for existing name pair
+                        if match_row['accountNumber'] not in consolidated_matches[name_key]['match_account']:
+                            consolidated_matches[name_key]['match_account'].append(match_row['accountNumber'])
+                            # Update risk score if needed (take maximum)
+                            new_risk = min(100, int(
+                                (similarity * 40) + 
+                                (60 if same_account else 0) + 
+                                (80 if MALE_FRAUD_FLAG and row.get('gender') == 'male' else 0))
+                            )
+                            consolidated_matches[name_key]['risk_score'] = max(
+                                consolidated_matches[name_key]['risk_score'],
+                                new_risk
+                            )
         
         # Update progress
         if i % 1000 == 0:
-            update_progress(50 + (i/total)*50)  # Second 50% of progress
+            update_progress(50 + (i/total)*50)
+
+    # Convert the consolidated matches to final results
+    for match in consolidated_matches.values():
+        # Join account numbers with comma
+        match['match_account'] = ', '.join(match['match_account'])
+        results.append(match)
     
     return pd.DataFrame(results)
 

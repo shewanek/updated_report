@@ -28,3 +28,7 @@ upload_arrears.py
 upload_collection1.py
 
 recommendations/
+
+
+#Ignore vscode AI rules
+.github\copilot-instructions.md
