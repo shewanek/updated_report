@@ -10239,51 +10239,32 @@ def check_rec_register(phone_number,account_number):
         bool: True if the phone number exists, False otherwise
     """
     processed_phone_number = "+251" + phone_number[1:]
+
+    queries = [
+        ("SELECT phoneNumber FROM branchcustomer WHERE phoneNumber = %s LIMIT 1", (processed_phone_number,)),
+        ("SELECT Saving_Account FROM branchcustomer WHERE Saving_Account = %s LIMIT 1", (account_number,)),
+        ("SELECT phone_number FROM women_product_customer WHERE phone_number = %s LIMIT 1", (processed_phone_number,)),
+        ("SELECT account_no FROM women_product_customer WHERE account_no = %s LIMIT 1", (account_number,)),
+        ("SELECT phone_number FROM kiyya_customer WHERE phone_number = %s LIMIT 1", (processed_phone_number,)),
+        ("SELECT phone_number FROM customer_list WHERE phone_number = %s LIMIT 1", (processed_phone_number,)),
+        ("SELECT phone_number FROM customer_list_nonecode WHERE phone_number = %s LIMIT 1", (processed_phone_number,)),
+        ("SELECT saving_account FROM customer_list WHERE saving_account = %s LIMIT 1", (account_number,)),
+        ("SELECT saving_account FROM customer_list_nonecode WHERE saving_account = %s LIMIT 1", (account_number,)),
+        ("SELECT saving_account FROM unique_intersection WHERE product_type NOT IN ('Wabbi', 'Women Formal') AND saving_account = %s LIMIT 1", (account_number,)),
+        ("SELECT saving_account FROM conversiondata WHERE product_type NOT IN ('Wabbi', 'Women Formal') AND saving_account = %s LIMIT 1", (account_number,))
+    ]
+
     try:
-        query1 = "SELECT phoneNumber FROM branchcustomer WHERE phoneNumber = %s"
-        result1 = db_ops.fetch_one(query1, (processed_phone_number,))
-        query2 = "SELECT Saving_Account FROM branchcustomer WHERE Saving_Account = %s"
-        result2 = db_ops.fetch_one(query2, (account_number,))
-
-        query3 = "SELECT phone_number FROM women_product_customer WHERE phone_number = %s"
-        result3 = db_ops.fetch_one(query3, (processed_phone_number,))
-        query4 = "SELECT account_no FROM women_product_customer WHERE account_no = %s"
-        result4 = db_ops.fetch_one(query4, (account_number,))
-        query5 = "SELECT phone_number FROM kiyya_customer WHERE phone_number = %s"
-        result5 = db_ops.fetch_one(query5, (processed_phone_number,))
-        
-
-        # Retrieve phone number from customer_list table
-        query6 = "SELECT phone_number FROM customer_list WHERE phone_number = %s"
-        result6 = db_ops.fetch_one(query6, (processed_phone_number,))
-        
-        # Retrieve phone number from customer_list_nonecode table
-        query7 = "SELECT phone_number FROM customer_list_nonecode WHERE phone_number = %s"
-        result7 = db_ops.fetch_one(query7, (processed_phone_number,))
-        # Retrieve phone number from customer_list table
-        query8 = "SELECT saving_account FROM customer_list WHERE saving_account = %s"
-        result8 = db_ops.fetch_one(query8, (account_number,))
-        
-        # Retrieve phone number from customer_list_nonecode table
-        query9 = "SELECT saving_account FROM customer_list_nonecode WHERE saving_account = %s"
-        result9 = db_ops.fetch_one(query9, (account_number,))
-
-        # Retrieve phone number from unique_intersection table
-        query10 = "SELECT saving_account FROM unique_intersection WHERE product_type NOT IN ('Wabbi', 'Women Formal') AND saving_account = %s"
-        result10 = db_ops.fetch_one(query10, (account_number,))
-        
-
-        # Retrieve phone number from conversiondata table
-        query11 = "SELECT saving_account FROM conversiondata WHERE product_type NOT IN ('Wabbi', 'Women Formal') AND saving_account = %s  LIMIT 1"
-        result11 = db_ops.fetch_one(query11, (account_number,))
-        
-       
-        return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None or result6 is not None or result7 is not None or result8 is not None or result9 is not None  or result10 is not None or result11 is not None
+        for query, param in queries:
+            result = db_ops.fetch_one(query, param)
+            if result is not None:
+                return True  # Stop checking once a match is found
+        return False  # No match found in any table
     except Exception as e:
-        st.error("Failed to search phone number")
-        traceback.print_exc()
+        st.error("Failed to search phone number or account number.")
         st.exception(e)
         return False
+
     
 
 
