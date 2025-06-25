@@ -10251,6 +10251,7 @@ def check_rec_register(phone_number,account_number):
         result4 = db_ops.fetch_one(query4, (account_number,))
         query5 = "SELECT phone_number FROM kiyya_customer WHERE phone_number = %s"
         result5 = db_ops.fetch_one(query5, (processed_phone_number,))
+        
 
         # Retrieve phone number from customer_list table
         query6 = "SELECT phone_number FROM customer_list WHERE phone_number = %s"
@@ -10270,14 +10271,17 @@ def check_rec_register(phone_number,account_number):
         # Retrieve phone number from unique_intersection table
         query10 = "SELECT saving_account FROM unique_intersection WHERE product_type NOT IN ('Wabbi', 'Women Formal') AND saving_account = %s"
         result10 = db_ops.fetch_one(query10, (account_number,))
+        
 
         # Retrieve phone number from conversiondata table
-        query11 = "SELECT saving_account FROM conversiondata WHERE product_type NOT IN ('Wabbi', 'Women Formal') AND saving_account = %s"
+        query11 = "SELECT saving_account FROM conversiondata WHERE product_type NOT IN ('Wabbi', 'Women Formal') AND saving_account = %s  LIMIT 1"
         result11 = db_ops.fetch_one(query11, (account_number,))
+        
        
         return result1 is not None or result2 is not None or result3 is not None or result4 is not None or result5 is not None or result6 is not None or result7 is not None or result8 is not None or result9 is not None  or result10 is not None or result11 is not None
     except Exception as e:
         st.error("Failed to search phone number")
+        traceback.print_exc()
         st.exception(e)
         return False
     
@@ -10355,6 +10359,49 @@ def upload_marchent(df):
         traceback.print_exc()   # Rollback in case of error
         return False
 
+
+def upload_loanid(df):
+    try:
+        data_to_insert = [tuple(x) for x in df[['loan_id', 'phone', 'emergene_phone']].values.tolist()]
+        # st.write(data_to_insert)
+        # # Prepare data for insertion
+        # data_to_insert = final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date']].values.tolist()
+
+        # Insert data into unique_intersection table
+        try:
+            insert_query = """
+                            INSERT INTO due_loan_dataset (loan_id, phone_number, emergency_contact) 
+                            VALUES (%s, %s, %s)
+                        """
+
+
+            # Replace NaN values with None in data_to_insert
+            data_to_insert = [
+                tuple(None if pd.isna(value) else value for value in row)
+                for row in data_to_insert
+            ]
+            
+             # Ensure data_to_insert is not empty
+            if data_to_insert:
+                # Make sure data_to_insert is a list of tuples
+                if all(isinstance(item, tuple) for item in data_to_insert):
+                    rows_inserted = db_ops.insert_many(insert_query, data_to_insert)
+                    st.success(f"{rows_inserted} rows uploaded successfully.")
+                    return True
+                else:
+                    st.error("Data to insert should be a list of tuples.")
+            else:
+                st.warning("No data to insert into the unique_intersection table.")
+        except Exception as e:
+            st.error(f"Error can't upload data: ")
+            print("Database fetch error:", e)
+            traceback.print_exc()  
+            
+
+    except Exception as e:
+        st.error(f"Error: {e}")
+        traceback.print_exc()   # Rollback in case of error
+        return False
 
 def check_rejected(phone: str) -> tuple[str, str, str] | None:
     """

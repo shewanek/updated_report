@@ -205,6 +205,12 @@ def upload():
                 if st.form_submit_button("Upload Marchent Data"):
                     st.switch_page('pages/upload_merchat.py')
 
+                st.write("")
+                st.write("")
+
+                if st.form_submit_button("Upload Loan Id Data"):
+                    st.switch_page('pages/upload_loan_id.py')
+
 
                 st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("---")
