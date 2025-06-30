@@ -25,10 +25,15 @@ def sign_up():
     custom_cs = """
     <style>
         div.block-container {
-            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
+        .stAppHeader { visibility: hidden; }
+        /* Hide the entire header bar */
+        header.stAppHeader {
+            display: none;
+        }
         .stButton button {
             background-color: #000000;
             border: 1px solid #ccc;

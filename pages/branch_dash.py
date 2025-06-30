@@ -33,6 +33,11 @@ def main():
         div.block-container {
             padding-top: 0.1rem; /* Adjust this value to reduce padding-top */
         }
+        .stAppHeader { visibility: hidden; }
+        /* Hide the entire header bar */
+        header.stAppHeader {
+            display: none;
+        }
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)

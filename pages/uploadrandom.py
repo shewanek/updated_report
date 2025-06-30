@@ -19,10 +19,15 @@ def upload_random():
     custom_css = """
     <style>
         div.block-container {
-            padding-top: 2.5rem;
+            # padding-top: 2.5rem;
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
+        .stAppHeader { visibility: hidden; }
+        /* Hide the entire header bar */
+        header.stAppHeader {
+            display: none;
+        }
         .stButton button {
             background-color: #000000;
             border: 1px solid #ccc;

@@ -22,11 +22,17 @@ def register():
     # Custom CSS to change button hover color to cyan blue
     custom_cs = """
     <style>
-        div.block-container {
-            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
-        }
+        # div.block-container {
+        #     padding-top: 0rem; /* Adjust this value to reduce padding-top */
+        # }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
+        .stAppHeader { visibility: hidden; }
+
+        /* Hide the entire header bar */
+        header.stAppHeader {
+            display: none;
+        }
         .stButton button {
             background-color: #000000;
             border: 1px solid #ccc;

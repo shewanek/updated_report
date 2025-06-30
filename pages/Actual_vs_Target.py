@@ -27,11 +27,17 @@ def main():
     st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
     custom_cs = """
     <style>
-        div.block-container {
-            padding-top: 1rem; /* Adjust this value to reduce padding-top */
-        }
+        # div.block-container {
+        #     padding-top: 1rem; /* Adjust this value to reduce padding-top */
+        # }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
+        .stAppHeader { visibility: hidden; }
+        /* Hide the entire header bar */
+        header.stAppHeader {
+            display: none;
+        }
+        
         .stButton button {
             background-color: #000000;
             border: 1px solid #ccc;
@@ -53,7 +59,7 @@ def main():
     custom_css = """
     <style>
         div.block-container {
-            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 0rem; /* Adjust this value to reduce padding-top */
         }
     </style>
     """
