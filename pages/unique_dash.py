@@ -72,6 +72,8 @@ def main():
     # Apply the custom CSS
     st.markdown(customm, unsafe_allow_html=True)
     update_activity()
+    fy_start = st.session_state.get("fiscal_year_start")
+    fy_end = st.session_state.get("fiscal_year_end")
 
     
     # Auto-refresh interval (in seconds)
@@ -117,7 +119,7 @@ def main():
         active_tab = st.radio("Select a Tab", tab_options, horizontal=True)
         if active_tab == "Unique Customer":
             
-            df_combine = load_unquie(role, username)
+            df_combine = load_unquie(role, username, fy_start, fy_end)
             
             # Side bar
             st.sidebar.image("pages/michu.png")
@@ -315,7 +317,7 @@ def main():
             # )
         
         elif active_tab == "Account Number":
-            df_combine = load_account(role, username)
+            df_combine = load_account(role, username, fy_start, fy_end)
             
             # Side bar
             st.sidebar.image("pages/michu.png")
@@ -513,7 +515,7 @@ def main():
             # )
 
         elif active_tab == "Total Disbursement":
-            df_combine = load_disbursment(role, username)
+            df_combine = load_disbursment(role, username, fy_start, fy_end)
             
             # Side bar
             # st.write(df_combine)

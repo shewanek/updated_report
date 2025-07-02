@@ -18,6 +18,7 @@ TheStream/__pycache__/
 fastApiBack/__pycache__/
 
 new_env/
+.vscode/
 
 fortestupload.py
 fortestuploadcon.py

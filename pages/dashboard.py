@@ -164,6 +164,7 @@ def register():
     fy_label = st.session_state.get("fiscal_year_label")
     fy_start = st.session_state.get("fiscal_year_start")
     fy_end = st.session_state.get("fiscal_year_end")
+    # You can use these variables in your app logic
 
     # # Example: Display
     # st.write(f"Selected Fiscal Year: {fy_label}")

@@ -101,6 +101,32 @@ def register():
     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
     # if st.sidebar.button("GetData"):
     #     st.switch_page("pages/branch_dash.py")
+
+    # Fiscal year options with corresponding date ranges
+    fiscal_year_mapping = {
+        "2024/2025": ("2024-07-01", "2025-06-30"),
+        "2025/2026": ("2025-07-01", "2026-06-30")
+    }
+
+    # Dropdown for display
+    selected_label = st.sidebar.selectbox(
+        "Select Fiscal Year",
+        list(fiscal_year_mapping.keys()),
+        index=1  # Default to 2025/2026 (adjust if needed)
+    )
+
+    # Retrieve corresponding date range
+    start_date, end_date = fiscal_year_mapping[selected_label]
+
+    # Store in session state for later use
+    st.session_state["fiscal_year_label"] = selected_label
+    st.session_state["fiscal_year_start"] = start_date
+    st.session_state["fiscal_year_end"] = end_date
+
+    # Read the selection
+    fy_label = st.session_state.get("fiscal_year_label")
+    fy_start = st.session_state.get("fiscal_year_start")
+    fy_end = st.session_state.get("fiscal_year_end")
                         
     make_sidebar()
     st.markdown(custom_cs, unsafe_allow_html=True)
@@ -117,9 +143,9 @@ def register():
                 st.switch_page('pages/sales_uniquedash.py')
             st.write("")
             st.write("")
-            if st.form_submit_button("Michu Customers Detail Report"):
-                sleep(0.5)
-                st.switch_page('pages/sales_data.py')
+            # if st.form_submit_button("Michu Customers Detail Report"):
+            #     sleep(0.5)
+            #     st.switch_page('pages/sales_data.py')
 
             # st.write("")
             # st.write("")
@@ -136,24 +162,20 @@ def register():
             
             # st.write("")
 
+            
+   
+    with st.form(key = 'Create convestion', clear_on_submit=True):
+        col1, col2 = st.columns([0.5, 0.5])
+        with col2:
             if st.form_submit_button("Retention Data Report"):
                 sleep(0.5)
                 st.switch_page('pages/sales_status.py')
 
-   
-    with st.form(key = 'Create convestion', clear_on_submit=True):
-        # col1, col2 = st.columns([0.5, 0.5])
-        # with col1:
-        #     if st.form_submit_button("Conversion Data Report"):
-        #         sleep(0.5)
-        #         # st.write("under development")
-        #         st.switch_page('pages/conversion_dash.py')
-        # with col2:
-
-        if st.form_submit_button("View Recomadation Letter"):
-            sleep(0.5)
-            # st.write("under development")
-            st.switch_page('pages/upload_letter.py')
+        with col1:
+            if st.form_submit_button("View Recomadation Letter"):
+                sleep(0.5)
+                # st.write("under development")
+                st.switch_page('pages/upload_letter.py')
     
 
 if __name__ == '__main__':

@@ -71,6 +71,8 @@ def main():
 
     # Apply the custom CSS
     st.markdown(customm, unsafe_allow_html=True)
+    fy_start = st.session_state.get("fiscal_year_start")
+    fy_end = st.session_state.get("fiscal_year_end")
 
     
     # Auto-refresh interval (in seconds)
@@ -117,7 +119,7 @@ def main():
     username = st.session_state.get("username", "") 
     try:
         
-        df_combine = load_salesuniquedash(username)
+        df_combine = load_salesuniquedash(username, fy_start, fy_end)
         # Side bar
         st.sidebar.image("pages/michu.png")
         

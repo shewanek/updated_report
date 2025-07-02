@@ -86,12 +86,39 @@ def register():
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
+        
     # Side bar
     st.sidebar.image("pages/michu.png")
     # username = st.session_state.get("username", "")
     full_name = st.session_state.get("full_name", "")
     # st.sidebar.write(f'Welcome, :orange[{full_name}]')
     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
+
+    # Fiscal year options with corresponding date ranges
+    fiscal_year_mapping = {
+        "2024/2025": ("2024-07-01", "2025-06-30"),
+        "2025/2026": ("2025-07-01", "2026-06-30")
+    }
+
+    # Dropdown for display
+    selected_label = st.sidebar.selectbox(
+        "Select Fiscal Year",
+        list(fiscal_year_mapping.keys()),
+        index=1  # Default to 2025/2026 (adjust if needed)
+    )
+
+    # Retrieve corresponding date range
+    start_date, end_date = fiscal_year_mapping[selected_label]
+
+    # Store in session state for later use
+    st.session_state["fiscal_year_label"] = selected_label
+    st.session_state["fiscal_year_start"] = start_date
+    st.session_state["fiscal_year_end"] = end_date
+
+    # Read the selection
+    fy_label = st.session_state.get("fiscal_year_label")
+    fy_start = st.session_state.get("fiscal_year_start")
+    fy_end = st.session_state.get("fiscal_year_end")
 
     # if st.sidebar.button("GetData"):
     #     st.switch_page("pages/branch_dash.py")
@@ -135,10 +162,10 @@ def register():
         # st.info("NB: For the Michu Kiyya Campaign, we hide the other dashboard and focus on the Kiyya product beginning October 1.")
         st.markdown('<h5><span style="color: #e38524;">Report </span> 👇🏻</h5>', unsafe_allow_html=True)
         with st.form(key = 'reports', clear_on_submit=True):
-            # st.markdown('<div class="centered-form">', unsafe_allow_html=True)
-            if st.form_submit_button("Michu Unique Customers Detail Report"):
-                sleep(0.5)
-                st.switch_page('pages/branch_dash.py')
+            # # st.markdown('<div class="centered-form">', unsafe_allow_html=True)
+            # if st.form_submit_button("Michu Unique Customers Detail Report"):
+            #     sleep(0.5)
+            #     st.switch_page('pages/branch_dash.py')
             st.write("")
             # if st.form_submit_button("Michu Collection Report"):
             #     sleep(0.5)
@@ -151,7 +178,9 @@ def register():
                 sleep(0.5)
                 st.switch_page('pages/Actual_vs_Target.py')
 
-            # st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
             # if st.form_submit_button("Target Performance Report Kiyya(Informal & Formal)"):
             #     sleep(0.5)
             #     st.switch_page('pages/kiyya_actual_vs_target.py')

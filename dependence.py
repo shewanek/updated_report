@@ -1,3 +1,4 @@
+from narwhals import col
 import pandas as pd
 import traceback
 import streamlit as st
@@ -7,6 +8,7 @@ import re
 import json
 from decimal import Decimal
 from datetime import date, datetime, timedelta
+# from TheStream.AddingCollection import fetch_data
 from db_connection import DatabaseOperations
 from session_manager import handle_websocket_errors  # initialize_session, update_activity, check_session_timeout
 # from navigation import logout
@@ -170,7 +172,7 @@ def load_dataframes():
 
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
-def load_unquie(role, usrname):
+def load_unquie(role, usrname, fy_start, fy_end):
     query = """
     SELECT d.district_name, bl.branch_code, bl.branch_name
     FROM branch_list bl
@@ -181,9 +183,12 @@ def load_unquie(role, usrname):
     df_user_infos = pd.DataFrame(db_ops.fetch_data(query))
     df_user_infos.columns=['District', 'branch_code', 'Branch']
     # df_user_infos = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_infos"), columns=['userId', 'userName','District','Branch'])
-    unique_customer_query = f"SELECT uni_id, branch_code, product_type, disbursed_date FROM unique_intersection WHERE `Disbursed_Date` >= '2024-07-01'"
+    unique_customer_query = f"SELECT uni_id, branch_code, product_type, disbursed_date FROM unique_intersection WHERE `Disbursed_Date` BETWEEN '{fy_start}' AND '{fy_end}'"
     df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
-    df_customer.columns=['uniqueId', 'branch_code', 'Product Type', 'Disbursed Date']
+    if not df_customer.empty:
+        df_customer.columns = ['uniqueId', 'branch_code', 'Product Type', 'Disbursed Date']
+    else:
+        df_customer = pd.DataFrame(columns=['uniqueId', 'branch_code', 'Product Type', 'Disbursed Date'])
     
     # Merge the two DataFrames based on 'userId'
     merged_df = pd.merge(df_user_infos, df_customer, on='branch_code', how='inner')
@@ -200,7 +205,7 @@ def load_unquie(role, usrname):
 # @handle_session
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
-def load_account(role, usrname):
+def load_account(role, usrname, fy_start, fy_end):
     query = """
     SELECT d.district_name, bl.branch_code, bl.branch_name
     FROM branch_list bl
@@ -211,13 +216,19 @@ def load_account(role, usrname):
     df_user_infos = pd.DataFrame(db_ops.fetch_data(query))
     df_user_infos.columns=['District', 'branch_code', 'Branch']
     # df_user_infos = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_infos"), columns=['userId', 'userName','District','Branch'])
-    unique_customer_query = f"SELECT uni_id, branch_code, product_type, disbursed_date FROM unique_intersection WHERE `Disbursed_Date` >= '2024-07-01'"
+    unique_customer_query = f"SELECT uni_id, branch_code, product_type, disbursed_date FROM unique_intersection WHERE `Disbursed_Date` BETWEEN '{fy_start}' AND '{fy_end}'"
     df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
-    df_customer.columns=['uniqueId', 'branch_code', 'Product Type', 'Disbursed Date']
+    if not df_customer.empty:
+        df_customer.columns = ['uniqueId', 'branch_code', 'Product Type', 'Disbursed Date']
+    else:
+        df_customer = pd.DataFrame(columns=['uniqueId', 'branch_code', 'Product Type', 'Disbursed Date'])
 
-    conv_customer_query = f"SELECT conv_id, branch_code, product_type, disbursed_date FROM conversiondata WHERE `Disbursed_Date` >= '2024-07-01'"
+    conv_customer_query = f"SELECT conv_id, branch_code, product_type, disbursed_date FROM conversiondata WHERE `Disbursed_Date` BETWEEN '{fy_start}' AND '{fy_end}'"
     df_conv = pd.DataFrame(db_ops.fetch_data(conv_customer_query))
-    df_conv.columns=['uniqueId', 'branch_code', 'Product Type', 'Disbursed Date']
+    if not df_conv.empty:
+        df_conv.columns = ['uniqueId', 'branch_code', 'Product Type', 'Disbursed Date']
+    else:
+        df_conv = pd.DataFrame(columns=['uniqueId', 'branch_code', 'Product Type', 'Disbursed Date'])
     
     df_data = pd.concat([df_customer, df_conv], axis=0).reset_index(drop=True).rename(lambda x: x + 1)
     # Merge the two DataFrames based on 'userId'
@@ -229,7 +240,7 @@ def load_account(role, usrname):
 
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
-def load_disbursment(role, usrname):
+def load_disbursment(role, usrname, fy_start, fy_end):
     query = """
     SELECT d.district_name, bl.branch_code, bl.branch_name
     FROM branch_list bl
@@ -240,13 +251,19 @@ def load_disbursment(role, usrname):
     df_user_infos = pd.DataFrame(db_ops.fetch_data(query))
     df_user_infos.columns=['District', 'branch_code', 'Branch']
     # df_user_infos = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_infos"), columns=['userId', 'userName','District','Branch'])
-    unique_customer_query = f"SELECT uni_id, branch_code, product_type, disbursed_amount, disbursed_date FROM unique_intersection WHERE `Disbursed_Date` >= '2024-07-01'"
+    unique_customer_query = f"SELECT uni_id, branch_code, product_type, disbursed_amount, disbursed_date FROM unique_intersection WHERE `Disbursed_Date` BETWEEN '{fy_start}' AND '{fy_end}'"
     df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
-    df_customer.columns=['uniqueId', 'branch_code', 'Product Type', 'disbursed_amount', 'Disbursed Date']
+    if not df_customer.empty:
+        df_customer.columns = ['uniqueId', 'branch_code', 'Product Type', 'disbursed_amount', 'Disbursed Date']
+    else:
+        df_customer = pd.DataFrame(columns=['uniqueId', 'branch_code', 'Product Type', 'disbursed_amount', 'Disbursed Date'])
 
-    conv_customer_query = f"SELECT conv_id, branch_code, product_type, disbursed_amount, disbursed_date FROM conversiondata WHERE `Disbursed_Date` >= '2024-07-01'"
+    conv_customer_query = f"SELECT conv_id, branch_code, product_type, disbursed_amount, disbursed_date FROM conversiondata WHERE `Disbursed_Date` BETWEEN '{fy_start}' AND '{fy_end}'"
     df_conv = pd.DataFrame(db_ops.fetch_data(conv_customer_query))
-    df_conv.columns=['uniqueId', 'branch_code', 'Product Type', 'disbursed_amount', 'Disbursed Date']
+    if not df_conv.empty:
+        df_conv.columns = ['uniqueId', 'branch_code', 'Product Type', 'disbursed_amount', 'Disbursed Date']
+    else:
+        df_conv = pd.DataFrame(columns=['uniqueId', 'branch_code', 'Product Type', 'disbursed_amount', 'Disbursed Date'])
     
     df_data = pd.concat([df_customer, df_conv], axis=0).reset_index(drop=True).rename(lambda x: x + 1)
     # Merge the two DataFrames based on 'userId'
@@ -886,7 +903,7 @@ def load_districtuniquekiya(username):
 
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
-def load_districtuniquedash(username):
+def load_districtuniquedash(username,fy_start,fy_end):
     # Access the username from session state
     # username = st.session_state.get("username", "")
     # st.write(username)
@@ -900,7 +917,7 @@ def load_districtuniquedash(username):
 
     district = user_id_result[0]['district']  # Assuming userId is the first element in the first row of the result
     # district = user_id_result[0][1]
-    unique_customer_query = f"SELECT uni_id, branch_code, saving_account, product_type, disbursed_date FROM unique_intersection WHERE `disbursed_date` >= '2024-07-01'"
+    unique_customer_query = f"SELECT uni_id, branch_code, saving_account, product_type, disbursed_date FROM unique_intersection WHERE `disbursed_date` BETWEEN '{fy_start}' AND '{fy_end}'"
     query = """
     SELECT ui.userId, ui.userName, ui.district, bl.branch_code, bl.branch_name
     FROM user_infos ui
@@ -913,9 +930,13 @@ def load_districtuniquedash(username):
     df_user_infos = pd.DataFrame(db_ops.fetch_data(query, (district,)))
     df_user_infos.columns=['userId', 'userName', 'District', 'branch_code', 'Branch']
     # df_user_infos = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_infos"), columns=['userId', 'userName','District','Branch'])
-
-    df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
-    df_customer.columns=['uniqueId', 'branch_code', 'Saving Account', 'Product Type', 'Disbursed Date']
+    fetch_data = db_ops.fetch_data(unique_customer_query)
+    if not fetch_data:
+        columns=['uniqueId', 'branch_code', 'Saving Account', 'Product Type', 'Disbursed Date']
+        df_customer = pd.DataFrame(fetch_data, columns=columns)
+    else:
+        df_customer = pd.DataFrame(fetch_data)
+        df_customer.columns=['uniqueId', 'branch_code', 'Saving Account', 'Product Type', 'Disbursed Date']
 
     branch_customer = pd.DataFrame(db_ops.fetch_data(branch_customer_query))
     branch_customer.columns=['userId', 'Product_Type', 'Saving Account', 'Disbursed_Date']
@@ -1071,7 +1092,7 @@ def aggregate_and_insert_actual_data():
 
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
-def load_actual_vs_targetdata(role, username):
+def load_actual_vs_targetdata(role, username, fy_start, fy_end):
     # Access the username from session state
     # username = st.session_state.get("username", "")
     # role = st.session_state.get("role", "")
@@ -1167,22 +1188,24 @@ def load_actual_vs_targetdata(role, username):
                 SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date 
                 FROM actual 
                 WHERE branch_code IN ({placeholders})
+                AND (actual_date BETWEEN %s AND %s)
             """
 
             # Fetch actual data using a parameterized query
-            fetch_actual = db_ops.fetch_data(actual_query, tuple(branch_codes))  # Ensure the tuple is passed correctly
+            query_params = tuple(branch_codes) + (fy_start, fy_end)
+            fetch_actual = db_ops.fetch_data(actual_query, query_params)  # Ensure the tuple is passed correctly
             # Debugging: Print the raw data fetched
             # st.write("Actual Data Fetched:", fetch_actual)
 
             # Check if fetch_actual has data
             if not fetch_actual:
-                st.warning("No actual data found for the selected branch codes.")
-                return pd.DataFrame()
-
-            # Convert the data to a DataFrame and handle data type conversions
-            df_actual = pd.DataFrame(fetch_actual)
-            # Rename columns for 'actual' data
-            df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                # Convert the data to a DataFrame and handle data type conversions
+                df_actual = pd.DataFrame(fetch_actual)
+                # Rename columns for 'actual' data
+                df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
             # Apply data type conversions
             df_actual['Actual Unique Customer'] = df_actual['Actual Unique Customer'].apply(convert_decimal)
             df_actual['Actual Number Of Account'] = df_actual['Actual Number Of Account'].apply(convert_decimal)
@@ -1192,15 +1215,20 @@ def load_actual_vs_targetdata(role, username):
             # st.write(df_actual)
             
             # Fetch target data
-            target_query = """
+            target_query = f"""
                 SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date
-                FROM target
+                FROM target WHERE (target_date BETWEEN %s AND %s)
             """
-            fetch_target = db_ops.fetch_data(target_query)
-            # st.write(fetch_target)
-            df_target = pd.DataFrame(fetch_target)
-            # Rename columns for 'target' data
-            df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+            tquery_params = (fy_start, fy_end)
+            fetch_target = db_ops.fetch_data(target_query, tquery_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+                df_target = pd.DataFrame(fetch_target, columns=columns)
+            else:
+                # st.write(fetch_target)
+                df_target = pd.DataFrame(fetch_target)
+                # Rename columns for 'target' data
+                df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
             # Apply data type conversions
             df_target['Target Unique Customer'] = df_target['Target Unique Customer'].apply(convert_decimal)
             df_target['Target Number Of Account'] = df_target['Target Number Of Account'].apply(convert_decimal)
@@ -1278,18 +1306,32 @@ def load_actual_vs_targetdata(role, username):
             actual_query = f"""
                 SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date 
                 FROM actual WHERE branch_code IN ({branch_codes_str})
+                AND (actual_date BETWEEN %s AND %s)
             """
-            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, tuple(branch_codes)))
-            df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            query_params = tuple(branch_codes) + (fy_start, fy_end)
+            fetch_actual = db_ops.fetch_data(actual_query, query_params)
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
             # st.write(df_actual)
 
             # Fetch target data
             target_query = f"""
                 SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date
                 FROM target WHERE branch_code IN ({branch_codes_str})
+                AND (target_date BETWEEN %s AND %s)
             """
-            df_target = pd.DataFrame(db_ops.fetch_data(target_query, tuple(branch_codes)))
-            df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+            tquery_params = tuple(branch_codes) + (fy_start, fy_end)
+            fetch_target = db_ops.fetch_data(target_query, tquery_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
             # st.write(df_target)
 
             return act_dis_branch, df_actual, df_target
@@ -1335,19 +1377,31 @@ def load_actual_vs_targetdata(role, username):
             actual_query = """
                 SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date 
                 FROM actual 
-                WHERE branch_code = %s
+                WHERE branch_code = %s AND (actual_date BETWEEN %s AND %s)
             """
-            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, (branch_code,)))
-            df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            query_params = (branch_code, fy_start, fy_end)
+            fetch_actual = db_ops.fetch_data(actual_query, query_params)
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
 
             # Fetch target data
             target_query = """
                 SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date 
                 FROM target 
-                WHERE branch_code = %s
+                WHERE branch_code = %s AND (target_date BETWEEN %s AND %s)
             """
-            df_target = pd.DataFrame(db_ops.fetch_data(target_query, (branch_code,)))
-            df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+            tquery_params = (branch_code, fy_start, fy_end)
+            fetch_target = db_ops.fetch_data(target_query, tquery_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
 
             
             return act_dis_branch, df_actual, df_target
@@ -1407,19 +1461,32 @@ def load_actual_vs_targetdata(role, username):
                 SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date
                 FROM actual 
                 WHERE branch_code IN ({branch_codes_str})
+                AND (actual_date BETWEEN %s AND %s)
             """
-            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, tuple(branch_codes)))
-            # st.write(df_actual)
-            df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            query_params = tuple(branch_codes) + (fy_start, fy_end)
+            fetch_actual = db_ops.fetch_data(actual_query, query_params)
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
 
             # Fetch target data using parameterized query
             target_query = f"""
                 SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date
                 FROM target 
                 WHERE branch_code IN ({branch_codes_str})
+                AND (target_date BETWEEN %s AND %s)
             """
-            df_target = pd.DataFrame(db_ops.fetch_data(target_query, tuple(branch_codes)))
-            df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+            tquery_params = tuple(branch_codes) + (fy_start, fy_end)
+            fetch_target = db_ops.fetch_data(target_query, tquery_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                df_target.columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
 
             return act_dis_branch, df_actual, df_target
         except Exception as e:
@@ -1556,7 +1623,7 @@ def load_salesuniquedata(username):
 
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
-def load_salesuniquedash(username):
+def load_salesuniquedash(username, fy_start, fy_end):
     # Access the username from session state
     # username = st.session_state.get("username", "")
     # st.write(username)
@@ -1596,9 +1663,14 @@ def load_salesuniquedash(username):
     df_user_infos = pd.DataFrame(db_ops.fetch_data(query, tuple(districts)))
     df_user_infos.columns=['District', 'branch_code', 'Branch']
     # df_user_infos = pd.DataFrame(db_ops.fetch_data("SELECT userId, userName, district, branch FROM user_infos"), columns=['userId', 'userName','District','Branch'])
-    unique_customer_query = f"SELECT uni_id, branch_code, saving_account, product_type, disbursed_date FROM unique_intersection WHERE `Disbursed_Date` >= '2024-07-01'"
-    df_customer = pd.DataFrame(db_ops.fetch_data(unique_customer_query))
-    df_customer.columns=['uniqueId', 'branch_code', 'Saving Account', 'Product Type', 'Disbursed Date']
+    unique_customer_query = f"SELECT uni_id, branch_code, saving_account, product_type, disbursed_date FROM unique_intersection WHERE `Disbursed_Date`  BETWEEN '{fy_start}' AND '{fy_end}'"
+    fetch_actual = db_ops.fetch_data(unique_customer_query)
+    if not fetch_actual:
+        columns = ['uniqueId', 'branch_code', 'Saving Account', 'Product Type', 'Disbursed Date']
+        df_customer = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+    else:
+        df_customer = pd.DataFrame(fetch_actual)
+        df_customer.columns=['uniqueId', 'branch_code', 'Saving Account', 'Product Type', 'Disbursed Date']
 
     # Merge the two DataFrames based on 'userId'
     merged_df_uni = pd.merge(df_user_infos, df_customer, on='branch_code', how='inner')
@@ -4553,7 +4625,7 @@ def aggregate_and_insert_actual_data_kiyya():
 
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
-def load_kiyya_actual_vs_targetdata(role, username):
+def load_kiyya_actual_vs_targetdata(role, username, fy_start, fy_end):
     # Access the username from session state
     # username = st.session_state.get("username", "")
     # role = st.session_state.get("role", "")
@@ -4649,22 +4721,30 @@ def load_kiyya_actual_vs_targetdata(role, username):
                 SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date 
                 FROM actual_kiyya 
                 WHERE branch_code IN ({placeholders})
+                AND (actual_date BETWEEN %s AND %s)
             """
+            query_params = tuple(branch_codes) + (fy_start, fy_end)  # Combine branch codes with fiscal year start and end dates
 
             # Fetch actual data using a parameterized query
-            fetch_actual = db_ops.fetch_data(actual_query, tuple(branch_codes))  # Ensure the tuple is passed correctly
+            fetch_actual = db_ops.fetch_data(actual_query, query_params)  # Ensure the tuple is passed correctly
             # Debugging: Print the raw data fetched
             # st.write("Actual Data Fetched:", fetch_actual)
 
-            # Check if fetch_actual has data
-            if not fetch_actual:
-                st.warning("No actual data found for the selected branch codes.")
-                return pd.DataFrame()
+            # # Check if fetch_actual has data
+            # if not fetch_actual:
+            #     st.warning("No actual data found for the selected branch codes.")
+            #     return pd.DataFrame()
 
             # Convert the data to a DataFrame and handle data type conversions
-            df_actual = pd.DataFrame(fetch_actual)
+            
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
             # Rename columns for 'actual' data
-            df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            # df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
             # Apply data type conversions
             df_actual['Actual Unique Customer'] = df_actual['Actual Unique Customer'].apply(convert_decimal)
             df_actual['Actual Number Of Account'] = df_actual['Actual Number Of Account'].apply(convert_decimal)
@@ -4674,11 +4754,12 @@ def load_kiyya_actual_vs_targetdata(role, username):
             # st.write(df_actual)
             
             # Fetch target data
-            target_query = """
+            target_query = f"""
                 SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date
-                FROM target_kiyya
+                FROM target_kiyya WHERE target_date BETWEEN %s AND %s
             """
-            fetch_target = db_ops.fetch_data(target_query)
+            tquery_params = (fy_start, fy_end)  # Fiscal year start and end dates
+            fetch_target = db_ops.fetch_data(target_query, tquery_params)
             # st.write(fetch_target)
             if not fetch_target:
                 columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
@@ -4763,18 +4844,25 @@ def load_kiyya_actual_vs_targetdata(role, username):
             # Fetch actual data
             actual_query = f"""
                 SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date 
-                FROM actual_kiyya WHERE branch_code IN ({branch_codes_str})
+                FROM actual_kiyya WHERE branch_code IN ({branch_codes_str}) AND (actual_date BETWEEN %s AND %s)
             """
-            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, tuple(branch_codes)))
-            df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            query_params = tuple(branch_codes) + (fy_start, fy_end)  # Combine branch codes with fiscal year start and end dates
+            fetch_actual = db_ops.fetch_data(actual_query, query_params)  # Ensure the tuple is passed correctly
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
             # st.write(df_actual)
 
             # Fetch target data
             target_query = f"""
                 SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date
-                FROM target_kiyya WHERE branch_code IN ({branch_codes_str})
+                FROM target_kiyya WHERE branch_code IN ({branch_codes_str}) AND (target_date BETWEEN %s AND %s)
             """
-            fetch_target = db_ops.fetch_data(target_query, tuple(branch_codes))
+            tquery_params = tuple(branch_codes) + (fy_start, fy_end)  # Fiscal year start and end dates
+            fetch_target = db_ops.fetch_data(target_query, tquery_params)
             # st.write(fetch_target)
             if not fetch_target:
                 columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
@@ -4830,18 +4918,25 @@ def load_kiyya_actual_vs_targetdata(role, username):
             actual_query = """
                 SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date 
                 FROM actual_kiyya 
-                WHERE branch_code = %s
+                WHERE branch_code = %s AND (actual_date BETWEEN %s AND %s)
             """
-            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, (branch_code,)))
-            df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            query_params = (branch_code, fy_start, fy_end)  # Combine branch code with fiscal year start and end dates
+            fetch_actual = db_ops.fetch_data(actual_query, query_params)  # Ensure the tuple is passed correctly
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
 
             # Fetch target data
             target_query = """
                 SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date 
                 FROM target_kiyya 
-                WHERE branch_code = %s
+                WHERE branch_code = %s AND (target_date BETWEEN %s AND %s)
             """
-            fetch_target = db_ops.fetch_data(target_query, (branch_code,))
+            tquery_params = (branch_code, fy_start, fy_end)  # Fiscal year start and end dates
+            fetch_target = db_ops.fetch_data(target_query, tquery_params)
             # st.write(fetch_target)
             if not fetch_target:
                 columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
@@ -4910,19 +5005,25 @@ def load_kiyya_actual_vs_targetdata(role, username):
             actual_query = f"""
                 SELECT actual_Id, branch_code, unique_actual, account_actual, disbursment_actual, actual_date
                 FROM actual_kiyya 
-                WHERE branch_code IN ({branch_codes_str})
+                WHERE branch_code IN ({branch_codes_str}) AND (actual_date BETWEEN %s AND %s)
             """
-            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, tuple(branch_codes)))
-            # st.write(df_actual)
-            df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            query_params = tuple(branch_codes) + (fy_start, fy_end)  # Combine branch codes with fiscal year start and end dates
+            fetch_actual = db_ops.fetch_data(actual_query, query_params)  # Ensure the tuple is passed correctly
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with specified columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns=['actual_Id', 'Branch Code', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
 
             # Fetch target data using parameterized query
             target_query = f"""
                 SELECT target_Id, branch_code, unique_target, account_target, disbursment_target, target_date
                 FROM target_kiyya 
-                WHERE branch_code IN ({branch_codes_str})
+                WHERE branch_code IN ({branch_codes_str}) AND (target_date BETWEEN %s AND %s)
             """
-            fetch_target = db_ops.fetch_data(target_query, tuple(branch_codes))
+            tquery_params = tuple(branch_codes) + (fy_start, fy_end)  # Fiscal year start and end dates
+            fetch_target = db_ops.fetch_data(target_query, tquery_params)
             # st.write(fetch_target)
             if not fetch_target:
                 columns = ['target_Id', 'Branch Code', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
@@ -6093,7 +6194,7 @@ def aggregate_and_insert_actual_data_per_product():
 
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
-def load_actual_vs_targetdata_per_product(role, username):
+def load_actual_vs_targetdata_per_product(role, username, fy_start, fy_end):
     # Access the username from session state
     # username = st.session_state.get("username", "")
     # role = st.session_state.get("role", "")
@@ -6189,22 +6290,22 @@ def load_actual_vs_targetdata_per_product(role, username):
                 SELECT actual_Id, branch_code, product_type, unique_actual, account_actual, disbursment_actual, actual_date 
                 FROM actual_per_product 
                 WHERE branch_code IN ({placeholders})
+                AND (actual_date BETWEEN %s AND %s)
             """
 
             # Fetch actual data using a parameterized query
-            fetch_actual = db_ops.fetch_data(actual_query, tuple(branch_codes))  # Ensure the tuple is passed correctly
+            quary_params = tuple(branch_codes) + (fy_start, fy_end)  # Combine branch codes with fiscal year start and end
+            fetch_actual = db_ops.fetch_data(actual_query, quary_params)  # Ensure the tuple is passed correctly
             # Debugging: Print the raw data fetched
             # st.write("Actual Data Fetched:", fetch_actual)
 
             # Check if fetch_actual has data
             if not fetch_actual:
-                st.warning("No actual data found for the selected branch codes.")
-                return pd.DataFrame()
-
-            # Convert the data to a DataFrame and handle data type conversions
-            df_actual = pd.DataFrame(fetch_actual)
-            # Rename columns for 'actual' data
-            df_actual.columns = ['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                columns = ['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns = ['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
             # Apply data type conversions
             df_actual['Actual Unique Customer'] = df_actual['Actual Unique Customer'].apply(convert_decimal)
             df_actual['Actual Number Of Account'] = df_actual['Actual Number Of Account'].apply(convert_decimal)
@@ -6214,15 +6315,19 @@ def load_actual_vs_targetdata_per_product(role, username):
             # st.write(df_actual)
             
             # Fetch target data
-            target_query = """
+            target_query = F"""
                 SELECT target_Id, branch_code, product_type, unique_target, account_target, disbursment_target, target_date
-                FROM target_per_product
+                FROM target_per_product WHERE (target_date BETWEEN %s AND %s)
             """
-            fetch_target = db_ops.fetch_data(target_query)
-            # st.write(fetch_target)
-            df_target = pd.DataFrame(fetch_target)
-            # Rename columns for 'target' data
-            df_target.columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+            tquary_params = (fy_start, fy_end)  # Fiscal year start and end dates
+            fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                # Rename columns for 'target' data
+                df_target.columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
             # Apply data type conversions
             df_target['Target Unique Customer'] = df_target['Target Unique Customer'].apply(convert_decimal)
             df_target['Target Number Of Account'] = df_target['Target Number Of Account'].apply(convert_decimal)
@@ -6299,20 +6404,32 @@ def load_actual_vs_targetdata_per_product(role, username):
             # Fetch actual data
             actual_query = f"""
                 SELECT actual_Id, branch_code, product_type, unique_actual, account_actual, disbursment_actual, actual_date 
-                FROM actual_per_product WHERE branch_code IN ({branch_codes_str})
+                FROM actual_per_product WHERE branch_code IN ({branch_codes_str}) AND (actual_date BETWEEN %s AND %s)
             """
-            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, tuple(branch_codes)))
-            df_actual.columns=['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            quary_params = tuple(branch_codes) + (fy_start, fy_end)  # Combine branch codes with fiscal year start and end
+            fetch_actual = db_ops.fetch_data(actual_query, quary_params)  # Ensure the tuple is passed correctly
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns=['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
             # st.write(df_actual)
 
             # Fetch target data
             target_query = f"""
                 SELECT target_Id, branch_code, product_type,  unique_target, account_target, disbursment_target, target_date
-                FROM target_per_product WHERE branch_code IN ({branch_codes_str})
+                FROM target_per_product WHERE branch_code IN ({branch_codes_str}) AND (target_date BETWEEN %s AND %s)
             """
-            df_target = pd.DataFrame(db_ops.fetch_data(target_query, tuple(branch_codes)))
-            df_target.columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
-            # st.write(df_target)
+            tquary_params = tuple(branch_codes) + (fy_start, fy_end) 
+            fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                df_target.columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+                # st.write(df_target)
 
             return act_dis_branch, df_actual, df_target
         except Exception as e:
@@ -6357,19 +6474,31 @@ def load_actual_vs_targetdata_per_product(role, username):
             actual_query = """
                 SELECT actual_Id, branch_code, product_type, unique_actual, account_actual, disbursment_actual, actual_date 
                 FROM actual_per_product 
-                WHERE branch_code = %s
+                WHERE branch_code = %s AND (actual_date BETWEEN %s AND %s)
             """
-            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, (branch_code,)))
-            df_actual.columns=['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            quary_params = (branch_code, fy_start, fy_end)  # Combine branch code with fiscal year start and end
+            fetch_actual = db_ops.fetch_data(actual_query, quary_params)  # Ensure the tuple is passed correctly
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns=['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
 
             # Fetch target data
             target_query = """
                 SELECT target_Id, branch_code, product_type, unique_target, account_target, disbursment_target, target_date 
                 FROM target_per_product 
-                WHERE branch_code = %s
+                WHERE branch_code = %s AND (target_date BETWEEN %s AND %s)
             """
-            df_target = pd.DataFrame(db_ops.fetch_data(target_query, (branch_code,)))
-            df_target.columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+            tquary_params = (branch_code, fy_start, fy_end)  # Fiscal year start and end dates
+            fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                df_target.columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
 
             
             return act_dis_branch, df_actual, df_target
@@ -6428,20 +6557,31 @@ def load_actual_vs_targetdata_per_product(role, username):
             actual_query = f"""
                 SELECT actual_Id, branch_code, product_type, unique_actual, account_actual, disbursment_actual, actual_date
                 FROM actual_per_product 
-                WHERE branch_code IN ({branch_codes_str})
+                WHERE branch_code IN ({branch_codes_str}) AND (actual_date BETWEEN %s AND %s)
             """
-            df_actual = pd.DataFrame(db_ops.fetch_data(actual_query, tuple(branch_codes)))
-            # st.write(df_actual)
-            df_actual.columns=['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+            quary_params = tuple(branch_codes) + (fy_start, fy_end)  # Combine branch codes with fiscal year start and end
+            fetch_actual = db_ops.fetch_data(actual_query, quary_params)  # Ensure the tuple is passed correctly
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns=['actual_Id', 'Branch Code', 'Product Type', 'Actual Unique Customer', 'Actual Number Of Account', 'Actual Disbursed Amount', 'Actual Date']
 
             # Fetch target data using parameterized query
             target_query = f"""
                 SELECT target_Id, branch_code, product_type, unique_target, account_target, disbursment_target, target_date
                 FROM target_per_product 
-                WHERE branch_code IN ({branch_codes_str})
+                WHERE branch_code IN ({branch_codes_str}) AND (target_date BETWEEN %s AND %s)
             """
-            df_target = pd.DataFrame(db_ops.fetch_data(target_query, tuple(branch_codes)))
-            df_target.columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+            tquary_params = tuple(branch_codes) + (fy_start, fy_end) 
+            fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                df_target.columns = ['target_Id', 'Branch Code', 'Product Type', 'Target Unique Customer', 'Target Number Of Account', 'Target Disbursed Amount', 'Target Date']
 
             return act_dis_branch, df_actual, df_target
         except Exception as e:
