@@ -110,115 +110,14 @@ def main():
     role = st.session_state.get("role", "")
     username = st.session_state.get("username", "")
     try:
-        
-        # # tab_options = ["Wabbi & Kiyya-Formal", "Guyya & Kiyya-Informal"]
-        # # active_tab = st.radio("Select a Tab", tab_options, horizontal=True)
-        # # if active_tab == "Wabbi & Kiyya-Formal":
-        # # unique_customer, unique_by_self, registed_by_branch, df_unique_all = load_unquiecustomer(role, username)
         if role == 'Admin' or role == 'under_admin':
-            df_combine_prospect, df_combine_rejected, df_merged_closed, df_merged_emegancce, df_merged_marchent = load_sales_detail(role, username)
+            df_combine_prospect, df_combine_rejected, df_merged_closed, df_merged_emegancce, df_merged_marchent, df_agents = load_sales_detail(role, username)
         else:
             df_combine_prospect, df_combine_rejected, df_merged_closed = load_sales_detail(role, username)
-        # st.write(df_combine_collection)
-        # df_combine_arrears['Michu Loan Product'] = df_combine_arrears['Michu Loan Product'].replace({'Michu 1.0': 'Wabbi'})
-
-
-        # # Combine unique values for filters
-        # combined_districts = sorted(set(df_combine_collection["District"].dropna().unique()) | set(df_combine_conversion["District"].dropna().unique()) | set(df_combine_arrears["District"].dropna().unique()))
-        # combined_branches = sorted(set(df_combine_collection["Branch"].dropna().unique()) | set(df_combine_conversion["Branch"].dropna().unique()) | set(df_combine_arrears["Branch"].dropna().unique()))
-
-        # start_dates = []
-        # end_dates = []
-
-
-
-        # if df_combine_conversion is not None and not df_combine_conversion.empty:
-        #     start_dates.append(df_combine_conversion["Conversion Date"].min())
-        #     end_dates.append(df_combine_conversion["Conversion Date"].max())
-        
-        # # if df_combine_arrears is not None and not df_combine_arrears.empty:
-        # #     start_dates.append(df_combine_arrears["Maturity Date"].min())
-        # #     end_dates.append(df_combine_arrears["Maturity Date"].max())
-        
-        # if df_combine_collection is not None and not df_combine_collection.empty:
-        #     start_dates.append(df_combine_collection["Collected Date"].min())
-        #     end_dates.append(df_combine_collection["Collected Date"].max())
-
-        # if start_dates and end_dates:
-        #     combined_start_date = min(start_dates)
-        #     combined_end_date = max(end_dates)
-        # else:
-        #     combined_start_date = None
-        #     combined_end_date = None
-    
-    
-    
-
-        # # Sidebar filters
-        # st.sidebar.image("pages/michu.png")
-        # full_name = st.session_state.get("full_name", "")
-        # # st.sidebar.write(f'Welcome, :orange[{full_name}]')
-        # st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
-        # st.sidebar.header("Please filter")
-
-        # district = st.sidebar.multiselect("Select District", options=combined_districts)
-        
-        # # Filter branches based on selected districts
-        # if district:
-        #     filtered_branches = sorted(set(df_combine_collection[df_combine_collection["District"].isin(district)]["Branch"].dropna().unique()) |
-        #                             set(df_combine_conversion[df_combine_conversion["District"].isin(district)]["Branch"].dropna().unique()) |
-        #                             set(df_combine_arrears[df_combine_arrears["District"].isin(district)]["Branch"].dropna().unique()))
-        # else:
-        #     filtered_branches = combined_branches
-
-        # branch = st.sidebar.multiselect("Select Branch", options=filtered_branches)
-
-        # col1, col2 = st.sidebar.columns(2)
-        # with col1:
-        #     date1 = st.date_input("Start Date", combined_start_date, min_value=combined_start_date, max_value=combined_end_date)
-        # with col2:
-        #     date2 = st.date_input("End Date", combined_end_date, min_value=combined_start_date, max_value=combined_end_date)
-
-
-        # # Apply filters to each DataFrame
-        # if district:
-        #     df_combine_collection = df_combine_collection[df_combine_collection["District"].isin(district)]
-        #     df_combine_conversion = df_combine_conversion[df_combine_conversion["District"].isin(district)]
-        #     df_combine_arrears = df_combine_arrears[df_combine_arrears["District"].isin(district)]
-        
-        # if branch:
-        #     df_combine_collection = df_combine_collection[df_combine_collection["Branch"].isin(branch)]
-        #     df_combine_conversion = df_combine_conversion[df_combine_conversion["Branch"].isin(branch)]
-        #     df_combine_arrears = df_combine_arrears[df_combine_arrears["Branch"].isin(branch)]
-
-
-    
-        # df_combine_collection = df_combine_collection[(df_combine_collection["Collected Date"] >= date1) & (df_combine_collection["Collected Date"] <= date2)]
-        # df_combine_conversion = df_combine_conversion[(df_combine_conversion["Conversion Date"] >= date1) & (df_combine_conversion["Conversion Date"] <= date2)]
-        # # df_combine_arrears = df_combine_arrears[(df_combine_arrears["Maturity Date"] >= date1) & (df_combine_arrears["Maturity Date"] <= date2)]
-        # # st.write(df_combine_collection)
-
-
-        # # Hide the sidebar by default with custom CSS
-        # hide_sidebar_style = """
-        #     <style>
-        #         #MainMenu {visibility: hidden;}
-        #     </style>
-        # """
-        # st.markdown(hide_sidebar_style, unsafe_allow_html=True)
+       
         home_sidebar()
 
-        # st.markdown(
-        #     """
-        #     <style>
-        #     .metric-card-container {
-        #         padding-top: 0.2rem;
-        #     }
-        #     </style>
-        #     """,
-        #     unsafe_allow_html=True
-        # )
-        # df_combine
+        
 
 
         total_rejected = df_combine_rejected['michu_id'].nunique()
@@ -238,6 +137,8 @@ def main():
             total_emrgance_active = df_merged_emegancce[df_merged_emegancce['statuss'] == 'active']['em_id'].nunique()
             total_marchent = df_merged_marchent['me_id'].nunique()
             total_marchent_active = df_merged_marchent[df_merged_marchent['statuss'] == 'active']['me_id'].nunique()
+            total_agents = df_agents['inactive_sum'].values[0] if not df_agents.empty else 0
+            total_agents_active = df_agents['active_sum'].values[0] if not df_agents.empty else 0
 
 
 
@@ -334,17 +235,6 @@ def main():
             return fig
 
     
-        
-        # col2, col3, col4, col5 = st.columns(4)
-        # # col2.markdown('<style>div.block-container{padding-top:0.0002rem;}</style>', unsafe_allow_html=True)
-        # col2.metric(label="**Total Rejected**", value=total_collected)
-        # col3.metric(label="**Total Closed**", value=total_collected)
-        # col4.metric(label="**Total Prospective**", value=total_rejected)
-        # col5.metric(label="**Total emrgance**", value=total_collectedd)
-        # # col4.metric(label="***Unrecognized Questions***", value=df_combine[df_combine['intent'] == 'nlu_fallback']['text_id'].nunique(), delta="unrecognized questions")
-        # # col5.metric(label="***Michu Channel Joined User***", value=df_combine.groupby('user_id')['ch_id'].nunique().sum(), delta="Michu Channel")
-        # style_metric_cards(background_color="#00adef", border_left_color="#e38524", border_color="#1f66bd", box_shadow="#f71938")
-
             
         # Usage in Streamlit
         if role == "Admin" or role == 'under_admin' or role == 'Sales Admin':
@@ -367,20 +257,8 @@ def main():
                 ).update_layout(margin=dict(t=50, b=0, l=0, r=0)),
                 use_container_width=True
             )
-            # with coll1:
-                # -- Per District --
-                # Drop duplicates to ensure unique District entries for summarization
-                # st.write(df_combine_rejected)
-                
         
-    
-        # # Display combined data in a table
-        # st.write(":orange[Michu Women Targeted Customer List 👇🏻]")
-        # st.write(df_combine.drop(columns=['customerId', 'userName']).reset_index(drop=True).rename(lambda x: x + 1))
-        # df = df_combine.drop(columns=['customerId', 'userName'])
-        # csv = df.to_csv(index=False)
-        # st.download_button(label=":blue[Download CSV]", data=csv, file_name='Women_Targeted_data.csv', mime='text/csv')
-        col2, col3, col4, col5, col6 = st.columns(5)
+        col2, col3, col4, col5, col6, col7 = st.columns(6)
         # col2.markdown('<style>div.block-container{padding-top:0.0002rem;}</style>', unsafe_allow_html=True)
         col2.metric(label="**Active / Rejected**", value=f"{total_rejected_active}/{Total_rejected_notactive}")
         col3.metric(label="**Active / Closed**", value=f"{total_closed_active}/{total_closed}")
@@ -388,6 +266,7 @@ def main():
         if role == 'Admin' or role == 'under_admin':
             col5.metric(label="**Active / emrgance**", value=f"{total_emrgance_active}/{total_emrgance}")
             col6.metric(label="**Active / marchent**", value=f"{total_marchent_active}/{total_marchent}")
+            col7.metric(label="**Active / Agents**", value=f"{total_agents_active}/{total_agents}")
         # style_metric_cards(background_color="#000000", border_left_color="#e38524", border_color="#000000")
         st.markdown("""
             <style>

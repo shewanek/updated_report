@@ -166,45 +166,48 @@ def register():
             # if st.form_submit_button("Michu Unique Customers Detail Report"):
             #     sleep(0.5)
             #     st.switch_page('pages/branch_dash.py')
-            st.write("")
+            
             # if st.form_submit_button("Michu Collection Report"):
             #     sleep(0.5)
             #     st.switch_page('pages/status.py')
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
+            
             if st.form_submit_button("Target Performance Report"):
                 sleep(0.5)
                 st.switch_page('pages/Actual_vs_Target.py')
 
             st.write("")
-            st.write("")
-            st.write("")
+            if st.form_submit_button("Retention Data Report"):
+                sleep(0.5)
+                # st.write("under development")
+                st.switch_page('pages/sales_status.py')
             # if st.form_submit_button("Target Performance Report Kiyya(Informal & Formal)"):
             #     sleep(0.5)
             #     st.switch_page('pages/kiyya_actual_vs_target.py')
             # # # st.write("")
-            # # # st.write("")
+            st.write("")
+            if st.form_submit_button("Upload Recommendation Letter"):
+                sleep(0.5)
+                # st.write("under development")
+                st.switch_page('pages/upload_letter.py')
             
             # st.markdown('</div>', unsafe_allow_html=True)
-    with st.form(key = 'Create_head_sales', clear_on_submit=True):
-        coll1, coll2 = st.columns([0.5, 0.5])
-        with coll1:
-            if st.form_submit_button("Retention Data Report"):
-                    sleep(0.5)
-                    # st.write("under development")
-                    st.switch_page('pages/sales_status.py')
+    # with st.form(key = 'Create_head_sales', clear_on_submit=True):
+    #     coll1, coll2 = st.columns([0.5, 0.5])
+    #     with coll1:
+    #         if st.form_submit_button("Retention Data Report"):
+    #                 sleep(0.5)
+    #                 # st.write("under development")
+    #                 st.switch_page('pages/sales_status.py')
 
-            with coll2:
-                if st.form_submit_button("Upload Recomadation Letter"):
-                    sleep(0.5)
-                    # st.write("under development")
-                    st.switch_page('pages/upload_letter.py')
-                # if st.form_submit_button("Collection & Conversion Data Report"):
-                #     sleep(0.5)
-                #     # st.write("under development")
-                #     st.switch_page('pages/conversion_dash.py')
+    #         with coll2:
+    #             if st.form_submit_button("Upload Recomadation Letter"):
+    #                 sleep(0.5)
+    #                 # st.write("under development")
+    #                 st.switch_page('pages/upload_letter.py')
+    #             # if st.form_submit_button("Collection & Conversion Data Report"):
+    #             #     sleep(0.5)
+    #             #     # st.write("under development")
+    #             #     st.switch_page('pages/conversion_dash.py')
     
 
     # with st.form(key = 'upload_recomadation', clear_on_submit=True):
@@ -215,7 +218,6 @@ def register():
     #             st.switch_page('pages/upload_letter.py')
             
     
-   
         
 
 if __name__ == '__main__':

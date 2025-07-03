@@ -6923,10 +6923,16 @@ def load_sales_detail(role, username):
         marchent = """
         SELECT me_id, phone, full_name, statuss from Marchent_data
         """
+        agents = """SELECT
+        (SELECT count(agent_id) FROM agents WHERE status = 'active') AS active_sum,
+        '/',
+        (SELECT count(agent_id) FROM agents WHERE status != 'active') AS inactive_sum
+        """
         df_branch = pd.DataFrame(db_ops.fetch_data(code_query))
         df_branch.columns=['District', 'branch_code', 'Branch']
         # st.write(df_branch)
         # columns=['cust_id', 'branch_code', 'Customer Number', 'Customer Name', 'Phone Number', 'Saving Account', 'Michu Loan Product', 'Approved Amount','Approved Date', 'Loan Status']
+        
         collectiond = db_ops.fetch_data(prospect_query)
         if not collectiond:
             df_collection = pd.DataFrame(collectiond, columns=['customer_id_michu', 'age', 'branch_code', 'phone', 'full_name', 'gender', 'customer_account_current_stage', 'michu_loan_product', 'saving_account', 'customer_number', 'marital_status', 'region', 'statuss', 'active_date'])
@@ -6963,6 +6969,14 @@ def load_sales_detail(role, username):
         else:
             df_marecnt = pd.DataFrame(marecnt)
             df_marecnt.columns=['me_id', 'phone', 'full_name', 'statuss']
+        
+        agents = db_ops.fetch_data(agents)
+        if not agents:
+            df_agents = pd.DataFrame(agents, columns=['active_sum', '/', 'inactive_sum'])
+        else:
+            df_agents = pd.DataFrame(agents)
+            df_agents.columns=['active_sum', '/', 'inactive_sum']
+        # st.write(df_agents)
 
 
         df_merged_collection = pd.merge(df_branch, df_collection, on='branch_code', how='inner')
@@ -6977,7 +6991,7 @@ def load_sales_detail(role, username):
         df_merged_emegancce = df_emegancce[['em_id', 'phone', 'full_name', 'statuss']]
         df_merged_marchent = df_marecnt[['me_id', 'phone', 'full_name', 'statuss']]
 
-        return df_combine_collection, df_combine_rejected, df_merged_closed, df_merged_emegancce, df_merged_marchent
+        return df_combine_collection, df_combine_rejected, df_merged_closed, df_merged_emegancce, df_merged_marchent, df_agents
     
     elif role == 'Sales Admin':
         user_query = "SELECT district FROM user_infos WHERE userName = %s"
@@ -10480,6 +10494,50 @@ def upload_marchent(df):
         traceback.print_exc()   # Rollback in case of error
         return False
 
+
+
+def upload_agents(df):
+    try:
+        data_to_insert = [tuple(x) for x in df[['customer_name', 'phone_number', 'bank']].values.tolist()]
+        # st.write(data_to_insert)
+        # # Prepare data for insertion
+        # data_to_insert = final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date']].values.tolist()
+
+        # Insert data into unique_intersection table
+        try:
+            insert_query = """
+                            INSERT INTO agents (customer_name, phone_number, bank) 
+                            VALUES (%s, %s, %s)
+                        """
+
+
+            # Replace NaN values with None in data_to_insert
+            data_to_insert = [
+                tuple(None if pd.isna(value) else value for value in row)
+                for row in data_to_insert
+            ]
+            
+             # Ensure data_to_insert is not empty
+            if data_to_insert:
+                # Make sure data_to_insert is a list of tuples
+                if all(isinstance(item, tuple) for item in data_to_insert):
+                    rows_inserted = db_ops.insert_many(insert_query, data_to_insert)
+                    st.success(f"{rows_inserted} rows uploaded successfully.")
+                    return True
+                else:
+                    st.error("Data to insert should be a list of tuples.")
+            else:
+                st.warning("No data to insert into the unique_intersection table.")
+        except Exception as e:
+            st.error(f"Error can't upload data: ")
+            print("Database fetch error:", e)
+            traceback.print_exc()  
+            
+
+    except Exception as e:
+        st.error(f"Error: {e}")
+        traceback.print_exc()   # Rollback in case of error
+        return False
 
 def upload_loanid(df):
     try:

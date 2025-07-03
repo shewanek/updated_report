@@ -2,9 +2,19 @@ import streamlit as st
 import traceback
 from dependence import initialize_session
 from dependence import check_active_session
+# from navigation import logout
 
 
 
+
+# if 'last_activity' in st.session_state:
+#     # Check if the session is active
+#     if not check_active_session(st.session_state['username']):
+#         # If the session is not active, reset the session state
+#         st.session_state.clear()
+#         st.warning("Your session has expired. Please log in again.")
+#         logout()
+    
 def set_session_state(username, password, role, full_name):
     initialize_session(username)
     st.session_state.logged_in = True

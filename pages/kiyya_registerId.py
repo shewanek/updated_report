@@ -95,11 +95,9 @@ def register():
                 national_key = "national_input"
                 phone_key = "phone_input"
 
-                national_id = st.number_input(
+                national_id = st.text_input(
                     "National ID",
                     key=national_key,
-                    value=None,
-                    step=1.0,
                     placeholder="Enter national ID (FIN)",
                     help="Provide your 12-digit National ID number."
                 )
@@ -136,36 +134,50 @@ def register():
                             st.stop()
 
                         else:
+                            url = f"https://kid-api.dev.kifiya.et/api/v1/request/otp?FAN={national_id}"
 
-                            # Prepare API request
-                            headers = {"Content-Type": "application/json"}
-                            payload = {"nationalId": national_id}
-                            response = requests.post(
-                                "https://faydaintegration.dev.kifiya.et/getRequestData",
-                                headers=headers,
-                                json=payload
-                            )
+                            payload = {}
+                            files={}
+                            headers = {
+                            'Authenticate': 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJNaWNodSBDb29wIiwiaWF0IjoxNzUxMzc0Mzc1LCJleHAiOjE3NjcxMzkyMDB9.KtIT28uzZMlsmW1HbWp4pC8ngl1EkaZEAxw9VQOSqreF2MTqJ7qv_uDtjl5bGh3XehZ_l6C2hBGY_77dF4OPHA',
+                            'Content-Type': 'application/json'
+                            }
+
+                            response = requests.request("GET", url, headers=headers, data=payload, files=files)
+
+                            print(response.text)
 
                             # Handle API response
                             if response.status_code == 200:
                                 data = response.json()
-                                if data.get("response") is not None:
-                                    # Set session state and print details
-                                    st.session_state.transaction_id = data.get("transactionID")
+                                api_data = data.get("data")
+
+                                if api_data is not None:
+                                    # Extract nested fields safely
+                                    transaction_id = api_data.get("transactionID")
+                                    response_info = api_data.get("response") or {}
+
+                                    # Set session state
+                                    st.session_state.transaction_id = transaction_id
                                     st.session_state.national_id = national_id
                                     st.session_state.phone_number = phone_number
 
-                                    print(data.get("id"))
-                                    print(data.get("version"))
-                                    print(data.get("transactionID"))
-                                    print(data.get("response"))
-                                    print(data.get("response").get("maskedMobile"))
-                                    
+                                    # Debug prints
+                                    print("Transaction ID:", transaction_id)
+                                    print("Response:", response_info)
+                                    print("Masked Mobile:", response_info.get("maskedMobile"))
+
                                     # Switch to OTP page
                                     st.success("Redirecting to OTP page...")
                                     st.switch_page("pages/kiyya_otp.py")
+
                                 else:
-                                    st.error(data.get("errors") or "Failed to verify the National ID.")
+                                    # Fallback: Show any errors or a generic message
+                                    errors = data.get("errors")
+                                    if errors:
+                                        st.error(f"API error: {errors}")
+                                    else:
+                                        st.error("Failed to verify the National ID.")
                             else:
                                 st.error(f"Failed to fetch data. HTTP Status Code: {response.status_code}")
                     except requests.exceptions.RequestException as e:

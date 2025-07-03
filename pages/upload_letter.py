@@ -168,7 +168,7 @@ def main():
             border-radius: 6px;
         }
         </style>
-        <center> <h3 class="title_dash"> Michu Recomadation Letter Upload/View Portal </h3> </center>
+        <center> <h3 class="title_dash"> Michu Recommendation Letter Upload/View Portal </h3> </center>
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)

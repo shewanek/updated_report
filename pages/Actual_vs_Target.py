@@ -9,6 +9,7 @@ import decimal
 import numpy as np
 from dependence import load_actual_vs_targetdata, load_kiyya_actual_vs_targetdata, load_actual_vs_targetdata_per_product
 from dependence import update_activity, check_session_timeout
+import traceback
 
 
 pd.set_option('future.no_silent_downcasting', True)
@@ -9401,6 +9402,7 @@ def main():
 
 
         except Exception as e:
+            traceback.print_exc()
             st.error(f"An error occurred while loading data: {e}")
         # finally:
         #     if db_instance:

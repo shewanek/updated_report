@@ -172,7 +172,7 @@ def register():
                 st.switch_page('pages/sales_status.py')
 
         with col1:
-            if st.form_submit_button("View Recomadation Letter"):
+            if st.form_submit_button("View Recommendation Letter"):
                 sleep(0.5)
                 # st.write("under development")
                 st.switch_page('pages/upload_letter.py')
