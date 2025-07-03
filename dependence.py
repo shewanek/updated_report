@@ -6905,23 +6905,23 @@ def load_sales_detail(role, username):
                             statuss,
                             active_date
                             
-                        FROM prospect_data
+                        FROM prospect_data where statuss != 'inactive'
                         """  
         Rejected_query = """
         SELECT branch_code, michu_id, Customer_Name, Phone_Number,
         Saving_Account, gender, michu_loan_product, 
-        statuss, Rejection_Reason_Remark, Customer_Feedback from rejected_customer
+        statuss, Rejection_Reason_Remark, Customer_Feedback from rejected_customer where statuss != 'inactive'
         """
         closed_query = """
         SELECT branch_code, customer_number, loan_id, customer_name,
         gender, phone_number, michu_loan_product, 
-        statuss, Saving_Account, business_tin_number from closed
+        statuss, Saving_Account, business_tin_number from closed where statuss != 'inactive'
         """
         emergance = """
-        SELECT em_id, phone, full_name, statuss from emargance_data
+        SELECT em_id, phone, full_name, statuss from emargance_data where statuss != 'inactive'
         """
         marchent = """
-        SELECT me_id, phone, full_name, statuss from Marchent_data
+        SELECT me_id, phone, full_name, statuss from Marchent_data where statuss != 'inactive'
         """
         agents = """SELECT
         (SELECT count(agent_id) FROM agents WHERE status = 'active') AS active_sum,
