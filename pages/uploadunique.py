@@ -28,10 +28,10 @@ def main():
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
         .stAppHeader { visibility: hidden; }
-        /* Hide the entire header bar */
-        header.stAppHeader {
-            display: none;
-        }
+        # /* Hide the entire header bar */
+        # header.stAppHeader {
+        #     display: none;
+        # }
         .stButton button {
             background-color: #000000;
             border: 1px solid #ccc;
