@@ -3,6 +3,7 @@ import streamlit as st
 from navigation import login_bar
 from navigation import make_sidebar1
 import requests
+from dependence import validate_phone, get_unquiedureatphone, get_unquiedkiyyaphone, get_natinal_id, validate_saving_account, check_durationunique_account
 
 
 def set_session_state(transactionID, national_id, phone_nmuber):
@@ -94,27 +95,33 @@ def register():
                 # Input fields
                 national_key = "national_input"
                 phone_key = "phone_input"
+                account_key = "account"
 
                 national_id = st.text_input(
-                    "National ID",
+                    "National ID*",
                     key=national_key,
                     placeholder="Enter national ID (FIN)",
                     help="Provide your 12-digit National ID number."
                 )
 
                 phone_number = st.text_input(
-                    "Phone Number",
-                    key=phone_key,
-                    placeholder="Enter phone number",
-                    help="Provide your mobile phone number (e.g., 09XXXXXXXX)."
+                    "Customer Phone* (09XXXXXXXX)", 
+                    placeholder = "enter phone",
+                    max_chars=10,
+                    help="Must start with 09 and be 10 digits"
                 ).strip()
+                Saving_Account = st.text_input(
+                            "Customer Account*",
+                            placeholder= "Enter Account Number",
+                            max_chars=13,
+                            help="Must be 12 or 13 digits"
+                        ).strip()
 
                 # Submit button
                 submit_button = st.form_submit_button("Proceed")
 
                 # Handle form submission
                 if submit_button:
-                    from dependence import validate_phone, get_unquiedureatphone, get_unquiedkiyyaphone, get_natinal_id
                     try:
                         # Validate form input
                         if not national_id:
@@ -123,6 +130,8 @@ def register():
                         elif not validate_phone(phone_number):
                             st.error('Please enter a valid phone number (use this format 09... or 07...)')
                             st.stop()
+                        elif not validate_saving_account(Saving_Account):
+                            st.error('The saving account is not correct please try again')
                         elif get_natinal_id(national_id):
                             st.error('The national id already exist, please enter correct national id (yours)')
                             st.stop()
@@ -131,6 +140,9 @@ def register():
                             st.stop()
                         elif phone_number in get_unquiedkiyyaphone():
                             st.error('The phone number already exist, please enter correct phone number(new)')
+                            st.stop()
+                        elif check_durationunique_account(Saving_Account):
+                            st.error('The saving account is already exist, indicating that the customer has already used the product (it is not new or unique).')
                             st.stop()
 
                         else:
@@ -145,27 +157,24 @@ def register():
 
                             response = requests.request("GET", url, headers=headers, data=payload, files=files)
 
-                            print(response.text)
+                            # print(response.text)
 
                             # Handle API response
                             if response.status_code == 200:
                                 data = response.json()
                                 api_data = data.get("data")
+                                errors=  api_data.get("errors")
 
-                                if api_data is not None:
+                                if errors is None:
                                     # Extract nested fields safely
                                     transaction_id = api_data.get("transactionID")
-                                    response_info = api_data.get("response") or {}
+                                    # response_info = api_data.get("response") or {}
 
                                     # Set session state
-                                    st.session_state.transaction_id = transaction_id
-                                    st.session_state.national_id = national_id
-                                    st.session_state.phone_number = phone_number
-
-                                    # Debug prints
-                                    print("Transaction ID:", transaction_id)
-                                    print("Response:", response_info)
-                                    print("Masked Mobile:", response_info.get("maskedMobile"))
+                                    st.session_state['transaction_id'] = transaction_id
+                                    st.session_state['national_id'] = national_id
+                                    st.session_state['phone_number'] = phone_number
+                                    st.session_state['Saving_Account'] = Saving_Account
 
                                     # Switch to OTP page
                                     st.success("Redirecting to OTP page...")
@@ -173,7 +182,6 @@ def register():
 
                                 else:
                                     # Fallback: Show any errors or a generic message
-                                    errors = data.get("errors")
                                     if errors:
                                         st.error(f"API error: {errors}")
                                     else:

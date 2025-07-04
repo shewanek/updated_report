@@ -3947,6 +3947,39 @@ def kiyya_customer(username, fullName, phone_number, Saving_Account, customer_id
         st.exception(e)
         return False
     
+def kiyya_customerwith_nid(username, fullName, phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan, national_id, transactionID, national_phone, email, address, responseTime):
+    try:
+        processed_phone_number = "+251" + phone_number[1:]
+        # phonenumber_processed = "+251" + phonenumber[1:]
+        procced_national_phone = "+251" + national_phone[1:]
+        userId  = get_id(username)
+        if userId:
+            query1 = """
+                INSERT INTO kiyya_customer_status(userId, phone_number, account_number, total_score, eligible)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            query2 = """
+                INSERT INTO nationaldata(nationalId, customerPhone, transactionID, name, dob, gender, nationalIdPhoneNumber, email, fullAddress, responseTime)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+
+            # Insert customer information into the customer table
+            query = """
+                INSERT INTO kiyya_customer(userId, fullName, phone_number, account_number, customer_ident_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, daily_sales, purpose_of_loan)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            db_ops.insert_data(query, (userId, fullName, processed_phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan))
+            # db_ops.insert_data(query1, (userId, phonenumber_processed, account_number, eligible, total_score))
+            db_ops.insert_data(query2, (national_id, processed_phone_number, transactionID, fullName, date_of_birth,  gender, procced_national_phone, email, address, responseTime))
+            return True
+        else:
+            st.error("User not found with the provided username.")
+            return False
+    except Exception as e:
+        st.error("Failed to create customer due to an unexpected error.")
+        st.exception(e)
+        return False
+    
 def kiyya_customer_notegible(username, fullName, phone_number, Saving_Account, customer_id_type, gender, marital_status, date_of_birth, region, zone_subcity, woreda, educational_level, economic_sector, line_of_business, initial_working_capital, source_of_initial_capital, monthly_income, purpose_of_loan, phonenumber, account_number, eligible, total_score):
     try:
         processed_phone_number = "+251" + phone_number[1:]
@@ -6080,6 +6113,11 @@ def get_natinal_id(id):
     result = db_ops.fetch_one(query4, (id,))  # Fetch only one result
     return result is not None
 
+def get_branchcode(username):
+    # Retrieve account number from kiyya_customer table
+    query4 = "SELECT branch_code FROM national_id_branch WHERE branch_code IN(SELECT branch FROM user_infos WHERE userName = %s)"
+    result = db_ops.fetch_one(query4, (username,))  # Fetch only one result
+    return result is not None
 
 def aggregate_and_insert_actual_data_per_product():
     # Fetch the latest disbursed_date from unique_intersection and conversiondata tables

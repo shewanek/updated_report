@@ -2,7 +2,7 @@ import streamlit as st
 # from dependence import  validate_full_name
 from navigation import login_bar
 from navigation import make_sidebar1
-from pages.kiyya_register import kiyya_register
+from pages.kiyya_register_withid import kiyya_register_withid
 import requests
 from datetime import datetime, timedelta
 import time
@@ -93,72 +93,79 @@ def register():
     with st.form(key="otp_form"):
         otp_key = 'otp_input'
         otp_id = st.text_input('OTP', key=otp_key, placeholder='Enter  OTP that sent to your phone number').strip()
-        if st.form_submit_button("Proceed"):
-            try:
-                # validate form not empty
-                if not otp_id:
-                    st.error("Please enter a valid OTP.")
-                    return
-                
-                headers = {"Content-Type": "application/json"}
-                # Add payload if needed (adjust as per API requirements)
-                payload = {
-                    "otp": otp_id,
-                    "transactionID": st.session_state.get("transactionID"),
-                    "nationalId": st.session_state.get("national_id")   
-                }
-                # st.write(payload)
+        transactionID = st.session_state.get("transaction_id")
+        national_id = st.session_state.get("national_id")
+        phone_number = st.session_state.get("phone_number")
+        Saving_Account = st.session_state.get("Saving_Account")
+        col21, col22 = st.columns([0.7, 0.3])
+        with col21:
+            if st.form_submit_button("Proceed"):
+                try:
+                    # validate form not empty
+                    if not otp_id:
+                        st.error("Please enter a valid OTP.")
+                        if st.form_submit_button("Back to Form"):
+                            st.switch_page("pages/kiyya_registerId.py")
+                        return
+                    
+                    # Validate session state dependencies
+                    required_fields = ["transaction_id", "national_id", "phone_number", "Saving_Account"]
+                    missing = [f for f in required_fields if not st.session_state.get(f)]
+                    if missing:
+                        st.error(f"Missing required data: {', '.join(missing)}")
+                        st.stop()
+                    
+                    # Build the URL with query parameters
+                    url = f"https://kid-api.dev.kifiya.et/api/v1/request/kyc?FAN={national_id}&OTP={otp_id}&TRANSACTIONID={transactionID}"
 
-                response = requests.post("https://faydaintegration.dev.kifiya.et/getEkycData", headers=headers, json=payload)
+                    # Headers
+                    payload = {}
+                    files={}
+                    headers = {
+                        'Authenticate': 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJNaWNodSBDb29wIiwiaWF0IjoxNzUxMzc0Mzc1LCJleHAiOjE3NjcxMzkyMDB9.KtIT28uzZMlsmW1HbWp4pC8ngl1EkaZEAxw9VQOSqreF2MTqJ7qv_uDtjl5bGh3XehZ_l6C2hBGY_77dF4OPHA',
+                        'Content-Type': 'application/json'
+                    }
 
-                # Check if request was successful
-                if response.status_code == 200:
-                    data = response.json()
-                    response_kyc_status = data.get("response", {}).get("kycStatus")
+                    with st.spinner("Verifying OTP and retrieving KYC data..."):
+                        try:
+                            response = requests.get(url, headers=headers, timeout=10)
 
-                    # Handle KYC status
-                    if response_kyc_status and response_kyc_status.lower() == "true":
-                        print(data.get("otp"))
-                        print(data.get("transactionID"))
-                        print(data.get("nationalId"))
-                        
-                        # Switch to OTP page
-                        st.success("Redirecting to form page...")
-                        kiyya_register()
-                    else:
-                        # # st.error("KYC failed or no response received. Please check your OTP.")
-                        # # st.text(f"Response: {data}")
-                        # st.error(data.get("errors"))
-                        # if 'page_load_time' not in st.session_state:
-                        #     st.session_state.page_load_time = datetime.now()
+                            if response.status_code == 200:
+                                data = response.json()
+                                resp = data.get("data", {})
+                                kyc_status = resp.get("response", {}).get("kycStatus")
+                                errors = resp.get("errors")
 
-                        # # Check if 2 minutes have elapsed
-                        # current_time = datetime.now()
-                        # time_diff = current_time - st.session_state.page_load_time
+                                if not errors and kyc_status == "true":
+                                    identity = resp["response"]["identity"]
+                                    responseTime = resp.get("responseTime")
+                                    name = next(i["value"] for i in identity["name"] if i["language"] == "eng")
+                                    dob = identity["dob"]
+                                    gender = next(i["value"] for i in identity["gender"] if i["language"] == "eng")
+                                    national_phone = identity["phoneNumber"]
+                                    email = identity["emailId"]
+                                    address = next(item["value"] for item in identity["fullAddress"] if item["language"] == "eng")
 
-                        # if time_diff.total_seconds() >= 120:  # 2 minutes in seconds
-                        #     st.success("Session timeout - redirecting to registration page...")
-                        #     time.sleep(2)
-                        #     st.switch_page('pages/kiyya_registerId.py')
-                        # Store the error message in session state
-                        st.session_state.error_message = data.get("errors")
-                        st.switch_page('pages/kiyya_registerId.py')
-                else:
-                    st.error(f"Failed to fetch data. HTTP Status Code: {response.status_code}")
-                    # st.text(f"Response Text: {response.text}")
-                    # Add timestamp to session state if not exists
-                    if 'page_load_time' not in st.session_state:
-                        st.session_state.page_load_time = datetime.now()
+                                    if gender.strip().lower() != "female":
+                                        st.error("Only females are allowed for this product.")
+                                        if st.form_submit_button("Back to Form"):
+                                            st.switch_page("pages/kiyya_registerId.py")
+                                        st.stop()
 
-                    # Check if 2 minutes have elapsed
-                    current_time = datetime.now()
-                    time_diff = current_time - st.session_state.page_load_time
-
-                    if time_diff.total_seconds() >= 120:  # 2 minutes in seconds
-                        st.success("Session timeout - redirecting to registration page...")
-                        st.switch_page('pages/kiyya_registerId.py')
-            except requests.exceptions.RequestException as e:
-                st.error(f"An error occurred while fetching data: {str(e)}")
+                                    st.success("Redirecting to form...")
+                                    kiyya_register_withid(name, phone_number, Saving_Account, national_id,  gender, dob, transactionID, national_phone, email, address, responseTime)
+                                else:
+                                    st.session_state["error_datamessage"] = data.get("message")
+                                    st.switch_page("pages/kiyya_registerId.py")
+                            else:
+                                st.error(f"Failed to fetch KYC data: {response.status_code}, pls enter correct OTP")
+                        except requests.exceptions.RequestException as e:
+                            st.error(f"Request failed: {e}")
+                except requests.exceptions.RequestException as e:
+                    st.error(f"An error occurred while fetching data: {str(e)}")
+        with col22:
+            if st.form_submit_button("Back to Form"):
+                st.switch_page("pages/kiyya_registerId.py")
 
     
         

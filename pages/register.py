@@ -6,7 +6,7 @@ from pages.kiyya_register import kiyya_register
 from pages.dureati_reg import registerr
 from pages.unique_register import unique_register
 # from pages.dureati_reg import registerr
-from dependence import update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout, get_branchcode
 
 
 
@@ -89,7 +89,7 @@ def register():
         
     # Side bar
     st.sidebar.image("pages/michu.png")
-    # username = st.session_state.get("username", "")
+    username = st.session_state.get("username", "")
     full_name = st.session_state.get("full_name", "")
     # st.sidebar.write(f'Welcome, :orange[{full_name}]')
     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
@@ -152,8 +152,10 @@ def register():
             st.write("")
 
             if st.form_submit_button("Kiyya :orange[INFORMAL] Customer Registeration Form"):
-                # st.switch_page('pages/kiyya_registerId.py')
-                kiyya_register()
+                if get_branchcode(username):
+                    st.switch_page('pages/kiyya_registerId.py')
+                else:
+                    kiyya_register()
             
             
     with col2:
