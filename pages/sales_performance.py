@@ -3,7 +3,7 @@ from streamlit_extras.metric_cards import style_metric_cards
 from streamlit_autorefresh import st_autorefresh
 import plotly.express as px
 from navigation import home_sidebar
-from dependence import get_officerreject, get_officerclosed, get_officerprospect
+from dependence import get_officerreject, get_officerclosed, get_officerprospect, get_unique_disbursment_data
 from dependence import initialize_session, update_activity, check_session_timeout
 import pandas as pd
 
@@ -80,6 +80,67 @@ def main():
         return
     
     try:
+
+        # Get your performance data
+        performance = get_unique_disbursment_data()
+        performance_df = pd.DataFrame(performance)
+
+        # Convert % columns to numeric
+        performance_df["Unique Performance Numeric"] = (
+            performance_df["Unique Performance %"]
+            .str.rstrip("%")
+            .astype(float)
+        )
+        performance_df["Disbursement Performance Numeric"] = (
+            performance_df["Disbursement Performance %"]
+            .str.rstrip("%")
+            .astype(float)
+        )
+
+        st.markdown("<h3 class='section-title'>Unique Report</h3>", unsafe_allow_html=True)
+        # 🎯 Unique Performance Table
+        st.dataframe(
+            performance_df
+            .drop(columns=[
+                "Total Disbursement Target", "Total Disbursement Actual", 
+                "Disbursement Performance %", "Disbursement Backlog",
+                "Disbursement Performance Numeric"
+            ])
+            .sort_values(by="Unique Performance Numeric", ascending=False)
+            .drop(columns=["Unique Performance Numeric"]),  # remove helper column after sorting
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Officer": st.column_config.TextColumn("Officer", width="medium"),
+                "Total Unique Target": st.column_config.NumberColumn("Total Unique Target"),
+                "Total Unique Actual": st.column_config.NumberColumn("Total Unique Actual"),
+                "Unique Performance %": st.column_config.ProgressColumn("Unique Performance %"),
+                "Unique Backlog": st.column_config.NumberColumn("Unique Backlog")
+            }
+        )
+
+        st.markdown("<h3 class='section-title'>Disbursement Report</h3>", unsafe_allow_html=True)
+        # 🎯 Disbursement Performance Table
+        st.dataframe(
+            performance_df
+            .drop(columns=[
+                "Total Unique Target", "Total Unique Actual",
+                "Unique Performance %", "Unique Backlog",
+                "Unique Performance Numeric"
+            ])
+            .sort_values(by="Disbursement Performance Numeric", ascending=False)
+            .drop(columns=["Disbursement Performance Numeric"]),
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Officer": st.column_config.TextColumn("Officer", width="medium"),
+                "Total Disbursement Target": st.column_config.NumberColumn("Total Disbursement Target"),
+                "Total Disbursement Actual": st.column_config.NumberColumn("Total Disbursement Actual"),
+                "Disbursement Performance %": st.column_config.ProgressColumn("Disbursement Performance %"),
+                "Disbursement Backlog": st.column_config.NumberColumn("Disbursement Backlog")
+            }
+        )
+
         # Rejected Customers Section
         st.markdown("<h3 class='section-title'>Rejected Customer Report</h3>", unsafe_allow_html=True)
         rejected_data = get_officerreject()

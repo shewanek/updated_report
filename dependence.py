@@ -10810,7 +10810,191 @@ def get_customer_names():
     return [row['fullName'] for row in results if row['fullName']] if results else []  # Additional Python-level filtering
 
 
+@st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
+def get_unique_disbursment_data():
+    """
+    Fetches officer performance based on their assigned districts.
+    Returns a list of dictionaries with 'Officer', 'Total Rejected', and 'Total Active' keys.
+    """
+    query = """
+        WITH RECURSIVE seq AS (
+        SELECT 1 AS n
+        UNION ALL
+        SELECT n + 1 FROM seq WHERE n < 10
+    ),
 
+    cleaned_user_infos AS (
+        SELECT 
+            userId,
+            full_Name AS Officer,
+            REPLACE(REPLACE(REPLACE(district, '[', ''), ']', ''), '"', '') AS clean_district
+        FROM 
+            user_infos
+        WHERE 
+            role = 3
+    ),
+
+    officer_districts AS (
+        SELECT 
+            u.userId,
+            u.Officer,
+            TRIM(
+                SUBSTRING_INDEX(
+                    SUBSTRING_INDEX(u.clean_district, ',', n),
+                    ',', -1
+                )
+            ) AS District
+        FROM 
+            cleaned_user_infos u
+        JOIN 
+            seq ON n <= 1 + LENGTH(u.clean_district) - LENGTH(REPLACE(u.clean_district, ',', ''))
+    ),
+
+    -- 🎯 Total target up to end of current month
+    target_data AS (
+        SELECT 
+            t.branch_code,
+            SUM(t.unique_target) AS total_unique_target,
+            SUM(t.disbursment_target) AS total_disbursment_target
+        FROM 
+            target_per_product t
+        WHERE 
+            t.target_date BETWEEN '2025-07-01' AND LAST_DAY(CURDATE())
+        GROUP BY 
+            t.branch_code
+    ),
+
+    -- ✅ Actuals up to today
+    actual_data AS (
+        SELECT 
+            a.branch_code,
+            SUM(a.unique_actual) AS total_unique_actual,
+            SUM(a.disbursment_actual) AS total_disbursment_actual
+        FROM 
+            actual_per_product a
+        WHERE 
+            a.actual_date BETWEEN '2025-07-01' AND CURDATE()
+        GROUP BY 
+            a.branch_code
+    ),
+
+    -- ⏳ Prorated backlog target
+    prorated_target_data AS (
+        SELECT
+            t.branch_code,
+            -- Unique
+            SUM(
+                CASE
+                    WHEN YEAR(t.target_date) < YEAR(CURDATE())
+                    OR (YEAR(t.target_date) = YEAR(CURDATE()) AND MONTH(t.target_date) < MONTH(CURDATE()))
+                    THEN t.unique_target
+                    ELSE 0
+                END
+            )
+            +
+            SUM(
+                CASE
+                    WHEN YEAR(t.target_date) = YEAR(CURDATE()) AND MONTH(t.target_date) = MONTH(CURDATE())
+                    THEN t.unique_target / DAY(LAST_DAY(t.target_date)) * DAY(CURDATE() - 1)
+                    ELSE 0
+                END
+            )
+            AS prorated_unique_target,
+
+            -- Disbursement
+            SUM(
+                CASE
+                    WHEN YEAR(t.target_date) < YEAR(CURDATE())
+                    OR (YEAR(t.target_date) = YEAR(CURDATE()) AND MONTH(t.target_date) < MONTH(CURDATE()))
+                    THEN t.disbursment_target
+                    ELSE 0
+                END
+            )
+            +
+            SUM(
+                CASE
+                    WHEN YEAR(t.target_date) = YEAR(CURDATE()) AND MONTH(t.target_date) = MONTH(CURDATE())
+                    THEN t.disbursment_target / DAY(LAST_DAY(t.target_date)) * DAY(CURDATE() - 1)
+                    ELSE 0
+                END
+            )
+            AS prorated_disbursment_target
+        FROM 
+            target_per_product t
+        WHERE 
+            t.target_date BETWEEN '2025-07-01' AND LAST_DAY(CURDATE())
+        GROUP BY 
+            t.branch_code
+    )
+
+    SELECT 
+        o.Officer,
+
+        -- 🎯 Total Targets
+        COALESCE(SUM(tgt.total_unique_target),0) AS `Total Unique Target`,
+        COALESCE(SUM(tgt.total_disbursment_target),0) AS `Total Disbursement Target`,
+
+        -- ✅ Actuals
+        COALESCE(SUM(act.total_unique_actual),0) AS `Total Unique Actual`,
+        COALESCE(SUM(act.total_disbursment_actual),0) AS `Total Disbursement Actual`,
+
+        -- 📈 Performance %
+        CONCAT(
+            ROUND(
+                IF(SUM(prt.prorated_unique_target) = 0,0,
+                    (SUM(act.total_unique_actual) / SUM(prt.prorated_unique_target)) * 100
+                ),
+                2
+            ), '%'
+        ) AS `Unique Performance %`,
+
+        CONCAT(
+            ROUND(
+                IF(SUM(prt.prorated_disbursment_target) = 0,0,
+                    (SUM(act.total_disbursment_actual) / SUM(prt.prorated_disbursment_target)) * 100
+                ),
+                2
+            ), '%'
+        ) AS `Disbursement Performance %`,
+
+        -- ⏳ Backlogs
+        ROUND(GREATEST(
+            COALESCE(SUM(prt.prorated_unique_target),0) - COALESCE(SUM(act.total_unique_actual),0),
+            0
+        ), 0) AS `Unique Backlog`,
+
+        ROUND(GREATEST(
+            COALESCE(SUM(prt.prorated_disbursment_target),0) - COALESCE(SUM(act.total_disbursment_actual),0),
+            0
+        ),0) AS `Disbursement Backlog`
+
+    FROM 
+        branch_list b
+    JOIN 
+        district_list d ON d.dis_Id = b.dis_Id
+    JOIN 
+        officer_districts o ON o.District = d.district_name
+    LEFT JOIN 
+        target_data tgt ON tgt.branch_code = b.branch_code
+    LEFT JOIN 
+        actual_data act ON act.branch_code = b.branch_code
+    LEFT JOIN 
+        prorated_target_data prt ON prt.branch_code = b.branch_code
+
+    GROUP BY 
+        o.Officer
+
+    ORDER BY 
+        o.Officer;
+    """
+    
+    # Fetch data using your db_ops.fetch_data method
+    result = db_ops.fetch_data(query)
+    
+    # Return empty list if result is None (in case of error), else return the fetched data
+    return result if result is not None else []
+
+@st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
 def get_officerreject():
     """
     Fetches officer performance based on their assigned districts.
@@ -10879,7 +11063,7 @@ def get_officerreject():
     return result if result is not None else []
 
 
-
+@st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
 def get_officerclosed():
     """
     Fetches officer performance based on their assigned districts.
@@ -10947,7 +11131,7 @@ def get_officerclosed():
     # Return empty list if result is None (in case of error), else return the fetched data
     return result if result is not None else []
 
-
+@st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
 def get_officerprospect():
     """
     Fetches officer performance based on their assigned districts.
