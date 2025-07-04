@@ -100,7 +100,7 @@ def register():
                 national_id = st.text_input(
                     "National ID*",
                     key=national_key,
-                    placeholder="Enter national ID (FIN)",
+                    placeholder="Enter national ID (FAN)",
                     help="Provide your 12-digit National ID number."
                 )
 

@@ -18,7 +18,7 @@ def main():
     custom_css = """
     <style>
         div.block-container {
-            # padding-top: 0.1rem;
+            padding-top: 0rem;
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
