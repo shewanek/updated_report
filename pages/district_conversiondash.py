@@ -6,7 +6,7 @@ from dependence import connect_to_database, load_districtconversiondata
 from navigation import make_sidebar1
 
 def main():
-    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Michu Portal", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
     custom_cs = """
     <style>
         div.block-container {

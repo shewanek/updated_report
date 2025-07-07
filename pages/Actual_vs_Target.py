@@ -25,7 +25,7 @@ check_session_timeout()
 # @st.cache_data
 def main():
     # Set page configuration, menu, and minimize top padding
-    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Michu Portal", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
     custom_cs = """
     <style>
         # div.block-container {
@@ -6578,14 +6578,8 @@ def main():
         )
         if active_tabb == "Disbursement":
             try:
-                    
-                # tab_options = ["Michu(Wabi & Guyya)", "Michu-Kiyya"]
-                # active_tab = st.radio("Select a Tab", tab_options, horizontal=True)
-                # if active_tab == "Michu(Wabi & Guyya)":
+                 
                 dis_branch, df_actual, df_target = load_actual_vs_targetdata_per_product(role, username, fy_start, fy_end)
-
-                # k_dis_branch, k_df_actual, k_df_target = load_kiyya_actual_vs_targetdata(role, username)
-                # Get the maximum date of the current month
 
                 
                 # Get the current date and the maximum date for the current month
@@ -6597,30 +6591,16 @@ def main():
                 df_actual['Actual Date'] = pd.to_datetime(df_actual['Actual Date']).dt.date
                 df_target['Target Date'] = pd.to_datetime(df_target['Target Date']).dt.date
 
-                # k_df_actual['Actual Date'] = pd.to_datetime(k_df_actual['Actual Date']).dt.date
-                # k_df_target['Target Date'] = pd.to_datetime(k_df_target['Target Date']).dt.date
-
                 # Filter df_actual and df_target based on the current month's max date
                 df_actual = df_actual[df_actual['Actual Date'] <= current_month_max_date]
                 df_target = df_target[df_target['Target Date'] <= current_month_max_date]
 
-                # # Filter df_actual and df_target based on the current month's max date
-                # k_df_actual = k_df_actual[k_df_actual['Actual Date'] <= current_month_max_date]
-                # k_df_target = k_df_target[k_df_target['Target Date'] <= current_month_max_date]
-                # st.write(df_target)
-
                 # Display the filtered DataFrames
-                # dis_branch, df_actual, df_target
                 merged_acttarg = pd.merge(df_actual, df_target, on=['Branch Code', 'Product Type'], how='outer') 
                 # merged_acttarg
                     
                 df_merged =  pd.merge(dis_branch, merged_acttarg, on='Branch Code', how='right')
 
-                # df_merged
-
-                # # dis_branch, df_actual, df_target
-                # k_merged_acttarg = pd.merge(k_df_actual, k_df_target, on='Branch Code', how='outer')
-                # k_df_merged =  pd.merge(k_dis_branch, k_merged_acttarg, on='Branch Code', how='inner')
 
                 # Combine unique values for filters
                 combined_districts = sorted(set(df_merged["District"].dropna().unique()))
@@ -6646,8 +6626,6 @@ def main():
                 if selected_product != "All":
                     df_merged = df_merged[df_merged["Product Type"] == selected_product]
 
-
-                # st.write(df_merged)
                     
                 # role = st.session_state.get("role", "")
                 if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
@@ -6657,10 +6635,8 @@ def main():
 
                     if not district:
                         df_merged = df_merged.copy()
-                        # k_df_merged = k_df_merged.copy()
                     else:
                         df_merged = df_merged[df_merged["District"].isin(district)]
-                        # k_df_merged = k_df_merged[k_df_merged["District"].isin(district)]
 
                 if role != 'Branch User':
                     combined_branches = sorted(set(df_merged["Branch"].dropna().unique()))
@@ -6668,10 +6644,8 @@ def main():
 
                     if not branch:
                         df_merged = df_merged.copy()
-                        # k_df_merged = k_df_merged.copy()
                     else:
                         df_merged = df_merged[df_merged["Branch"].isin(branch)]
-                        # k_df_merged = k_df_merged[k_df_merged["Branch"].isin(branch)]
                     
                 if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
                     if not district and not branch:
@@ -6680,13 +6654,10 @@ def main():
                         
                     elif district:
                         df_merged = df_merged[df_merged["District"].isin(district)]
-                        # k_df_merged = k_df_merged[k_df_merged["District"].isin(district)]
                     elif branch:
                         df_merged = df_merged[df_merged["Branch"].isin(branch)]
-                        # k_df_merged = k_df_merged[k_df_merged["Branch"].isin(branch)]
                     else:
                         df_merged = df_merged[df_merged["District"].isin(district) & df_merged["Branch"].isin(branch)]
-                        # k_df_merged = k_df_merged[k_df_merged["District"].isin(district) & k_df_merged["Branch"].isin(branch)]
 
                 if df_merged is not None and not df_merged.empty:
                     col1, col2 = st.sidebar.columns(2)
@@ -6694,10 +6665,6 @@ def main():
                     # Convert the date columns to datetime if they are not already
                     df_merged["Target Date"] = pd.to_datetime(df_merged["Target Date"], errors='coerce')
                     df_merged["Actual Date"] = pd.to_datetime(df_merged["Actual Date"], errors='coerce')
-
-                    # # Convert the date columns to datetime if they are not already
-                    # k_df_merged["Target Date"] = pd.to_datetime(k_df_merged["Target Date"], errors='coerce')
-                    # k_df_merged["Actual Date"] = pd.to_datetime(k_df_merged["Actual Date"], errors='coerce')
 
                     # Determine the overall min and max dates
                     overall_start_date = df_merged[["Target Date", "Actual Date"]].min().min()
@@ -6725,11 +6692,6 @@ def main():
                     start_date = pd.Timestamp(start_date)
                     end_date = pd.Timestamp(end_date)
 
-                    # Filter the dataframe based on the selected date range
-                    # df_filtered = df_merged[
-                    #     (df_merged["Target Date"] >= start_date) & (df_merged["Target Date"] <= end_date)
-                    # ].copy()
-
                     df_filtered = df_merged[
                         (start_date.to_period("M") <= df_merged["Target Date"].dt.to_period("M")) &
                         (end_date.to_period("M") >= df_merged["Target Date"].dt.to_period("M"))
@@ -6739,17 +6701,6 @@ def main():
                     df_filtered_actual = df_merged[
                         (df_merged["Actual Date"] >= start_date) & (df_merged["Actual Date"] <= end_date)
                     ].copy()
-
-
-                    # k_df_filtered = k_df_merged[
-                    #     (start_date.to_period("M") <= k_df_merged["Target Date"].dt.to_period("M")) &
-                    #     (end_date.to_period("M") >= k_df_merged["Target Date"].dt.to_period("M"))
-                    # ].copy()
-
-                    # # You can filter Actual Date separately if needed
-                    # k_df_filtered_actual = k_df_merged[
-                    #     (k_df_merged["Actual Date"] >= start_date) & (k_df_merged["Actual Date"] <= end_date)
-                    # ].copy()
 
 
 
@@ -6787,17 +6738,6 @@ def main():
 
                 if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
                     tab1, tab2 = st.tabs(["📈 Aggregate Report", "🗃 Report per District & Branch"])
-                    # # Drop duplicate target_Id and actual_Id
-                    # with Tab3:
-                    #     st.write("""
-                    #             **Note the following points regarding the Target Performance Report:**
-
-                    #             1. *Michu (Wabi & Guyya)* includes the entire Michu Product Performance Report to the end of October. So, the Michu (Wabi & Guyya) YTD (Year-To-Date) tab includes all product Target Performance Reports until the end of October, but only includes Wabi & Guyya products starting  November 1.
-                                
-                    #             2. The *Michu-Kiyya* YTD (Year-To-Date) tab includes only Kiyya products, starting from November 1.
-
-                    #             :blue[**NB:** Kiyya product performance prior to November 1 is treated as part of the Michu Target Performance Report (Wabi & Guyya). This is because no specific targets were set for Kiyya products before November 1, and their performance was included under the Michu (Wabi & Guyya) objectives.]
-                    #             """)
 
                     with tab1:
                         coll1, coll2 = st.columns(2)
@@ -6915,19 +6855,6 @@ def main():
                         # Display the chart in Streamlit
                         # st.write("### Michu - Target vs Actual Comparison")
                         st.plotly_chart(fig, use_container_width=True)
-
-
-                    
-
-
-
-
-
-                        
-
-
-
-
 
                         col1,  col2 = st.columns([0.2, 0.8])
 
@@ -7072,8 +6999,7 @@ def main():
                                     # Replace all NaN/None values with zero
                                     grouped_df = grouped_df.fillna(0)
 
-                                    # # Calculate 'Percentage(%)'
-                                    # grouped_df['Percentage(%)'] = (grouped_df['Actual Unique Customer'] / grouped_df['Target Unique Customer']) * 100
+                                  
                                     # Calculate Percentage(%)
                                     grouped_df['Percentage(%)'] = grouped_df.apply(
                                         lambda row: (
@@ -7083,10 +7009,6 @@ def main():
                                         ),
                                         axis=1
                                     )
-
-                                    # # Calculate 'Percentage(%)' and handle division by zero
-                                    # grouped_df['Percentage(%)'] = grouped_df.apply(lambda row: (row['Actual Unique Customer'] / row['Target Unique Customer'] * 100) if row['Target Unique Customer'] != 0 else 0, axis=1)
-
 
                                     # Format 'Percentage(%)' with a percentage sign
                                     grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
@@ -7167,106 +7089,6 @@ def main():
                                         unsafe_allow_html=True
                                     )
                                     st.write(styled_df)
-
-                                # with col2:
-                                    
-                                #     df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                                #     df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
-
-                                #     # Ensure all numerical values are converted to floats
-                                #     df_target_unique.loc[:,'Target Number Of Account'] = df_target_unique['Target Number Of Account'].astype(float)
-                                #     df_actual_unique.loc[:,'Actual Number Of Account'] = df_actual_unique['Actual Number Of Account'].astype(float)
-
-                                #     # Group and aggregate the data for each metric using unique IDs
-                                #     target_grouped = df_target_unique.groupby(['District']).agg(
-                                #         {'Target Number Of Account': 'sum'}).reset_index()
-                                #     actual_grouped = df_actual_unique.groupby(['District']).agg(
-                                #         {'Actual Number Of Account': 'sum'}).reset_index()
-
-                                #     # Merge the target and actual data on 'District' and 'Branch' to align them
-                                #     grouped_df = target_grouped.merge(actual_grouped, on=['District'], how='outer')
-                                #     # Replace all NaN/None values with zero
-                                #     grouped_df = grouped_df.fillna(0)
-                                #     # Create an explicit copy
-                                #     # grouped_df.fillna(0, inplace=True)  # Replace None/NaN with 0  
-
-                                #     grouped_df['Percentage(%)'] = grouped_df.apply(
-                                #         lambda row: (
-                                #             np.nan if row['Actual Number Of Account'] == 0 and row['Target Number Of Account'] == 0
-                                #             else np.inf if row['Target Number Of Account'] == 0 and row['Actual Number Of Account'] != 0
-                                #             else (row['Actual Number Of Account'] / row['Target Number Of Account']) * 100
-                                #         ),
-                                #         axis=1
-                                #     )
-
-                                #     # # Calculate 'Percentage(%)'
-                                #     # grouped_df['Percentage(%)'] = (grouped_df['Actual Number Of Account'] / grouped_df['Target Number Of Account']) * 100
-
-                                #     # Format 'Percentage(%)' with a percentage sign
-                                #     grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
-
-                                #     # Calculate the totals for 'Target Number Of Account' and 'Actual Number Of Account'
-                                    
-                                #     total_target_number = grouped_df['Target Number Of Account'].sum()
-                                #     total_actual_number = grouped_df['Actual Number Of Account'].sum()
-                                #     total_percentage = (total_actual_number / total_target_number) * 100 if total_target_number != 0 else 0
-                                    
-
-                                #     # Create a summary row
-                                #     summary_row = pd.DataFrame([{
-                                #         'District': 'Total',
-                                #         'Target Number Of Account': total_target_number,
-                                #         'Actual Number Of Account': total_actual_number,
-                                #         'Percentage(%)': f"{total_percentage:.2f}%"
-                                #     }])
-
-                                #     # Append the summary row to the grouped DataFrame
-                                #     grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
-                                #     grouped_df['Target Number Of Account'] = grouped_df['Target Number Of Account'].map(lambda x: f"{x:,.0f}")
-                                #     grouped_df['Actual Number Of Account'] = grouped_df['Actual Number Of Account'].map(lambda x: f"{x:,.0f}")
-
-                                #     # Drop rows where 'Percentage(%)' is 'nan%'
-                                #     filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
-
-                                #     # Reset the index and rename it to start from 1
-                                #     grouped_df_reset = filtered_df.reset_index(drop=True)
-                                #     grouped_df_reset.index = grouped_df_reset.index + 1
-
-                                #     # Apply styling
-                                #     def highlight_columns(s):
-                                #         colors = []
-                                #         for val in s:
-                                #             if isinstance(val, str) and '%' in val:
-                                #                 percentage_value = float(val.strip('%'))
-                                #                 if percentage_value < 50:
-                                #                     colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                #                 elif 50 <= percentage_value < 70:
-                                #                     colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                #                 elif percentage_value >= 70:
-                                #                     colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                                #                 else:
-                                #                     colors.append('') 
-                                #             else:
-                                #                 colors.append('')  # no color for other values
-                                #         return colors
-
-                                #     # Define function to highlight the Total row
-                                #     def highlight_total_row(s):
-                                #         is_total = s['District'] == 'Total'
-                                #         return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
-
-                                #     # Center-align data and apply styling
-                                #     styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-                                #                                     .apply(highlight_total_row, axis=1)\
-                                #                                     .set_properties(**{'text-align': 'center'})
-
-                                #     # Display the result
-                                #     # st.write(":blue[Michu(Wabi & Guyya) Number Of Account]  👇🏻")
-                                #     st.write(
-                                #         f'<span style="text-decoration: underline;">Michu[<span style="color: #e38524; font-size: 20px;">{selected_product}</span>] <span style="color: #00adef;">Number Of Account</span></span>',
-                                #         unsafe_allow_html=True
-                                #     )
-                                #     st.write(styled_df)
                                 
 
                                 with col2:
@@ -7492,117 +7314,6 @@ def main():
                                         unsafe_allow_html=True
                                     )
                                     st.write(styled_df)
-
-
-
-                                # with col2:
-                                #     # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
-                                #     # # Ensure all numerical values are converted to floats
-                                #     # df_merged['Target Number Of Account'] = df_merged['Target Number Of Account'].astype(float)
-                                #     # df_merged['Actual Number Of Account'] = df_merged['Actual Number Of Account'].astype(float)
-
-                                    
-                                #     df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                                #     df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
-
-                                #     # Ensure all numerical values are converted to floats
-                                #     df_target_unique.loc[:,'Target Number Of Account'] = df_target_unique['Target Number Of Account'].astype(float)
-                                #     df_actual_unique.loc[:,'Actual Number Of Account'] = df_actual_unique['Actual Number Of Account'].astype(float)
-
-                                #     # Group and aggregate the data for each metric using unique IDs
-                                #     target_grouped = df_target_unique.groupby(['District', 'Branch']).agg(
-                                #         {'Target Number Of Account': 'sum'}).reset_index()
-                                #     actual_grouped = df_actual_unique.groupby(['District', 'Branch']).agg(
-                                #         {'Actual Number Of Account': 'sum'}).reset_index()
-
-                                #     # Merge the target and actual data on 'District' and 'Branch' to align them
-                                #     grouped_df = target_grouped.merge(actual_grouped, on=['District', 'Branch'], how='outer')
-                                #     # Replace all NaN/None values with zero
-                                #     grouped_df = grouped_df.fillna(0)
-
-                                #     grouped_df['Percentage(%)'] = grouped_df.apply(
-                                #         lambda row: (
-                                #             np.nan if row['Actual Number Of Account'] == 0 and row['Target Number Of Account'] == 0
-                                #             else np.inf if row['Target Number Of Account'] == 0 and row['Actual Number Of Account'] != 0
-                                #             else (row['Actual Number Of Account'] / row['Target Number Of Account']) * 100
-                                #         ),
-                                #         axis=1
-                                #     )
-
-                                #     # grouped_df['Percentage(%)'] = grouped_df['Actual Number Of Account'].div(
-                                #     #     grouped_df['Target Number Of Account'].replace(0, np.nan)
-                                #     # ) * 100
-
-
-                                #     # # Calculate 'Percentage(%)'
-                                #     # grouped_df['Percentage(%)'] = (grouped_df['Actual Number Of Account'] / grouped_df['Target Number Of Account']) * 100
-
-                                #     # Format 'Percentage(%)' with a percentage sign
-                                #     grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
-
-                                #     # Calculate the totals for 'Target Number Of Account' and 'Actual Number Of Account'
-                                    
-                                #     total_target_number = grouped_df['Target Number Of Account'].sum()
-                                #     total_actual_number = grouped_df['Actual Number Of Account'].sum()
-                                #     total_percentage = (total_actual_number / total_target_number) * 100 if total_target_number != 0 else 0
-                                    
-
-                                #     # Create a summary row
-                                #     summary_row = pd.DataFrame([{
-                                #         'District': 'Total',
-                                #         'Branch': '',
-                                #         'Target Number Of Account': total_target_number,
-                                #         'Actual Number Of Account': total_actual_number,
-                                #         'Percentage(%)': f"{total_percentage:.2f}%"
-                                #     }])
-
-                                #     # Append the summary row to the grouped DataFrame
-                                #     grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
-                                #     grouped_df['Target Number Of Account'] = grouped_df['Target Number Of Account'].map(lambda x: f"{x:.0f}")
-                                #     grouped_df['Actual Number Of Account'] = grouped_df['Actual Number Of Account'].map(lambda x: f"{x:.0f}")
-
-                                #     # Drop rows where 'Percentage(%)' is 'nan%'
-                                #     filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
-
-                                #     # Reset the index and rename it to start from 1
-                                #     grouped_df_reset = filtered_df.reset_index(drop=True)
-                                #     grouped_df_reset.index = grouped_df_reset.index + 1
-
-                                #     # Apply styling
-                                #     def highlight_columns(s):
-                                #         colors = []
-                                #         for val in s:
-                                #             if isinstance(val, str) and '%' in val:
-                                #                 percentage_value = float(val.strip('%'))
-                                #                 if percentage_value < 50:
-                                #                     colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                #                 elif 50 <= percentage_value < 70:
-                                #                     colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                #                 elif percentage_value >= 70:
-                                #                     colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                                #                 else:
-                                #                     colors.append('') 
-                                #             else:
-                                #                 colors.append('')  # no color for other values
-                                #         return colors
-
-                                #     # Define function to highlight the Total row
-                                #     def highlight_total_row(s):
-                                #         is_total = s['District'] == 'Total'
-                                #         return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
-
-                                #     # Center-align data and apply styling
-                                #     styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-                                #                                     .apply(highlight_total_row, axis=1)\
-                                #                                     .set_properties(**{'text-align': 'center'})
-
-                                #     # Display the result
-                                #     # st.write(":blue[Michu(Wabi & Guyya) Number Of Account]  👇🏻")
-                                #     st.write(
-                                #         f'<span style="text-decoration: underline;">Michu[<span style="color: #e38524; font-size: 20px;">{selected_product}</span>] <span style="color: #00adef;">Number Of Account</span></span>',
-                                #         unsafe_allow_html=True
-                                #     )
-                                #     st.write(styled_df)
 
 
 
@@ -7961,17 +7672,6 @@ def main():
 
                 if role == 'District User':
                     tab1, tab2 = st.tabs(["📈 Aggregate Report", "🗃 Report per Branch"])
-                    # # Drop duplicate target_Id and actual_Id
-                    # with Tab31:
-                    #     st.write("""
-                    #             **Note the following points regarding the Target Performance Report:**
-
-                    #             1. *Michu (Wabi & Guyya)* includes the entire Michu Product Performance Report to the end of October. So, the Michu (Wabi & Guyya) YTD (Year-To-Date) tab includes all product Target Performance Reports until the end of October, but only includes Wabi & Guyya products starting  November 1.
-                                
-                    #             2. The *Michu-Kiyya* YTD (Year-To-Date) tab includes only Kiyya products, starting from November 1.
-
-                    #             :blue[**NB:** Kiyya product performance prior to November 1 is treated as part of the Michu Target Performance Report (Wabi & Guyya). This is because no specific targets were set for Kiyya products before November 1, and their performance was included under the Michu (Wabi & Guyya) objectives.]
-                    #             """)
                     with tab1:
                         
                         # with cool1:
@@ -8109,17 +7809,6 @@ def main():
                             unique_customer_df['Percentage(%)'] = (
                                 (unique_customer_df['Actual Unique Customer'] / unique_customer_df['Target Unique Customer']) * 100).round(0)
                             unique_customer_df['Metric'] = 'Unique Customer'
-
-                            # account_df = df_target_unique.groupby(['District']).agg(
-                            #     {'Target Number Of Account': 'sum'}).reset_index()
-                            # actual_account_df = df_actual_unique.groupby(['District']).agg(
-                            #     {'Actual Number Of Account': 'sum'}).reset_index()
-                            # account_df['Target Number Of Account'] = convert_to_float(account_df['Target Number Of Account'])
-                            # actual_account_df['Actual Number Of Account'] = convert_to_float(actual_account_df['Actual Number Of Account'])
-                            # account_df = account_df.merge(actual_account_df, on=['District'], how='left')
-                            # account_df['Percentage(%)'] = (
-                            #     account_df['Actual Number Of Account'] / account_df['Target Number Of Account']) * 100
-                            # account_df['Metric'] = 'Number Of Account'
 
                             disbursed_amount_df = df_target_unique.groupby(['District']).agg(
                                 {'Target Disbursed Amount': 'sum'}).reset_index()
@@ -8321,115 +8010,6 @@ def main():
                                 unsafe_allow_html=True
                             )
                             st.write(styled_df)
-
-
-
-                        # with colll2:
-                        #     # # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
-                        #     # # Ensure all numerical values are converted to floats
-                        #     # df_merged['Target Number Of Account'] = df_merged['Target Number Of Account'].astype(float)
-                        #     # df_merged['Actual Number Of Account'] = df_merged['Actual Number Of Account'].astype(float)
-
-                            
-                        #     df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                        #     df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
-
-                        #     # Ensure all numerical values are converted to floats
-                        #     df_target_unique.loc[:,'Target Number Of Account'] = df_target_unique['Target Number Of Account'].astype(float)
-                        #     df_actual_unique.loc[:,'Actual Number Of Account'] = df_actual_unique['Actual Number Of Account'].astype(float)
-
-                        #     # Group and aggregate the data for each metric using unique IDs
-                        #     target_grouped = df_target_unique.groupby(['District', 'Branch']).agg(
-                        #         {'Target Number Of Account': 'sum'}).reset_index()
-                        #     actual_grouped = df_actual_unique.groupby(['District', 'Branch']).agg(
-                        #         {'Actual Number Of Account': 'sum'}).reset_index()
-
-                        #     # Merge the target and actual data on 'District' and 'Branch' to align them
-                        #     grouped_df = target_grouped.merge(actual_grouped, on=['District', 'Branch'], how='outer')
-                        #     grouped_df = grouped_df.fillna(0)
-
-                        #     grouped_df['Percentage(%)'] = grouped_df.apply(
-                        #             lambda row: (
-                        #                 np.nan if row['Actual Number Of Account'] == 0 and row['Target Number Of Account'] == 0
-                        #                 else np.inf if row['Target Number Of Account'] == 0 and row['Actual Number Of Account'] != 0
-                        #                 else (row['Actual Number Of Account'] / row['Target Number Of Account']) * 100
-                        #             ),
-                        #             axis=1
-                        #         )
-
-                        #     # grouped_df['Percentage(%)'] = grouped_df['Actual Number Of Account'].div(
-                        #     #         grouped_df['Target Number Of Account'].replace(0, np.nan)
-                        #     #     ) * 100
-
-                        #     # # Calculate 'Percentage(%)'
-                        #     # grouped_df['Percentage(%)'] = (grouped_df['Actual Number Of Account'] / grouped_df['Target Number Of Account']) * 100
-
-                        #     # Format 'Percentage(%)' with a percentage sign
-                        #     grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
-
-                        #     # Calculate the totals for 'Target Number Of Account' and 'Actual Number Of Account'
-                            
-                        #     total_target_number = grouped_df['Target Number Of Account'].sum()
-                        #     total_actual_number = grouped_df['Actual Number Of Account'].sum()
-                        #     total_percentage = (total_actual_number / total_target_number) * 100 if total_target_number !=0 else 0
-                            
-
-                        #     # Create a summary row
-                        #     summary_row = pd.DataFrame([{
-                        #         'District': 'Total',
-                        #         'Branch': '',
-                        #         'Target Number Of Account': total_target_number,
-                        #         'Actual Number Of Account': total_actual_number,
-                        #         'Percentage(%)': f"{total_percentage:.2f}%"
-                        #     }])
-
-                        #     # Append the summary row to the grouped DataFrame
-                        #     grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
-                        #     grouped_df['Target Number Of Account'] = grouped_df['Target Number Of Account'].map(lambda x: f"{x:,.0f}")
-                        #     grouped_df['Actual Number Of Account'] = grouped_df['Actual Number Of Account'].map(lambda x: f"{x:,.0f}")
-
-                        #     # Drop rows where 'Percentage(%)' is 'nan%'
-                        #     filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
-
-                        #     # Reset the index and rename it to start from 1
-                        #     grouped_df_reset = filtered_df.reset_index(drop=True)
-                        #     grouped_df_reset.index = grouped_df_reset.index + 1
-
-                        #     # Apply styling
-                        #     def highlight_columns(s):
-                        #         colors = []
-                        #         for val in s:
-                        #             if isinstance(val, str) and '%' in val:
-                        #                 percentage_value = float(val.strip('%'))
-                        #                 if percentage_value < 50:
-                        #                     colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                        #                 elif 50 <= percentage_value < 70:
-                        #                     colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                        #                 elif percentage_value >= 70:
-                        #                     colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                        #                 else:
-                        #                     colors.append('') 
-                        #             else:
-                        #                 colors.append('')  # no color for other values
-                        #         return colors
-
-                        #     # Define function to highlight the Total row
-                        #     def highlight_total_row(s):
-                        #         is_total = s['District'] == 'Total'
-                        #         return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
-
-                        #     # Center-align data and apply styling
-                        #     styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-                        #                                     .apply(highlight_total_row, axis=1)\
-                        #                                     .set_properties(**{'text-align': 'center'})
-
-                        #     # Display the result
-                        #     # st.write(":blue[Michu(Wabi & Guyya) Number Of Account]  👇🏻")
-                        #     st.write(
-                        #         f'<span style="text-decoration: underline;">Michu <span style="color: #e38524; font-size: 20px;">{selected_product}</span> Product <span style="color: #00adef;">Number Of Account</span></span>',
-                        #         unsafe_allow_html=True
-                        #     )
-                        #     st.write(styled_df)
 
 
 
@@ -8710,28 +8290,6 @@ def main():
 
                             unique_customer_df['Metric'] = 'Unique Customer'
 
-                            # account_df = df_target_unique.groupby(['District']).agg(
-                            #     {'Target Number Of Account': 'sum'}).reset_index()
-                            # actual_account_df = df_actual_unique.groupby(['District']).agg(
-                            #     {'Actual Number Of Account': 'sum'}).reset_index()
-                            # account_df['Target Number Of Account'] = convert_to_float(account_df['Target Number Of Account'])
-                            # actual_account_df['Actual Number Of Account'] = convert_to_float(actual_account_df['Actual Number Of Account'])
-                            # account_df = account_df.merge(actual_account_df, on=['District'], how='left')
-
-                            # def calculate_percentage_account(row):
-                            #     if row['Target Number Of Account'] == 0:
-                            #         if row['Actual Number Of Account'] == 0:
-                            #             return 0  # Case 1: Both Target and Actual are 0
-                            #         else:
-                            #             return np.inf  # Case 2: Target is 0 but Actual is not
-                            #     else:
-                            #         return (row['Actual Number Of Account'] / row['Target Number Of Account']) * 100  # Case 3: Safe to calculate
-
-                            # # Apply the function to each row
-                            # account_df['Percentage(%)'] = account_df.apply(calculate_percentage_account, axis=1)
-
-                            # account_df['Metric'] = 'Number Of Account'
-
                             disbursed_amount_df = df_target_unique.groupby(['District']).agg(
                                 {'Target Disbursed Amount': 'sum'}).reset_index()
                             actual_disbursed_amount_df = df_actual_unique.groupby(['District']).agg(
@@ -8977,33 +8535,6 @@ def main():
                         # unique_customer_df['Percentage(%)'] = (
                         #     unique_customer_df['Actual Unique Customer'] / unique_customer_df['Target Unique Customer']) * 100
                         unique_customer_df['Metric'] = 'Unique Customer'
-
-                        # account_df = df_target_unique.groupby(['District', 'Branch']).agg(
-                        #     {'Target Number Of Account': 'sum'}).reset_index()
-                        # actual_account_df = df_actual_unique.groupby(['District', 'Branch']).agg(
-                        #     {'Actual Number Of Account': 'sum'}).reset_index()
-
-                        # # Convert decimals to float
-                        # account_df['Target Number Of Account'] = convert_to_float(account_df['Target Number Of Account'])
-                        # actual_account_df['Actual Number Of Account'] = convert_to_float(actual_account_df['Actual Number Of Account'])
-
-                        # account_df = account_df.merge(actual_account_df, on=['District', 'Branch'], how='left')
-
-                        # def calculate_percentage_account(row):
-                        #     if row['Target Number Of Account'] == 0:
-                        #         if row['Actual Number Of Account'] == 0:
-                        #             return np.nan  # Case 1: Both Target and Actual are 0
-                        #         else:
-                        #             return np.inf  # Case 2: Target is 0 but Actual is not
-                        #     else:
-                        #         return (row['Actual Number Of Account'] / row['Target Number Of Account']) * 100  # Case 3: Safe to calculate
-
-                        # # Apply the function to each row
-                        # account_df['Percentage(%)'] = account_df.apply(calculate_percentage_account, axis=1)
-
-                        # # account_df['Percentage(%)'] = (
-                        # #     account_df['Actual Number Of Account'] / account_df['Target Number Of Account']) * 100
-                        # account_df['Metric'] = 'Number Of Account'
 
                         disbursed_amount_df = df_target_unique.groupby(['District', 'Branch']).agg(
                             {'Target Disbursed Amount': 'sum'}).reset_index()
@@ -9278,33 +8809,6 @@ def main():
                         #     unique_customer_df['Actual Unique Customer'] / unique_customer_df['Target Unique Customer']) * 100
                         unique_customer_df['Metric'] = 'Unique Customer'
 
-                        # account_df = df_target_unique.groupby(['District', 'Branch']).agg(
-                        #     {'Target Number Of Account': 'sum'}).reset_index()
-                        # actual_account_df = df_actual_unique.groupby(['District', 'Branch']).agg(
-                        #     {'Actual Number Of Account': 'sum'}).reset_index()
-
-                        # # Convert decimals to float
-                        # account_df['Target Number Of Account'] = convert_to_float(account_df['Target Number Of Account'])
-                        # actual_account_df['Actual Number Of Account'] = convert_to_float(actual_account_df['Actual Number Of Account'])
-
-                        # account_df = account_df.merge(actual_account_df, on=['District', 'Branch'], how='left')
-
-                        # def calculate_percentage_account(row):
-                        #     if row['Target Number Of Account'] == 0:
-                        #         if row['Actual Number Of Account'] == 0:
-                        #             return np.nan  # Case 1: Both Target and Actual are 0
-                        #         else:
-                        #             return np.inf  # Case 2: Target is 0 but Actual is not
-                        #     else:
-                        #         return (row['Actual Number Of Account'] / row['Target Number Of Account']) * 100  # Case 3: Safe to calculate
-
-                        # # Apply the function to each row
-                        # account_df['Percentage(%)'] = account_df.apply(calculate_percentage_account, axis=1)
-
-                        # # account_df['Percentage(%)'] = (
-                        # #     account_df['Actual Number Of Account'] / account_df['Target Number Of Account']) * 100
-                        # account_df['Metric'] = 'Number Of Account'
-
                         disbursed_amount_df = df_target_unique.groupby(['District', 'Branch']).agg(
                             {'Target Disbursed Amount': 'sum'}).reset_index()
                         actual_disbursed_amount_df = df_actual_unique.groupby(['District', 'Branch']).agg(
@@ -9329,15 +8833,11 @@ def main():
                         # Apply the function to each row
                         disbursed_amount_df['Percentage(%)'] = disbursed_amount_df.apply(calculate_percentage_dis, axis=1)
 
-                        # disbursed_amount_df['Percentage(%)'] = (
-                        #     disbursed_amount_df['Actual Disbursed Amount'] / disbursed_amount_df['Target Disbursed Amount']) * 100
                         disbursed_amount_df['Metric'] = 'Disbursed Amount'
 
                         # Rename columns to have consistent names
                         unique_customer_df = unique_customer_df.rename(columns={
                             'Target Unique Customer': 'Target', 'Actual Unique Customer': 'Actual'})
-                        # account_df = account_df.rename(columns={
-                        #     'Target Number Of Account': 'Target', 'Actual Number Of Account': 'Actual'})
                         disbursed_amount_df = disbursed_amount_df.rename(columns={
                             'Target Disbursed Amount': 'Target', 'Actual Disbursed Amount': 'Actual'})
 
@@ -9394,20 +8894,6 @@ def main():
                         st.write(" ")
                         st.write(" ")
                         st.write(" ")
-
-
-                
-                    
-                    # st.write("""
-                    #             **Note the following points regarding the Target Performance Report:**
-
-                    #             1. *Michu (Wabi & Guyya)* includes the entire Michu Product Performance Report to the end of October. So, the Michu (Wabi & Guyya) YTD (Year-To-Date) tab includes all product Target Performance Reports until the end of October, but only includes Wabi & Guyya products starting  November 1.
-                                
-                    #             2. The *Michu-Kiyya* YTD (Year-To-Date) tab includes only Kiyya products, starting from November 1.
-
-                    #             :blue[**NB:** Kiyya product performance prior to November 1 is treated as part of the Michu Target Performance Report (Wabi & Guyya). This is because no specific targets were set for Kiyya products before November 1, and their performance was included under the Michu (Wabi & Guyya) objectives.]
-                    #             """)
-
 
 
             except Exception as e:

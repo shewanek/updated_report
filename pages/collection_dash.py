@@ -44,7 +44,7 @@ def register():
     </style>
     """
     # Set page configuration, menu, and minimize top padding
-    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide")
+    st.set_page_config(page_title="Michu Portal", page_icon=":bar_chart:", layout="wide")
     custom_css = """
     <style>
         div.block-container {

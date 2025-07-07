@@ -23,7 +23,7 @@ pd.set_option('future.no_silent_downcasting', True)
 
 def main():
     # Set page configuration, menu, and minimize top padding
-    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Michu Portal", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
     custom_cs = """
     <style>
         div.block-container {

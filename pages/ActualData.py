@@ -63,7 +63,7 @@ def upload_to_db(df, mydb):
 
 # Streamlit app
 def main():
-    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Michu Portal", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
     custom_css = """
     <style>
         div.block-container {

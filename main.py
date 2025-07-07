@@ -61,7 +61,7 @@ def crm_role_redirect(role):
         st.warning("No Role assigned for this CRM User")
 
 def main():
-    st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="centered")
+    st.set_page_config(page_title="Michu Portal", page_icon=":bar_chart:", layout="centered")
     
     # CSS for custom styling
     custom_css = """
