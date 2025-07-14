@@ -4,14 +4,7 @@ from pathlib import Path
 from navigation import make_sidebar1
 import traceback
 
-from dependence import initialize_session, update_activity, check_session_timeout
-
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
+from dependence import update_activity, check_session_timeout
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -23,11 +16,11 @@ def main():
     custom_css = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 3rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
-        .stAppHeader { visibility: hidden; }
+        # .stAppHeader { visibility: hidden; }
         # /* Hide the entire header bar */
         # header.stAppHeader {
         #     display: none;
@@ -48,14 +41,6 @@ def main():
     """
     st.markdown(custom_css, unsafe_allow_html=True)
     update_activity()
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
 
     col1, col2 = st.columns([0.1, 0.9])
     with col1:

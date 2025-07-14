@@ -3,14 +3,8 @@ from navigation import make_sidebar
 from pages.dureati_reg import registerr
 from pages.kiyya_register import kiyya_register
 
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -50,16 +44,6 @@ def register():
     </style>
     """
     
-    
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    
-    st.markdown(custom_css, unsafe_allow_html=True)
     update_activity()
 
 
@@ -81,16 +65,7 @@ def register():
         st.markdown(html_title, unsafe_allow_html=True)
     
     
-    
-    # st.balloons()
 
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     # back_image = Image.open('pages/kiyya.jpg')
     st.sidebar.image('pages/kiyya.jpg')
     # st.sidebar.image('pages/michu.png')

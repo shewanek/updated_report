@@ -5,22 +5,11 @@ from dependence import allget_recommendations
 import os
 import streamlit as st
 import pandas as pd
-from pathlib import Path
-from navigation import make_sidebar1
 import traceback
-import uuid
-from typing import Tuple
-import time
 from PIL import Image
 import base64
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -33,7 +22,7 @@ def register():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 2.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 1rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -60,15 +49,6 @@ def register():
     </style>
     """
     
-    
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
     update_activity()
     
 
@@ -91,15 +71,6 @@ def register():
     
     
     
-    # st.balloons()
-
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     # back_image = Image.open('pages/kiyya.jpg')
     st.logo('pages/michu.png')
     # st.sidebar.image('pages/michu.png')

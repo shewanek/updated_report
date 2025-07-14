@@ -4,7 +4,7 @@ from streamlit_autorefresh import st_autorefresh
 from navigation import home_sidebar
 from dependence import load_unquiecustomer, load_unquiekiyya
 
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
 
 
@@ -23,7 +23,7 @@ def main():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 1rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -47,25 +47,8 @@ def main():
     </style>
     """
     st.markdown(custom_cs, unsafe_allow_html=True)
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 0.1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
+ 
     update_activity()
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
-
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
 
     # Auto-refresh interval (in seconds)
     refresh_interval = 600  # 5 minutes
@@ -91,13 +74,6 @@ def main():
 
     st.balloons()
 
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
     # Fetch data from different tables
     # Database connection and data fetching (with error handling)
@@ -228,13 +204,7 @@ def main():
         k_registed_by_branch = k_registed_by_branch[(k_registed_by_branch["Disbursed_Date"] >= date1) & (k_registed_by_branch["Disbursed_Date"] <= date2)]
 
 
-        # Hide the sidebar by default with custom CSS
-        hide_sidebar_style = """
-            <style>
-                #MainMenu {visibility: hidden;}
-            </style>
-        """
-        st.markdown(hide_sidebar_style, unsafe_allow_html=True)
+   
         home_sidebar()
 
         # st.markdown(

@@ -2,11 +2,11 @@ import os
 import streamlit as st
 import pandas as pd
 # from pathlib import Path
-from navigation import make_sidebar1, make_sidebar, logout
+from navigation import make_sidebar1, make_sidebar 
 from streamlit_extras.metric_cards import style_metric_cards
 import traceback
 import uuid
-from typing import Tuple, List
+from typing import Tuple
 import time
 from PIL import Image
 import base64
@@ -120,7 +120,7 @@ def main():
     custom_css = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 0rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -140,14 +140,6 @@ def main():
         .stButton button:hover {
             background-color: #00bfff; /* Cyan blue on hover */
             color: white; /* Change text color to white on hover */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 3rem; /* Adjust this value to reduce padding-top */
         }
     </style>
     """

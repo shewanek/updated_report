@@ -1,15 +1,9 @@
 import streamlit as st
-from time import sleep  # Assuming dash.py contains your dashboard layout
 from navigation import make_sidebar
 
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
 
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -45,24 +39,6 @@ def register():
     """
     # Set page configuration, menu, and minimize top padding
     st.set_page_config(page_title="Michu Portal", page_icon=":bar_chart:", layout="wide")
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
-
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
 
     
     
@@ -87,14 +63,6 @@ def register():
     
     # st.balloons()
     update_activity()  # Update the last activity timestamp
-
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     st.sidebar.image("pages/michu.png")
     username = st.session_state.get("username", "")
     full_name = st.session_state.get("full_name", "")

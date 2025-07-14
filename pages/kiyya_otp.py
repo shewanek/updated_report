@@ -4,8 +4,6 @@ from navigation import login_bar
 from navigation import make_sidebar1
 from pages.kiyya_register_withid import kiyya_register_withid
 import requests
-from datetime import datetime, timedelta
-import time
 
 def set_session_state(transactionID):
     st.session_state.logged_in = True
@@ -21,7 +19,7 @@ def register():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 1rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -46,22 +44,6 @@ def register():
     """
     st.markdown(custom_cs, unsafe_allow_html=True)
     login_bar()
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-    # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1,0.9])
     with col1:

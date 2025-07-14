@@ -5107,8 +5107,9 @@ def any_target_date_exists(df):
         placeholders = ', '.join(['%s'] * len(formatted_dates))
         query = f"SELECT disbursed_date FROM unique_intersection WHERE disbursed_date IN ({placeholders})"
         result = db_ops.fetch_data(query, formatted_dates)
-    st.write(result)
+    # st.write(result)
     return len(result) > 0
+    
 
 def any_targetperpro_date_exists(df):
     # Format the dates using the format_target_date function
@@ -6220,15 +6221,6 @@ def aggregate_and_insert_actual_data_per_product():
             """
             db_ops.insert_data(querry, (row['branch_code'], row['product_type'], row['unique_actual'], row['account_actual'], row['disbursment_actual'], row['actual_date']))
     
-
-
-
-
-
-
-
-
-
 
 @handle_websocket_errors
 @st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
@@ -11198,6 +11190,841 @@ def get_officerprospect():
     
     # Return empty list if result is None (in case of error), else return the fetched data
     return result if result is not None else []
+
+
+def any_transaction_id_exists(df):
+    # Format the dates using the format_target_date function
+    formatted_id = tuple(df['transaction_id'].tolist())
+    
+    if len(formatted_id) == 1:
+        # Single date case
+        query = "SELECT transaction_id FROM collection_actual WHERE transaction_id = %s"
+        result = db_ops.fetch_data(query, (formatted_id[0],))  # Access the first date
+    else:
+        # Multiple dates case, dynamically generate placeholders
+        placeholders = ', '.join(['%s'] * len(formatted_id))
+        query = f"SELECT transaction_id FROM collection_actual WHERE transaction_id IN ({placeholders})"
+        result = db_ops.fetch_data(query, formatted_id)
+    # st.write(result)
+    return len(result) > 0
+
+
+
+def aggregate_and_insert_actual_data_actual_collection_anydate():
+    try:
+        date_query = """
+            SELECT ui.collected_date
+            FROM collection_actual ui
+            WHERE ui.collected_date >= %s
+            AND ui.collected_date NOT IN (
+                SELECT collected_date FROM aggregate_collection
+            )
+            ORDER BY ui.collected_date
+        """
+
+        available_dates = db_ops.fetch_data(date_query, ('2025-07-01',))
+        date_exists = [row['collected_date'] for row in available_dates]
+        # print("Eligible Dates:", target_dates)
+
+
+        # Now date_exists will be 1 if the date exists or 0 if it does not exist
+        if not date_exists:
+            st.warning("No new disbursed_date found in collection_actual and conversiondata tables.")
+            return
+        
+        # Build placeholders string
+        placeholders = ', '.join(['%s'] * len(date_exists))
+        # Fetch data from unique_intersection and conversiondata tables where disbursed_date is the latest
+        unique_query = f"""
+            SELECT branch_code, collected_date, principal_collected, interest_collected, penalty_collected
+            FROM collection_actual
+            WHERE collected_date IN ({placeholders})
+        """
+        
+        collection_data = db_ops.fetch_data(unique_query, tuple(date_exists))
+        
+        # Convert fetched data to DataFrames
+        collection_df = pd.DataFrame(collection_data)
+        collection_df.columns=['branch_code', 'collected_date', 'principal_collected', 'interest_collected', 'penalty_collected']
+        # st.write(combined_df)
+        
+        if collection_df.empty:
+            st.warning("No data found in unique_intersection or conversiondata tables for the latest disbursed_date.")
+            return
+        
+        
+
+        # Group by branch_code and aggregate the required columns
+        aggregated_df = collection_df.groupby(['branch_code', 'collected_date']).agg(
+            principal_collected=('principal_collected', 'sum'),
+            interest_collected=('interest_collected', 'sum'),
+            penalty_collected=('penalty_collected', 'sum')
+        ).reset_index()
+        # st.write(aggregated_df)
+        # Insert aggregated data into the actual table
+        for index, row in aggregated_df.iterrows():
+            # Check if this branch_code and actual_date already exist in the actual table
+            check_record_query = """
+                SELECT 1 FROM aggregate_collection 
+                WHERE branch_code = %s AND  collected_date = %s LIMIT 1
+            """
+            record_exists = db_ops.fetch_one(check_record_query, (row['branch_code'], row['collected_date']))
+
+            
+            if not record_exists:
+                # Insert the new record only if it doesn't already exist
+                querry = """
+                    INSERT INTO aggregate_collection (branch_code, principal_collected, interest_collected, penalty_collected, collected_date)
+                    VALUES (%s, %s, %s, %s, %s)
+                """
+                db_ops.insert_data(querry, (row['branch_code'], row['principal_collected'], row['interest_collected'], row['penalty_collected'], row['collected_date']))
+        st.success("data aggregated successfully.")
+    except Exception as e:
+        st.error(f"Error all: {e}")
+        traceback.print_exc()
+
+
+
+def upload_to_actual_coll(df):
+    try:
+        # Display the Saving_Account as list where product_type is 'Women Informal'
+        kiyya_accounts = df[df['collected_to'] == '1000100020975']['collected_from'].tolist()
+
+        # Initialize the dataframes to avoid referencing issues
+        kiyya_customer_df = pd.DataFrame(columns=['Saving_Account', 'userId'])
+        women_customer_df = pd.DataFrame(columns=['Saving_Account', 'userId'])
+
+        
+        # Prepare placeholders for kiyya_accounts in the query
+        if kiyya_accounts:
+            # Convert the list to tuple format
+            kiyya_accounts_tuple = tuple(kiyya_accounts)
+            
+            if kiyya_accounts_tuple:
+                # Handle case where there is only one element in the tuple
+                if len(kiyya_accounts_tuple) == 1:
+                    kiyya_accounts_tuple = f"('{kiyya_accounts_tuple[0]}')"
+                else:
+                    kiyya_accounts_tuple = str(kiyya_accounts_tuple)
+
+                # Fetch kiyya_customer data for accounts in kiyya_accounts
+                query = f"""
+                    SELECT account_number, userId 
+                    FROM kiyya_customer 
+                    WHERE account_number IN {kiyya_accounts_tuple}
+                        AND userId IN (SELECT userId FROM user_infos)
+                """
+                
+                # kiyya_customer_data = db_ops.fetch_data(query)
+                kcinf = db_ops.fetch_data(query)
+                if not kcinf:
+                    columns=['Saving_Account', 'userId']
+                    kiyya_customer_df = pd.DataFrame(kcinf, columns=columns)
+                else:
+                    kiyya_customer_df = pd.DataFrame(kcinf)
+                    kiyya_customer_df.columns=['Saving_Account', 'userId']
+                
+                query2 = f"""
+                    SELECT account_no, crm_id 
+                    FROM women_product_customer 
+                    WHERE account_no IN {kiyya_accounts_tuple}
+                        AND crm_id IN (SELECT userId FROM user_infos)
+                """
+                wcf = db_ops.fetch_data(query2)
+                if not wcf:
+                    columns=['Saving_Account', 'userId']
+                    women_customer_df = pd.DataFrame(wcf, columns=columns)
+                else:
+                    women_customer_df = pd.DataFrame(wcf)
+                    women_customer_df.columns=['Saving_Account', 'userId']
+                
+        # Concatenate customer data in reverse order to prioritize kiyya_customer and women_customer
+        kiyya_customer_df = pd.concat([women_customer_df, kiyya_customer_df], ignore_index=True)
+        kiyya_customer_df = kiyya_customer_df.drop_duplicates(subset=['Saving_Account'], keep='last')
+        # Fetch branchcustomer data
+        querry1 = "SELECT Saving_Account, userId FROM branchcustomer"
+        branchcustomer_df = pd.DataFrame(db_ops.fetch_data(querry1))
+        branchcustomer_df.columns=['Saving_Account', 'userId']
+
+        # Fetch all user_info data
+        querry2 = "SELECT userId, branch FROM user_infos where branch like 'ET%'"
+        user_info_df = pd.DataFrame(db_ops.fetch_data(querry2))
+        user_info_df.columns=['userId', 'branch_code']
+
+      
+
+        # Concatenate customer data in reverse order to prioritize kiyya_customer and women_customer
+        combined_customer_df = pd.concat([branchcustomer_df, kiyya_customer_df], ignore_index=True)
+        combined_customer_df = combined_customer_df.drop_duplicates(subset=['Saving_Account'], keep='last')
+
+        # # Close cursor after data fetching
+        # cursor.close()
+
+        # Merge combined customer data with user_info
+        merged_df = combined_customer_df.merge(user_info_df, on='userId', how='left')
+
+        # Merge the original df with merged_df on 'Saving_Account'
+        final_merged_df = df.merge(merged_df, left_on='collected_from', right_on='Saving_Account', how='left')
+        # st.write(final_merged_df)
+        # Replace the branch_code in df with the correct merged branch_code if saving_account matches
+        final_merged_df['branch_code'] = final_merged_df.apply(
+            lambda row: row['branch_code_y'] if pd.notna(row['branch_code_y']) else row['branch_code_x'], axis=1
+        )
+
+        # Prepare data for insertion
+        data_to_insert = [tuple(x) for x in final_merged_df[['transaction_id', 'branch_code', 'customer_id', 'customer_name', 'collected_to', 'collected_from', 'collected_date', 'principal_collected', 'interest_collected', 'penalty_collected']].values.tolist()]
+        
+        # Insert data into unique_intersection table
+        try:
+            insert_query = """
+                INSERT INTO collection_actual (transaction_id, branch_code, customer_id, customer_name, collected_to, collected_from, collected_date, principal_collected, interest_collected, penalty_collected)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            
+             # Ensure data_to_insert is not empty
+            if data_to_insert:
+                # Make sure data_to_insert is a list of tuples
+                if all(isinstance(item, tuple) for item in data_to_insert):
+                    rows_inserted = db_ops.insert_many(insert_query, data_to_insert)
+                    st.success(f"{rows_inserted} rows uploaded successfully.")
+
+                    aggregate_and_insert_actual_data_actual_collection_anydate()
+                    return True
+                else:
+                    st.error("Data to insert should be a list of tuples.")
+            else:
+                st.warning("No data to insert into the actual_collection table.")
+        except Exception as e:
+            st.error(f"Error can't upload data: {e}")
+            # Print a full stack trace for debugging
+            print("Database fetch error:", e)
+            traceback.print_exc()  # This prints the full error trace to the terminal
+
+    except Exception as e:
+        st.error(f"Error:")
+        # Print a full stack trace for debugging
+        print("Database fetch error:", e)
+        traceback.print_exc()  # This prints the full error trace to the terminal
+        # db_ops.rollback()  # Rollback in case of error
+        return False
+
+
+
+@handle_websocket_errors
+@st.cache_data(show_spinner="Loading data, please wait...", persist="disk")
+def load_actual_vs_targetdata_collection(role, username, fy_start, fy_end):
+    # Access the username from session state
+    # username = st.session_state.get("username", "")
+    # role = st.session_state.get("role", "")
+
+    # st.write(role)
+    # st.write(username)
+
+    # Helper function to convert Decimal to float
+    def convert_decimal(value):
+        if isinstance(value, Decimal):
+            return float(value)
+        return value
+
+    # Helper function to convert date types to string
+    def convert_date(value):
+        if isinstance(value, (date, datetime)):
+            return value.strftime('%Y-%m-%d')
+        return value
+
+    if role == "Admin" or role == 'under_admin':
+        try:
+            # Fetch districts from user_infos
+            # aggregate_and_insert_actual_data_per_product()
+            user_id_query = "SELECT district FROM user_infos"
+            district_result = db_ops.fetch_data(user_id_query)
+
+            if not district_result:
+                st.warning("No users found.")
+                return pd.DataFrame()  # Return an empty DataFrame if no users are found
+
+            # Extract only the district names from the result
+            districts = [item['district'] for item in district_result if item.get('district')]
+
+            if not districts:
+                st.warning("No valid district names found.")
+                return pd.DataFrame()
+
+            # Convert the list of districts to a tuple for parameterized query
+            districts_tuple = tuple(districts) if len(districts) > 1 else (districts[0],)
+
+            # Create the SQL query with placeholders for each district
+            district_query = f"SELECT dis_Id, district_name FROM district_list WHERE district_name IN ({', '.join(['%s'] * len(districts_tuple))})"
+
+            # Fetch data with parameterized query
+            district_result = db_ops.fetch_data(district_query, districts_tuple)
+            # st.write(district_result)
+            # Check if any districts were found
+            if not district_result:
+                st.warning("No district found with the given district names.")
+                return pd.DataFrame()  # Return an empty DataFrame if no districts are found
+
+            # Extract dis_Id values from the district query result
+            dis_ids = [row['dis_Id'] for row in district_result]  # Assuming result is a dictionary with 'dis_Id' as a key
+
+            # If no valid dis_ids, warn and return
+            if not dis_ids:
+                st.warning("No valid district IDs found.")
+                return pd.DataFrame()
+
+            # Convert the list of dis_ids to a tuple for parameterized SQL query
+            dis_ids_tuple = tuple(dis_ids) if len(dis_ids) > 1 else (dis_ids[0],)
+
+            # Fetch branch code and branch name using a parameterized query
+            branch_code_query = f"SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id IN ({', '.join(['%s'] * len(dis_ids_tuple))})"
+            branch_code_result = db_ops.fetch_data(branch_code_query, dis_ids_tuple)
+            # st.write(branch_code_result)
+
+            # Check if branch information was found
+            if not branch_code_result:
+                st.warning("No branches found for the given districts.")
+                return pd.DataFrame()  # Return an empty DataFrame if no branches are found
+            # Assuming district_result and branch_code_result return dictionaries with relevant keys
+            actul_dis = pd.DataFrame(district_result)  # Use 'district_name' from the result
+            actul_dis.columns = ['dis_Id', 'District']
+            actual_branch = pd.DataFrame(branch_code_result)
+            actual_branch.columns = ['dis_Id', 'Branch Code', 'Branch']
+            # st.write(actual_branch)
+            # Merge DataFrames based on 'dis_Id'
+            act_dis_branch = pd.merge(actul_dis, actual_branch, on='dis_Id', how='inner')
+
+
+            # Extract branch codes from the result
+            branch_codes = [row['branch_code'] for row in branch_code_result if 'branch_code' in row]  # Ensure the key exists
+
+            # If no valid branch codes, warn and return
+            if not branch_codes:
+                st.warning("No valid branch codes found.")
+                return pd.DataFrame()  # or return None if you prefer
+
+            # Create the SQL query with the correct number of placeholders
+            placeholders = ', '.join(['%s'] * len(branch_codes))  # Create placeholders for the number of branch codes
+            actual_query = f"""
+                SELECT coll_id, branch_code, principal_collected, collected_date 
+                FROM aggregate_collection 
+                WHERE branch_code IN ({placeholders})
+                AND (collected_date BETWEEN %s AND %s)
+            """
+
+            # Fetch actual data using a parameterized query
+            quary_params = tuple(branch_codes) + (fy_start, fy_end)  # Combine branch codes with fiscal year start and end
+            fetch_actual = db_ops.fetch_data(actual_query, quary_params)  # Ensure the tuple is passed correctly
+            # Debugging: Print the raw data fetched
+            # st.write("Actual Data Fetched:", fetch_actual)
+
+            # Check if fetch_actual has data
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Collected', 'Collected Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Collected', 'Collected Date']
+            # Apply data type conversions
+            df_actual['Actual Collected' ] = df_actual['Actual Collected'].apply(convert_decimal)
+            df_actual['Collected Date'] = df_actual['Collected Date'].apply(convert_date)
+            # st.write(df_actual)
+            
+            # # Fetch target data
+            # target_query = F"""
+            #     SELECT 
+            #     actual_Id, 
+            #     branch_code,
+            #     product_type,
+            #     disbursment_actual, 
+            #     actual_date
+            # FROM 
+            #     actual_per_product
+            # WHERE 
+            #     (
+            #         product_type IN ('Wabbi', 'Women Formal') 
+            #         AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            #     )
+            #     OR
+            #     (
+            #         product_type = 'Women Informal' 
+            #         AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+            #     )
+            #     OR
+            #     (
+            #         product_type = 'Guyya' 
+            #         AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            #     )
+            # """
+            # fetch_target = db_ops.fetch_data(target_query)
+            # if not fetch_target:
+            #     columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+            #     df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            # else:
+            #     df_target = pd.DataFrame(fetch_target)
+            #     # Rename columns for 'target' data
+            #     df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+
+            # # Ensure the column is datetime
+            # df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+
+            # # Add conditional days based on product_type (i.e., 'target_Id' actually holds product_type here)
+            # df_target['Target Date'] = df_target.apply(
+            #     lambda row: row['Target Date'] + (
+            #         timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
+            #         else timedelta(days=14) if row['product_type'] == 'Women Informal'
+            #         else timedelta(days=7) if row['product_type'] == 'Guyya'
+            #         else timedelta(days=0)
+            #     ),
+            #     axis=1
+            # )
+
+
+
+            #  -- new --            # Fetch target data for the new target date
+            target_new = """
+            SELECT 
+                UUID() AS target_Id,
+                t.branch_code,
+                ROUND(SUM(t.disbursment_target) * 0.95, 2) AS `Collection Target`,
+                t.target_date
+            FROM 
+                target_per_product t
+            where t.target_date >= '2025-07-31'
+            GROUP BY 
+                t.branch_code, t.target_date;
+            """
+            fetch_target = db_ops.fetch_data(target_new)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'Collection Target', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                # Rename columns for 'target' data
+                df_target.columns = ['target_Id', 'Branch Code', 'Collection Target', 'Target Date']
+
+            # Ensure the column is datetime
+            df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+            #  --new --            # Add conditional days based on product_type (i.e., 'target_Id' actually holds product_type here)
+
+
+
+            df_target = df_target[['target_Id', 'Branch Code', 'Collection Target', 'Target Date']]
+            # st.write(df_target)
+            # Apply data type conversions
+            df_target['Collection Target'] = df_target['Collection Target'].apply(convert_decimal)
+            df_target['Target Date'] = df_target['Target Date'].apply(convert_date)
+            # df_target['created_date'] = df_target['created_date'].apply(convert_date)
+
+            # st.write(df_target)
+           
+
+            return act_dis_branch, df_actual, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+
+    elif role == "Sales Admin":
+        try:
+            # Fetch district for the Sales Admin based on their username
+            district_query = "SELECT district FROM user_infos WHERE userName = %s"
+            district_result = db_ops.fetch_data(district_query, (username,))
+            
+            if not district_result:
+                st.warning("No users found.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()  # Return empty DataFrames if no users found
+
+            district = district_result[0]['district']
+            
+            # Handle JSON-encoded district data
+            if isinstance(district, str):
+                try:
+                    districts = json.loads(district)
+                except json.JSONDecodeError:
+                    districts = [district]  # If not JSON-encoded, treat it as a single district
+            else:
+                districts = [district]
+
+            # Use placeholders for parameterized queries
+            placeholders = ', '.join(['%s'] * len(districts))
+
+            # Fetch dis_Id for the districts
+            district_query = f"SELECT dis_Id, district_name FROM district_list WHERE district_name IN ({placeholders})"
+            district_result = db_ops.fetch_data(district_query, tuple(districts))
+            
+            if not district_result:
+                st.warning("No districts found with the given district names.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()  # Return empty DataFrames if no districts found
+
+            dis_ids = [row['dis_Id'] for row in district_result]
+
+            # Fetch branch code and branch name for the dis_ids
+            branch_code_query = f"SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id IN ({placeholders})"
+            branch_code_result = db_ops.fetch_data(branch_code_query, tuple(dis_ids))
+            
+            if not branch_code_result:
+                st.warning("No branches found for the given districts.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()  # Return empty DataFrames if no branches found
+
+            # Extract branch codes from the result
+            branch_codes = [row['branch_code'] for row in branch_code_result]
+            branch_codes_str = ', '.join(['%s'] * len(branch_codes))
+
+            # Create DataFrames for district and branch information
+            actul_dis = pd.DataFrame(district_result)
+            actul_dis.columns=['dis_Id', 'District']
+            actual_branch = pd.DataFrame(branch_code_result)
+            actual_branch.columns=['dis_Id', 'Branch Code', 'Branch']
+
+            # Merge district and branch DataFrames based on 'dis_Id'
+            act_dis_branch = pd.merge(actul_dis, actual_branch, on='dis_Id', how='inner')
+            # st.write(act_dis_branch)
+
+            # Fetch actual data
+            actual_query = f"""
+                SELECT coll_id, branch_code, principal_collected, collected_date 
+                FROM aggregate_collection  WHERE branch_code IN ({branch_codes_str}) AND (collected_date BETWEEN %s AND %s)
+            """
+            quary_params = tuple(branch_codes) + (fy_start, fy_end)  # Combine branch codes with fiscal year start and end
+            fetch_actual = db_ops.fetch_data(actual_query, quary_params)  # Ensure the tuple is passed correctly
+            # Check if fetch_actual has data
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Collected', 'Collected Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Collected', 'Collected Date']
+            # Apply data type conversions
+            df_actual['Actual Collected' ] = df_actual['Actual Collected'].apply(convert_decimal)
+            df_actual['Collected Date'] = df_actual['Collected Date'].apply(convert_date)
+            # st.write(df_actual)
+
+            # Fetch target data
+            target_query = f"""
+                SELECT 
+                actual_Id, 
+                branch_code,
+                product_type,
+                disbursment_actual, 
+                actual_date
+            FROM 
+                actual_per_product
+            WHERE 
+                branch_code IN ({branch_codes_str})
+                AND
+                (
+                (
+                    product_type IN ('Wabbi', 'Women Formal') 
+                    AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                )
+                OR
+                (
+                    product_type = 'Women Informal' 
+                    AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+                )
+                OR
+                (
+                    product_type = 'Guyya' 
+                    AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                )
+                )
+            """
+            tquary_params = tuple(branch_codes)
+            fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                # Rename columns for 'target' data
+                df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+
+            # Ensure the column is datetime
+            df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+
+            # Add conditional days based on product_type (i.e., 'target_Id' actually holds product_type here)
+            df_target['Target Date'] = df_target.apply(
+                lambda row: row['Target Date'] + (
+                    timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
+                    else timedelta(days=14) if row['product_type'] == 'Women Informal'
+                    else timedelta(days=7) if row['product_type'] == 'Guyya'
+                    else timedelta(days=0)
+                ),
+                axis=1
+            )
+            
+
+            df_target = df_target[['target_Id', 'Branch Code', 'Collection Target', 'Target Date']]
+            # st.write(df_target)
+            # Apply data type conversions
+            df_target['Collection Target'] = df_target['Collection Target'].apply(convert_decimal)
+            df_target['Target Date'] = df_target['Target Date'].apply(convert_date)
+
+            return act_dis_branch, df_actual, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+    elif role == "Branch User":
+        try:
+            # Fetch branch and district for the given username
+            user_id_query = "SELECT branch, district FROM user_infos WHERE userName = %s"
+            user_id_result = db_ops.fetch_data(user_id_query, (username,))
+
+            if not user_id_result:
+                st.warning("No user found with the given username.")
+                return pd.DataFrame()  # Return an empty DataFrame if no user is found
+
+            branch = user_id_result[0]['branch']  # Assuming branch is the first element in the first row of the result
+            district = user_id_result[0]['district']
+
+            # Fetch branch code and branch name
+            branch_code_query = "SELECT branch_code, branch_name FROM branch_list WHERE branch_code = %s"
+            branch_code_result = db_ops.fetch_data(branch_code_query, (branch,))
+
+            if not branch_code_result:
+                st.warning("No branch found with the given branch name.")
+                return pd.DataFrame()  # Return an empty DataFrame if no branch is found
+
+            branch_code = branch_code_result[0]['branch_code']
+
+            # Create DataFrames from the fetched data
+            actul_dis = pd.DataFrame(user_id_result)
+            actul_dis.columns=['Branch Code', 'District']
+            actual_branch = pd.DataFrame(branch_code_result)
+            actual_branch.columns=['Branch Code', 'Branch']
+
+            # Merge DataFrames based on 'branch'
+            act_dis_branch = pd.merge(actul_dis, actual_branch, on='Branch Code', how='inner')
+            # st.write(act_dis_branch)
+
+            # Fetch actual data
+            actual_query = """
+                SELECT coll_id, branch_code, principal_collected, collected_date 
+                FROM aggregate_collection  
+                WHERE branch_code = %s AND (collected_date BETWEEN %s AND %s)
+            """
+            quary_params = (branch_code, fy_start, fy_end) # Combine branch code with fiscal year start and end
+            fetch_actual = db_ops.fetch_data(actual_query, quary_params)  # Ensure the tuple is passed correctly
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Collected', 'Collected Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Collected', 'Collected Date']
+            # Apply data type conversions
+            df_actual['Actual Collected' ] = df_actual['Actual Collected'].apply(convert_decimal)
+            df_actual['Collected Date'] = df_actual['Collected Date'].apply(convert_date)
+
+            # st.write(df_actual)
+
+            # Fetch target data
+            target_query = """
+                SELECT 
+                actual_Id, 
+                branch_code,
+                product_type,
+                disbursment_actual, 
+                actual_date
+            FROM 
+                actual_per_product
+            WHERE 
+                branch_code = %s
+                AND
+                (
+                (
+                    product_type IN ('Wabbi', 'Women Formal') 
+                    AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                )
+                OR
+                (
+                    product_type = 'Women Informal' 
+                    AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+                )
+                OR
+                (
+                    product_type = 'Guyya' 
+                    AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                )
+                )
+            """
+            # tquary_params = branch_code # Fiscal year start and end dates
+            fetch_target = db_ops.fetch_data(target_query, (branch_code,))
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                # Rename columns for 'target' data
+                df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+
+            # Ensure the column is datetime
+            df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+
+            # Add conditional days based on product_type (i.e., 'product_type' actually holds product_type here)
+            df_target['Target Date'] = df_target.apply(
+                lambda row: row['Target Date'] + (
+                    timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
+                    else timedelta(days=14) if row['product_type'] == 'Women Informal'
+                    else timedelta(days=7) if row['product_type'] == 'Guyya'
+                    else timedelta(days=0)
+                ),
+                axis=1
+            )
+            
+
+            df_target = df_target[['target_Id', 'Branch Code', 'Collection Target', 'Target Date']]
+            # st.write(df_target)
+            # Apply data type conversions
+            df_target['Collection Target'] = df_target['Collection Target'].apply(convert_decimal)
+            df_target['Target Date'] = df_target['Target Date'].apply(convert_date)
+
+            # st.write(df_target)
+
+            
+            return act_dis_branch, df_actual, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+    else:
+        try:
+            # Fetch district for the given username
+            user_id_query = "SELECT district FROM user_infos WHERE userName = %s"
+            user_id_result = db_ops.fetch_data(user_id_query, (username,))
+
+            if not user_id_result:
+                st.warning("No user found with the given username.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+            # district = user_id_result[0][0]  # Assuming district is the first element in the first row of the result
+            district = user_id_result[0]['district']
+
+            # Fetch dis_Id for the district
+            district_query = "SELECT dis_Id, district_name FROM district_list WHERE district_name = %s"
+            district_result = db_ops.fetch_data(district_query, (district,))
+            if not district_result:
+                st.warning("No district found with the given district name.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()   # Return an empty DataFrame if no district is found
+
+            dis_id = district_result[0]['dis_Id']
+
+            # Fetch branch code and branch name
+            branch_code_query = "SELECT dis_Id, branch_code, branch_name FROM branch_list WHERE dis_Id = %s"
+            branch_code_result = db_ops.fetch_data(branch_code_query, (dis_id,))
+            if not branch_code_result:
+                st.warning("No branches found for the given district.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()  # Return an empty DataFrame if no branches are found
+
+            # Extract branch codes from the result
+            branch_codes = [row['branch_code'] for row in branch_code_result]
+            # branch_code = [f"'{row['branch_code']}'" for row in branch_code_result]  # Get all branch codes from the query result and quote them
+            # branch_codes_str = ','.join(f"'{code}'" for code in branch_code)  # Prepare for SQL IN clause
+            branch_codes_str = ', '.join(['%s'] * len(branch_codes))
+
+
+            # Create DataFrames from the fetched data
+            actul_dis = pd.DataFrame(district_result)
+            actul_dis.columns=['dis_Id', 'District']
+            actual_branch = pd.DataFrame(branch_code_result)
+            actual_branch.columns=['dis_Id', 'Branch Code', 'Branch']
+
+            # Merge DataFrames based on 'dis_Id'
+            act_dis_branch = pd.merge(actul_dis, actual_branch, on='dis_Id', how='inner')
+            # st.write(act_dis_branch)
+
+            # Fetch actual data using parameterized query
+            actual_query = f"""
+                SELECT coll_id, branch_code, principal_collected, collected_date 
+                FROM aggregate_collection 
+                WHERE branch_code IN ({branch_codes_str}) AND (collected_date BETWEEN %s AND %s)
+            """
+            quary_params = tuple(branch_codes) + (fy_start, fy_end)  # Combine branch codes with fiscal year start and end
+            fetch_actual = db_ops.fetch_data(actual_query, quary_params)  # Ensure the tuple is passed correctly
+            if not fetch_actual:
+                columns = ['actual_Id', 'Branch Code', 'Actual Collected', 'Collected Date']
+                df_actual = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_actual = pd.DataFrame(fetch_actual)
+                df_actual.columns = ['actual_Id', 'Branch Code', 'Actual Collected', 'Collected Date']
+            # Apply data type conversions
+            df_actual['Actual Collected' ] = df_actual['Actual Collected'].apply(convert_decimal)
+            df_actual['Collected Date'] = df_actual['Collected Date'].apply(convert_date)
+
+            # Fetch target data using parameterized query
+            target_query = f"""
+                SELECT 
+                actual_Id, 
+                branch_code,
+                product_type,
+                disbursment_actual, 
+                actual_date
+            FROM 
+                actual_per_product
+            WHERE 
+                branch_code IN ({branch_codes_str})
+                AND
+                (
+                (
+                    product_type IN ('Wabbi', 'Women Formal') 
+                    AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                )
+                OR
+                (
+                    product_type = 'Women Informal' 
+                    AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+                )
+                OR
+                (
+                    product_type = 'Guyya' 
+                    AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                )
+                )
+            """
+            tquary_params = tuple(branch_codes) 
+            fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            if not fetch_target:
+                columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+                df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            else:
+                df_target = pd.DataFrame(fetch_target)
+                # Rename columns for 'target' data
+                df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+
+            # Ensure the column is datetime
+            df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+
+            # Add conditional days based on product_type (i.e., 'product_type' actually holds product_type here)
+            df_target['Target Date'] = df_target.apply(
+                lambda row: row['Target Date'] + (
+                    timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
+                    else timedelta(days=14) if row['product_type'] == 'Women Informal'
+                    else timedelta(days=7) if row['product_type'] == 'Guyya'
+                    else timedelta(days=0)
+                ),
+                axis=1
+            )
+            
+
+            df_target = df_target[['target_Id', 'Branch Code', 'Collection Target', 'Target Date']]
+            # st.write(df_target)
+            # Apply data type conversions
+            df_target['Collection Target'] = df_target['Collection Target'].apply(convert_decimal)
+            df_target['Target Date'] = df_target['Target Date'].apply(convert_date)
+
+            return act_dis_branch, df_actual, df_target
+        except Exception as e:
+            st.error("An error occurred while loading data.")
+            st.exception(e)
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+
+
+
+
 
 
 

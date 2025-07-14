@@ -4,22 +4,11 @@ from streamlit_autorefresh import st_autorefresh
 import plotly.express as px
 from navigation import make_sidebar1
 from dependence import load_districtuniquedash
-from dependence import initialize_session, update_activity, check_session_timeout
-
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
+from dependence import update_activity, check_session_timeout
 
 # Check timeout on every interaction
 check_session_timeout()
 
-# Function to establish MySQL connection
-# @st.cache_resource
-# @st.cache_resource(allow_output_mutation=True)
-# Function to establish MySQL connection (with error handling and resource cleanup)
 
 
 
@@ -29,7 +18,7 @@ def main():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 0rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -53,25 +42,9 @@ def main():
     </style>
     """
     st.markdown(custom_cs, unsafe_allow_html=True)
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 0.1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
+  
     update_activity()
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
 
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
     fy_start = st.session_state.get("fiscal_year_start")
     fy_end = st.session_state.get("fiscal_year_end")
 
@@ -99,15 +72,7 @@ def main():
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
     
-    # st.balloons()
 
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     
 
     # Fetch data from different tables
@@ -148,26 +113,10 @@ def main():
 
             df_combine = df_combine[(df_combine["Disbursed Date"] >= date1) & (df_combine["Disbursed Date"] <= date2)].copy()
 
-        
-        # Hide the sidebar by default with custom CSS
-        hide_sidebar_style = """
-            <style>
-                #MainMenu {visibility: hidden;}
-            </style>
-        """
-        st.markdown(hide_sidebar_style, unsafe_allow_html=True)
+    
         make_sidebar1()
     
-        st.markdown(
-            """
-            <style>
-            .metric-card-container {
-                padding-top: 0.2rem;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+    
         
         col1, col2, col3, col4 = st.columns([0.3, 0.1, 0.3, 0.3])
         # col2.markdown('<style>div.block-container{padding-top:0.0002rem;}</style>', unsafe_allow_html=True)

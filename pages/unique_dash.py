@@ -4,24 +4,12 @@ from streamlit_autorefresh import st_autorefresh
 import plotly.express as px
 from navigation import home_sidebar
 from dependence import  load_unquie, load_account, load_disbursment
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
 
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
 
 # Check timeout on every interaction
 check_session_timeout()
-
-# Function to establish MySQL connection
-# @st.cache_resource
-# @st.cache_resource(allow_output_mutation=True)
-# Function to establish MySQL connection (with error handling and resource cleanup)
-
-
 
 def main():
     # Set page configuration, menu, and minimize top padding
@@ -29,7 +17,7 @@ def main():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 0rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -53,24 +41,6 @@ def main():
     </style>
     """
     st.markdown(custom_cs, unsafe_allow_html=True)
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 0.1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
-
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
     update_activity()
     fy_start = st.session_state.get("fiscal_year_start")
     fy_end = st.session_state.get("fiscal_year_end")
@@ -98,16 +68,6 @@ def main():
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
-    
-    # st.balloons()
-
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     
 
     # Fetch data from different tables
@@ -166,15 +126,6 @@ def main():
                 df_combine = df_combine[df_combine["Branch"].isin(branch)]
             else:
                 df_combine = df_combine[df_combine["District"].isin(district) & df_combine["Branch"].isin(branch)]
-
-            
-            # Hide the sidebar by default with custom CSS
-            hide_sidebar_style = """
-                <style>
-                    #MainMenu {visibility: hidden;}
-                </style>
-            """
-            st.markdown(hide_sidebar_style, unsafe_allow_html=True)
 
             home_sidebar()
         
@@ -575,16 +526,6 @@ def main():
 
             home_sidebar()
         
-            st.markdown(
-                """
-                <style>
-                .metric-card-container {
-                    padding-top: 0.2rem;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
             
             disbursed_amount_sum = float(df_combine.disbursed_amount.sum())
             # Format the amount in billions or millions

@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-# from navigation import make_sidebar1
-from dependence import update_activity, check_session_timeout
+from navigation import make_sidebar1
+import traceback
 
+from dependence import update_activity, check_session_timeout
 
 # Check timeout on every interaction
 check_session_timeout()
-
 
 
 # Streamlit app
@@ -16,15 +16,15 @@ def main():
     custom_css = """
     <style>
         div.block-container {
-            padding-top: 1rem; /* Adjust this value to reduce padding-top */
+            padding-top: 2rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
-        .stAppHeader { visibility: hidden; }
-        /* Hide the entire header bar */
-        header.stAppHeader {
-            display: none;
-        }
+        # .stAppHeader { visibility: hidden; }
+        # /* Hide the entire header bar */
+        # header.stAppHeader {
+        #     display: none;
+        # }
         .stButton button {
             background-color: #000000;
             border: 1px solid #ccc;
@@ -41,6 +41,8 @@ def main():
     """
     st.markdown(custom_css, unsafe_allow_html=True)
     update_activity()
+    
+    st.markdown(custom_css, unsafe_allow_html=True)
 
     col1, col2 = st.columns([0.1, 0.9])
     with col1:
@@ -53,7 +55,7 @@ def main():
             border-radius: 6px;
         }
         </style>
-        <center> <h3 class="title_dash"> Michu Actual Data Upload Portal </h3> </center>
+        <center> <h3 class="title_dash"> Michu Collection Actual Data Upload Portal </h3> </center>
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
@@ -62,29 +64,27 @@ def main():
     # st.sidebar.write(f'Welcome, :orange[{full_name}]')
     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader(":orange[Upload Actual Unique Excel file 👇🏻]", type=["csv", "txt", "xlsx", "xls"], accept_multiple_files=False)
-    # make_sidebar1()
+    uploaded_file = st.file_uploader(":orange[Upload Collection Actual Unique Excel file 👇🏻]", type=["csv", "txt", "xlsx", "xls"], accept_multiple_files=False)
+    make_sidebar1()
 
     try:
         if uploaded_file is not None:
-            from dependence import all_branch_code_exist, upload_all_Data
+            from dependence import all_branch_code_exist, any_transaction_id_exists, upload_to_actual_coll
             filename = uploaded_file.name
             # Determine file extension
             file_extension = Path(filename).suffix.lower()
             try:
                 column_types = {
-                    'branch_code': str,
-                    'customer_number': str,
-                    'customer_name': str, 
-                    'gender': str, 
-                    'phone_number': str, 
-                    'saving_account': str, 
-                    'business_tin': str,
-                    'application_status': str,
-                    'michu_loan_product': str, 
-                    'approved_amount': float,
-                    'oustanding_total': float,
-                    'loan_status': str
+                    'transaction_id': str,
+                    'branch_code': str,    
+                    'customer_id': str, 
+                    'customer_name': str,
+                    'collected_to': str,
+                    'collected_from': str,
+                    'principal_collected': float,
+                    'interest_collected': float,
+                    'penalty_collected': float,
+
                 }
                 if file_extension in [".csv", ".txt"]:
                     # Read CSV or text file
@@ -96,9 +96,9 @@ def main():
                 # Convert column names to lowercase and take only the first word
                 df.columns = [str(col).lower().split()[0] for col in df.columns]
                 
-                required_columns = {'branch_code', 'customer_number', 'customer_name', 'gender', 'phone_number', 'saving_account', 'business_tin', 'application_status', 'michu_loan_product', 'approved_amount', 'approved_date', 'expiry_date', 'oustanding_total', 'arrears_start_date', 'loan_status'}
+                required_columns = {'transaction_id', 'branch_code', 'customer_id', 'customer_name', 'collected_to', 'collected_from', 'collected_date', 'principal_collected', 'interest_collected', 'penalty_collected'}
                 missing_columns = required_columns - set(df.columns)
-                req_col = {'branch_code', 'approved_date', 'loan_status'}
+                req_col = {'transaction_id', 'branch_code', 'customer_id', 'collected_to', 'collected_from', 'collected_date'}
                 if missing_columns:
                     st.error(f"The uploaded file is missing the following columns: {', '.join(missing_columns)}")
                 else:
@@ -107,17 +107,15 @@ def main():
                     if required_df.isnull().any().any():
                         null_columns = required_df.columns[required_df.isnull().any()].tolist()
                         st.error(f"The following columns contain null or empty values: {', '.join(null_columns)}")
-                    
                     else:
-                        df = df.where(pd.notnull(df), None)
                         df['branch_code'] = df['branch_code'].str.strip()
 
                         # Check for invalid dates in target_date column
                         try:
-                            df['approved_date'] = pd.to_datetime(df['approved_date'], errors='coerce')
-                            invalid_dates = df['approved_date'].isna()
+                            df['collected_date'] = pd.to_datetime(df['collected_date'], errors='coerce')
+                            invalid_dates = df['collected_date'].isna()
                             if invalid_dates.any():
-                                st.error("The approved_date column contains invalid dates.")
+                                st.error("The collected_date column contains invalid dates.")
                                 return
                         except Exception as e:
                             st.error(f"An error occurred while parsing dates: {e}")
@@ -131,17 +129,36 @@ def main():
                             missing_branch_code = [str(branch) for branch in missing_branch_code]
                             st.error(f"The following branches are not found in the database: {', '.join(missing_branch_code)}")
                         else:
-                            try:
-                                if upload_all_Data(df):
-                                    st.success("Data uploaded successfully!")
+                            # Ensure missing (NaN) and empty strings are replaced with 0
+                            df[['principal_collected', 'interest_collected', 'penalty_collected']] = (
+                                df[['principal_collected', 'interest_collected', 'penalty_collected']]
+                                .replace('', 0)                 # Replace empty strings with 0
+                                .fillna(0)                      # Replace NaNs with 0
+                                .astype(float)                 # Ensure values are numeric
+                            )
 
+                            try:
+                                # Check if any target_date exists
+                                if any_transaction_id_exists(df):
+                                    st.error("One or more transaction id in the uploaded file already exist in the database. this means You are trying to upload same data twice. Upload aborted.")
                                 else:
-                                    st.error("Data upload failed.")
+                                    
+                                    if upload_to_actual_coll(df):
+                                        st.success("Data uploaded successfully!")
+
+                                    else:
+                                        st.error("Data upload failed.")
                             except Exception as e:
-                                st.error(f"Fail to  uload data: {e}")
+                                st.error(f"Fail to  uload data:")
+                                # Print a full stack trace for debugging
+                                print("Database fetch error:", e)
+                                traceback.print_exc()  # This prints the full error trace to the terminal
                         
             except Exception as e:
-                st.error(f"An error occurred while uloading: {e}")
+                st.error(f"An error occurred while uloading:")
+                print("Database fetch error:", e)
+                traceback.print_exc()  # This prints the full error trace to the terminal
+                
     except Exception as e:
         st.error(f"An error occurred: {e}")
         

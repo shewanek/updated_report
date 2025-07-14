@@ -4,14 +4,7 @@ from streamlit_autorefresh import st_autorefresh
 from navigation import home_sidebar
 import pandas as pd
 from dependence import load_all_women_data, load_all_kiyya_data
-from dependence import initialize_session, update_activity, check_session_timeout
-
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
+from dependence import update_activity, check_session_timeout
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -23,7 +16,7 @@ def main():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 0rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -47,25 +40,7 @@ def main():
     </style>
     """
     st.markdown(custom_cs, unsafe_allow_html=True)
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 0.1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
     update_activity()
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
-
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
 
     # Auto-refresh interval (in seconds)
     refresh_interval = 600  # 5 minutes
@@ -90,14 +65,6 @@ def main():
         st.markdown(html_title, unsafe_allow_html=True)
 
     st.balloons()
-
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
     # Fetch data from different tables
     # Database connection and data fetching (with error handling)

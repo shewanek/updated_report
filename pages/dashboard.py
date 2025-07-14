@@ -1,14 +1,7 @@
 import streamlit as st
 from time import sleep  # Assuming dash.py contains your dashboard layout
 from navigation import make_sidebar2
-from dependence import initialize_session, update_activity, check_session_timeout
-
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
+from dependence import update_activity, check_session_timeout
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -22,7 +15,7 @@ def register():
         <style>
             /* Reduce padding at the top */
             div.block-container {
-                padding-top: 0rem; /* Adjust as needed */
+                padding-top: 1rem; /* Adjust as needed */
             }
 
             /* Hide main menu and deploy button */
@@ -60,27 +53,7 @@ def register():
     
     # Set page configuration, menu, and minimize top padding
     st.set_page_config(page_title="Michu Portal", page_icon=":bar_chart:", layout="wide")
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
     update_activity()
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
-
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
-
-    # Fiscal year selector in sidebar
 
     
     
@@ -108,31 +81,10 @@ def register():
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
-    # CSS to hide the first column on small screens
-    hide_col1_css = """
-        <style>
-        @media (max-width: 600px) {
-            .col3 {
-                display: none;
-            }
-        }
-        </style>
-        """
-
-    # Insert the custom CSS
-    st.markdown(hide_col1_css, unsafe_allow_html=True)
+   
     
-    
-    # st.balloons()
 
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-    st.sidebar.image('pages/michu.png')
+    st.logo('pages/michu.png')
     # username = st.session_state.get("username", "")
     full_name = st.session_state.get("full_name", "")
     # st.sidebar.write(f'Welcome, :orange[{full_name}]')

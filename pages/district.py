@@ -2,14 +2,7 @@ import streamlit as st
 from navigation import login_bar
 from navigation import home_sidebar
 from dependence import get_roles_from_db
-from dependence import initialize_session, update_activity, check_session_timeout
-
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
+from dependence import update_activity, check_session_timeout
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -25,7 +18,7 @@ def select():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 1rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -51,21 +44,7 @@ def select():
     st.markdown(custom_cs, unsafe_allow_html=True)
     update_activity()
     login_bar()
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+ 
     # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1, 0.9])
@@ -83,12 +62,7 @@ def select():
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
-    hide_sidebar_style = """
-            <style>
-                #MainMenu {visibility: hidden;}
-            </style>
-        """
-    st.markdown(hide_sidebar_style, unsafe_allow_html=True)
+  
     # Side bar
     st.sidebar.image("pages/michu.png")
     username = st.session_state.get("username", "")

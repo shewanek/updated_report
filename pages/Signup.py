@@ -3,14 +3,8 @@ from time import sleep  # Assuming dash.py contains your dashboard layout
 import json 
 from navigation import login_bar
 from navigation import home_sidebar
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -25,7 +19,7 @@ def sign_up():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 1rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -50,21 +44,7 @@ def sign_up():
     """
     st.markdown(custom_cs, unsafe_allow_html=True)
     login_bar()
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
     update_activity()
     # image = Image.open('pages/michu.png')
 

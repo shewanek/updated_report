@@ -9,12 +9,6 @@ from pages.unique_register import unique_register
 from dependence import update_activity, check_session_timeout, get_branchcode
 
 
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
-
 # Check timeout on every interaction
 check_session_timeout()
 
@@ -26,7 +20,7 @@ def register():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 0rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -53,21 +47,7 @@ def register():
     login_bar()
     st.markdown(custom_cs, unsafe_allow_html=True)
     update_activity()
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+  
     # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1,0.9])

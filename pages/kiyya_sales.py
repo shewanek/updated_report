@@ -11,7 +11,7 @@ def register():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.8rem; /* Adjust this value to reduce padding-top */
+            padding-top: 1rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -40,24 +40,6 @@ def register():
     
     # Set page configuration, menu, and minimize top padding
     st.set_page_config(page_title="Michu Report", page_icon=":bar_chart:", layout="wide")
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
-
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
 
    
     
@@ -82,16 +64,6 @@ def register():
         st.markdown(html_title, unsafe_allow_html=True)
     
     
-    
-    # st.balloons()
-
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     back_image = Image.open('pages/kiyya.jpg')
     st.sidebar.image(back_image)
     # st.sidebar.image('pages/michu.png')

@@ -17,6 +17,10 @@ baseUrlPath = "MichuPortal"  # Custom base URL path for your portal
 enableCORS = true  # Enable Cross-Origin Resource Sharing for external domain access
 enableXsrfProtection = true  # Enable Cross-Site Request Forgery protection for added security
 maxUploadSize = 100  # Max upload size in MB
+cookieSecret = "6c98dbccf111e2df392981fc4c3c78a43e9c885efaef83e2c3eeb57da1c0shzw"
+disconnectedSessionTTL = 300
+
+fileWatcherType = "watchdog"
 
 # Increase maxMessageSize slightly to handle large WebSocket messages, but avoid excessive values
 maxMessageSize = 600_000_000  # Increased WebSocket message size limit to 60 MB
@@ -44,3 +48,7 @@ enableStaticServing = true  # Enable static file serving if you use external sta
 [browser]
 gatherUsageStats = false  # Disable sending usage statistics to Streamlit's servers
 serverAddress = "0.0.0.0"  # Bind server to all network interfaces to allow external access
+
+
+[logger]
+level = "info"

@@ -19,7 +19,7 @@ def main():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 1rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -43,24 +43,6 @@ def main():
     </style>
     """
     st.markdown(custom_cs, unsafe_allow_html=True)
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 0.1rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
-
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
 
     
     # Auto-refresh interval (in seconds)
@@ -86,15 +68,6 @@ def main():
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
     
-    # st.balloons()
-
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     
 
     # Fetch data from different tables
@@ -154,25 +127,8 @@ def main():
             df_combine = df_combine[df_combine["District"].isin(district) & df_combine["Branch"].isin(branch)]
         
         
-        # Hide the sidebar by default with custom CSS
-        hide_sidebar_style = """
-            <style>
-                #MainMenu {visibility: hidden;}
-            </style>
-        """
-        st.markdown(hide_sidebar_style, unsafe_allow_html=True)
         make_sidebar1()
     
-        st.markdown(
-            """
-            <style>
-            .metric-card-container {
-                padding-top: 0.2rem;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
         
         col1, col2, col3, col4 = st.columns([0.3, 0.1, 0.3, 0.3])
         # col2.markdown('<style>div.block-container{padding-top:0.0002rem;}</style>', unsafe_allow_html=True)

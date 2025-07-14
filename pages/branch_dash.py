@@ -4,14 +4,9 @@ from streamlit_autorefresh import st_autorefresh
 from navigation import make_sidebar1
 from dependence import load_branchdata, load_branch_kiyya_data
 
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
 
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -21,13 +16,7 @@ check_session_timeout()
 def main():
     # Set page configuration, menu, and minimize top padding
     st.set_page_config(page_title="Michu Portal", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
-    # CSS to hide the header
-    hide_header_style = """
-        <style>
-        .app-header {display: none;}
-        </style>
-        """
-    st.markdown(hide_header_style, unsafe_allow_html=True)
+    
     custom_css = """
     <style>
         div.block-container {
@@ -38,19 +27,12 @@ def main():
         header.stAppHeader {
             display: none;
         }
+        .app-header {
+                display: none;
+            }
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
-
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
     update_activity()
 
     # Auto-refresh interval (in seconds)
@@ -75,15 +57,6 @@ def main():
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
 
-    # st.balloons()
-
-    hide_streamlit_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
     # Fetch data from different tables
     # Check if user is logged in

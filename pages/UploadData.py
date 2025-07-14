@@ -4,13 +4,6 @@ from time import sleep
 from navigation import make_sidebar
 from dependence import initialize_session, update_activity, check_session_timeout
 
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
-
 # Check timeout on every interaction
 check_session_timeout()
 
@@ -22,7 +15,7 @@ def upload():
     custom_cs = """
     <style>
         div.block-container {
-            # padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
+            padding-top: 0rem; /* Adjust this value to reduce padding-top */
         }
         #MainMenu { visibility: hidden; }
         .stDeployButton { visibility: hidden; }
@@ -49,21 +42,6 @@ def upload():
     # login_bar()
     st.markdown(custom_cs, unsafe_allow_html=True)
     update_activity()
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     # image = Image.open('pages/michu.png')
 
     col1, col2 = st.columns([0.1,0.9])
@@ -127,6 +105,17 @@ def upload():
                 if st.form_submit_button("Upload Actual :blue[Conversion] Data"):
                     sleep(0.5)
                     st.switch_page('pages/uploadconversion.py')
+
+                st.write("")
+                st.write("")
+                st.write("")
+                st.write("")
+                st.write("")
+                st.write("")
+
+                if st.form_submit_button("Upload Actual :green[Collection] Data"):
+                    sleep(0.5)
+                    st.switch_page('pages/upload_actual_collection.py')
                 st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("---")
         with tab2:

@@ -3,16 +3,9 @@ from dependence import load_crmdata
 from navigation import  home_sidebar
 import pandas as pd
 import plotly.graph_objects as go
-import numpy as np
 from decimal import Decimal
-from dependence import initialize_session, update_activity, check_session_timeout
+from dependence import update_activity, check_session_timeout
 
-
-
-
-# # Initialize session when app starts
-# if 'logged_in' not in st.session_state:
-#     initialize_session()
 
 # Check timeout on every interaction
 check_session_timeout()
@@ -52,26 +45,8 @@ def main():
     """
     st.markdown(custom_cs, unsafe_allow_html=True)
     update_activity()
-    custom_css = """
-    <style>
-        div.block-container {
-            padding-top: 1.5rem; /* Adjust this value to reduce padding-top */
-        }
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
-    # with open('custom.css') as f:
-    #     st.write(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    customm = """
-        <style>
-            .app-header {
-                display: none;
-            }
-        </style>
-        """
-
-    # Apply the custom CSS
-    st.markdown(customm, unsafe_allow_html=True)
+    
+   
 
     # image = Image.open('pages/michu.png')
 
@@ -90,16 +65,6 @@ def main():
         """
     with col2:
         st.markdown(html_title, unsafe_allow_html=True)
-
-    # st.balloons()
-
-    hide_streamlit_style = """
-    <style>
-    #MainMenu{visibility: hidden;}
-    .stDeployButton {visibility: hidden;}
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     
 
     # Check if user is logged in
