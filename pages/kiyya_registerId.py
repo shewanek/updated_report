@@ -151,7 +151,7 @@ def register():
                             payload = {}
                             files={}
                             headers = {
-                            'Authenticate': 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJNaWNodSBDb29wIiwiaWF0IjoxNzUxMzc0Mzc1LCJleHAiOjE3NjcxMzkyMDB9.KtIT28uzZMlsmW1HbWp4pC8ngl1EkaZEAxw9VQOSqreF2MTqJ7qv_uDtjl5bGh3XehZ_l6C2hBGY_77dF4OPHA',
+                            'Authenticate': 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJDb3Bwb3JhdGl2ZSBiYWsiLCJpYXQiOjE3NTI0Nzk2MDEsImV4cCI6MTgxMjkzMTIwMH0.DK5Y2HdepGc8JyRPyOxhBLYEBCAY4jK8wdLc6LR1zYs8dr_OQDSBxmsPpWXqOA2BFG9rXh8No3hvGxFxKNEFyw',
                             'Content-Type': 'application/json'
                             }
 
