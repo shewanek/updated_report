@@ -73,6 +73,9 @@ def main():
             align-items: center;
             height: 80vh;
         }
+        .stDecoration{
+            display: none;  /* Hide the default Streamlit decoration */
+            }
         .login-box {
             width: 100%;
             max-width: 200px;  /* Adjusted width to make it narrower */

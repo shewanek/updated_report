@@ -210,6 +210,12 @@ def upload():
 
                 if st.form_submit_button("Upload Agents Data"):
                     st.switch_page('pages/upload_agent.py')
+                
+                st.write("")
+                st.write("")
+
+                if st.form_submit_button("Upload phone for check up Data"):
+                    st.switch_page('pages/upload_check.py')
 
 
                 st.markdown('</div>', unsafe_allow_html=True)

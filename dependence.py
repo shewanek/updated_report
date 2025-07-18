@@ -10526,6 +10526,52 @@ def upload_marchent(df):
 
 
 
+
+def upload_check(df):
+    try:
+        data_to_insert = [tuple(x) for x in df[['loanid', 'phone_number']].values.tolist()]
+        # st.write(data_to_insert)
+        # # Prepare data for insertion
+        # data_to_insert = final_merged_df[['branch_code', 'customer_number', 'customer_name', 'saving_account', 'product_type', 'disbursed_amount', 'disbursed_date']].values.tolist()
+
+        # Insert data into unique_intersection table
+        try:
+            insert_query = """
+                            INSERT INTO forcheck (loanId, phone_number) 
+                            VALUES (%s, %s)
+                        """
+
+
+            # Replace NaN values with None in data_to_insert
+            data_to_insert = [
+                tuple(None if pd.isna(value) else value for value in row)
+                for row in data_to_insert
+            ]
+            
+             # Ensure data_to_insert is not empty
+            if data_to_insert:
+                # Make sure data_to_insert is a list of tuples
+                if all(isinstance(item, tuple) for item in data_to_insert):
+                    rows_inserted = db_ops.insert_many(insert_query, data_to_insert)
+                    st.success(f"{rows_inserted} rows uploaded successfully.")
+                    return True
+                else:
+                    st.error("Data to insert should be a list of tuples.")
+            else:
+                st.warning("No data to insert into the unique_intersection table.")
+        except Exception as e:
+            st.error(f"Error can't upload data: ")
+            print("Database fetch error:", e)
+            traceback.print_exc()  
+            
+
+    except Exception as e:
+        st.error(f"Error: {e}")
+        traceback.print_exc()   # Rollback in case of error
+        return False
+
+
+
 def upload_agents(df):
     try:
         data_to_insert = [tuple(x) for x in df[['customer_name', 'phone_number', 'bank']].values.tolist()]
@@ -11700,59 +11746,90 @@ def load_actual_vs_targetdata_collection(role, username, fy_start, fy_end):
             df_actual['Collected Date'] = df_actual['Collected Date'].apply(convert_date)
             # st.write(df_actual)
 
-            # Fetch target data
-            target_query = f"""
-                SELECT 
-                actual_Id, 
-                branch_code,
-                product_type,
-                disbursment_actual, 
-                actual_date
+
+            # # Fetch target data
+            # target_query = f"""
+            #     SELECT 
+            #     actual_Id, 
+            #     branch_code,
+            #     product_type,
+            #     disbursment_actual, 
+            #     actual_date
+            # FROM 
+            #     actual_per_product
+            # WHERE 
+            #     branch_code IN ({branch_codes_str})
+            #     AND
+            #     (
+            #     (
+            #         product_type IN ('Wabbi', 'Women Formal') 
+            #         AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            #     )
+            #     OR
+            #     (
+            #         product_type = 'Women Informal' 
+            #         AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+            #     )
+            #     OR
+            #     (
+            #         product_type = 'Guyya' 
+            #         AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            #     )
+            #     )
+            # """
+            # tquary_params = tuple(branch_codes)
+            # fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            # if not fetch_target:
+            #     columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+            #     df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            # else:
+            #     df_target = pd.DataFrame(fetch_target)
+            #     # Rename columns for 'target' data
+            #     df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+
+            # # Ensure the column is datetime
+            # df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+
+            # # Add conditional days based on product_type (i.e., 'target_Id' actually holds product_type here)
+            # df_target['Target Date'] = df_target.apply(
+            #     lambda row: row['Target Date'] + (
+            #         timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
+            #         else timedelta(days=14) if row['product_type'] == 'Women Informal'
+            #         else timedelta(days=7) if row['product_type'] == 'Guyya'
+            #         else timedelta(days=0)
+            #     ),
+            #     axis=1
+            # )
+
+
+            #  -- new --            # Fetch target data for the new target date
+            target_new = f"""
+            SELECT 
+                UUID() AS target_Id,
+                t.branch_code,
+                ROUND(SUM(t.disbursment_target) * 0.95, 2) AS `Collection Target`,
+                t.target_date
             FROM 
-                actual_per_product
-            WHERE 
-                branch_code IN ({branch_codes_str})
-                AND
-                (
-                (
-                    product_type IN ('Wabbi', 'Women Formal') 
-                    AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                )
-                OR
-                (
-                    product_type = 'Women Informal' 
-                    AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
-                )
-                OR
-                (
-                    product_type = 'Guyya' 
-                    AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-                )
-                )
+                target_per_product t
+            where t.target_date >= '2025-07-31'
+                AND t.branch_code IN ({branch_codes_str})
+            GROUP BY 
+                t.branch_code, t.target_date;
             """
             tquary_params = tuple(branch_codes)
-            fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            fetch_target = db_ops.fetch_data(target_new, tquary_params)
             if not fetch_target:
-                columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+                columns = ['target_Id', 'Branch Code', 'Collection Target', 'Target Date']
                 df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
             else:
                 df_target = pd.DataFrame(fetch_target)
                 # Rename columns for 'target' data
-                df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+                df_target.columns = ['target_Id', 'Branch Code', 'Collection Target', 'Target Date']
 
             # Ensure the column is datetime
             df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+            #  --new --            # Add conditional days based on product_type (i.e., 'target_Id' actually holds product_type here)
 
-            # Add conditional days based on product_type (i.e., 'target_Id' actually holds product_type here)
-            df_target['Target Date'] = df_target.apply(
-                lambda row: row['Target Date'] + (
-                    timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
-                    else timedelta(days=14) if row['product_type'] == 'Women Informal'
-                    else timedelta(days=7) if row['product_type'] == 'Guyya'
-                    else timedelta(days=0)
-                ),
-                axis=1
-            )
             
 
             df_target = df_target[['target_Id', 'Branch Code', 'Collection Target', 'Target Date']]
@@ -11820,59 +11897,89 @@ def load_actual_vs_targetdata_collection(role, username, fy_start, fy_end):
 
             # st.write(df_actual)
 
-            # Fetch target data
-            target_query = """
-                SELECT 
-                actual_Id, 
-                branch_code,
-                product_type,
-                disbursment_actual, 
-                actual_date
+            # # Fetch target data
+            # target_query = """
+            #     SELECT 
+            #     actual_Id, 
+            #     branch_code,
+            #     product_type,
+            #     disbursment_actual, 
+            #     actual_date
+            # FROM 
+            #     actual_per_product
+            # WHERE 
+            #     branch_code = %s
+            #     AND
+            #     (
+            #     (
+            #         product_type IN ('Wabbi', 'Women Formal') 
+            #         AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            #     )
+            #     OR
+            #     (
+            #         product_type = 'Women Informal' 
+            #         AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+            #     )
+            #     OR
+            #     (
+            #         product_type = 'Guyya' 
+            #         AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            #     )
+            #     )
+            # """
+            # # tquary_params = branch_code # Fiscal year start and end dates
+            # fetch_target = db_ops.fetch_data(target_query, (branch_code,))
+            # if not fetch_target:
+            #     columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+            #     df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            # else:
+            #     df_target = pd.DataFrame(fetch_target)
+            #     # Rename columns for 'target' data
+            #     df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+
+            # # Ensure the column is datetime
+            # df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+
+            # # Add conditional days based on product_type (i.e., 'product_type' actually holds product_type here)
+            # df_target['Target Date'] = df_target.apply(
+            #     lambda row: row['Target Date'] + (
+            #         timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
+            #         else timedelta(days=14) if row['product_type'] == 'Women Informal'
+            #         else timedelta(days=7) if row['product_type'] == 'Guyya'
+            #         else timedelta(days=0)
+            #     ),
+            #     axis=1
+            # )
+
+
+            #  -- new --            # Fetch target data for the new target date
+            target_new = """
+            SELECT 
+                UUID() AS target_Id,
+                t.branch_code,
+                ROUND(SUM(t.disbursment_target) * 0.95, 2) AS `Collection Target`,
+                t.target_date
             FROM 
-                actual_per_product
-            WHERE 
-                branch_code = %s
-                AND
-                (
-                (
-                    product_type IN ('Wabbi', 'Women Formal') 
-                    AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                )
-                OR
-                (
-                    product_type = 'Women Informal' 
-                    AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
-                )
-                OR
-                (
-                    product_type = 'Guyya' 
-                    AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-                )
-                )
+                target_per_product t
+            where t.target_date >= '2025-07-31'
+                AND t.branch_code = %s
+            GROUP BY 
+                t.branch_code, t.target_date;
             """
-            # tquary_params = branch_code # Fiscal year start and end dates
-            fetch_target = db_ops.fetch_data(target_query, (branch_code,))
+            # tquary_params = tuple(branch_codes)
+            fetch_target = db_ops.fetch_data(target_new, (branch_code,))
             if not fetch_target:
-                columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+                columns = ['target_Id', 'Branch Code', 'Collection Target', 'Target Date']
                 df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
             else:
                 df_target = pd.DataFrame(fetch_target)
                 # Rename columns for 'target' data
-                df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+                df_target.columns = ['target_Id', 'Branch Code', 'Collection Target', 'Target Date']
 
             # Ensure the column is datetime
             df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+            #  --new --            # Add conditional days based on product_type (i.e., 'target_Id' actually holds product_type here)
 
-            # Add conditional days based on product_type (i.e., 'product_type' actually holds product_type here)
-            df_target['Target Date'] = df_target.apply(
-                lambda row: row['Target Date'] + (
-                    timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
-                    else timedelta(days=14) if row['product_type'] == 'Women Informal'
-                    else timedelta(days=7) if row['product_type'] == 'Guyya'
-                    else timedelta(days=0)
-                ),
-                axis=1
-            )
             
 
             df_target = df_target[['target_Id', 'Branch Code', 'Collection Target', 'Target Date']]
@@ -11954,59 +12061,88 @@ def load_actual_vs_targetdata_collection(role, username, fy_start, fy_end):
             df_actual['Actual Collected' ] = df_actual['Actual Collected'].apply(convert_decimal)
             df_actual['Collected Date'] = df_actual['Collected Date'].apply(convert_date)
 
-            # Fetch target data using parameterized query
-            target_query = f"""
-                SELECT 
-                actual_Id, 
-                branch_code,
-                product_type,
-                disbursment_actual, 
-                actual_date
+            # # Fetch target data using parameterized query
+            # target_query = f"""
+            #     SELECT 
+            #     actual_Id, 
+            #     branch_code,
+            #     product_type,
+            #     disbursment_actual, 
+            #     actual_date
+            # FROM 
+            #     actual_per_product
+            # WHERE 
+            #     branch_code IN ({branch_codes_str})
+            #     AND
+            #     (
+            #     (
+            #         product_type IN ('Wabbi', 'Women Formal') 
+            #         AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            #     )
+            #     OR
+            #     (
+            #         product_type = 'Women Informal' 
+            #         AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+            #     )
+            #     OR
+            #     (
+            #         product_type = 'Guyya' 
+            #         AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            #     )
+            #     )
+            # """
+            # tquary_params = tuple(branch_codes) 
+            # fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            # if not fetch_target:
+            #     columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+            #     df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
+            # else:
+            #     df_target = pd.DataFrame(fetch_target)
+            #     # Rename columns for 'target' data
+            #     df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+
+            # # Ensure the column is datetime
+            # df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+
+            # # Add conditional days based on product_type (i.e., 'product_type' actually holds product_type here)
+            # df_target['Target Date'] = df_target.apply(
+            #     lambda row: row['Target Date'] + (
+            #         timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
+            #         else timedelta(days=14) if row['product_type'] == 'Women Informal'
+            #         else timedelta(days=7) if row['product_type'] == 'Guyya'
+            #         else timedelta(days=0)
+            #     ),
+            #     axis=1
+            # )
+
+            #  -- new --            # Fetch target data for the new target date
+            target_new = f"""
+            SELECT 
+                UUID() AS target_Id,
+                t.branch_code,
+                ROUND(SUM(t.disbursment_target) * 0.95, 2) AS `Collection Target`,
+                t.target_date
             FROM 
-                actual_per_product
-            WHERE 
-                branch_code IN ({branch_codes_str})
-                AND
-                (
-                (
-                    product_type IN ('Wabbi', 'Women Formal') 
-                    AND actual_date BETWEEN '2025-06-01' AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                )
-                OR
-                (
-                    product_type = 'Women Informal' 
-                    AND actual_date BETWEEN '2025-06-17' AND DATE_SUB(CURDATE(), INTERVAL 14 DAY)
-                )
-                OR
-                (
-                    product_type = 'Guyya' 
-                    AND actual_date BETWEEN '2025-06-24' AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-                )
-                )
+                target_per_product t
+            where t.target_date >= '2025-07-31'
+                AND t.branch_code IN ({branch_codes_str})
+            GROUP BY 
+                t.branch_code, t.target_date;
             """
-            tquary_params = tuple(branch_codes) 
-            fetch_target = db_ops.fetch_data(target_query, tquary_params)
+            tquary_params = tuple(branch_codes)
+            fetch_target = db_ops.fetch_data(target_new, tquary_params)
             if not fetch_target:
-                columns = ['target_Id', 'Branch Code', 'product_type', 'Collection Target', 'Target Date']
+                columns = ['target_Id', 'Branch Code', 'Collection Target', 'Target Date']
                 df_target = pd.DataFrame(columns=columns)  # Create an empty DataFrame with the expected columns
             else:
                 df_target = pd.DataFrame(fetch_target)
                 # Rename columns for 'target' data
-                df_target.columns = ['target_Id', 'Branch Code',  'product_type', 'Collection Target', 'Target Date']
+                df_target.columns = ['target_Id', 'Branch Code', 'Collection Target', 'Target Date']
 
             # Ensure the column is datetime
             df_target['Target Date'] = pd.to_datetime(df_target['Target Date'])
+            #  --new --            # Add conditional days based on product_type (i.e., 'target_Id' actually holds product_type here)
 
-            # Add conditional days based on product_type (i.e., 'product_type' actually holds product_type here)
-            df_target['Target Date'] = df_target.apply(
-                lambda row: row['Target Date'] + (
-                    timedelta(days=30) if row['product_type'] in ['Wabbi', 'Women Formal']
-                    else timedelta(days=14) if row['product_type'] == 'Women Informal'
-                    else timedelta(days=7) if row['product_type'] == 'Guyya'
-                    else timedelta(days=0)
-                ),
-                axis=1
-            )
             
 
             df_target = df_target[['target_Id', 'Branch Code', 'Collection Target', 'Target Date']]
