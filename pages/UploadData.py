@@ -153,6 +153,10 @@ def upload():
                 st.write("")
                 if st.form_submit_button("Upload due loan Data"):
                     st.switch_page('pages/upload_dueloan.py')
+                st.write("")
+                st.write("")
+                if st.form_submit_button("Upload collection target Data"):
+                    st.switch_page('pages/upload_colltarget.py')
                 st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("---")
         with tab4:

@@ -8837,1679 +8837,1679 @@ def main():
 
 
         if active_tabb == "Collection":
-            # st.markdown("## Comming Soon")
-            try:
+            st.markdown("## Under Maintenance")
+            # try:
                  
-                dis_branch, df_actual, df_target = load_actual_vs_targetdata_collection(role, username, fy_start, fy_end)
+            #     dis_branch, df_actual, df_target = load_actual_vs_targetdata_collection(role, username, fy_start, fy_end)
 
                 
-                # Get the current date and the maximum date for the current month
-                current_date = datetime.now().date()
-                current_month_max_date = current_date.replace(day=1) + pd.DateOffset(months=1) - pd.DateOffset(days=1)
-                current_month_max_date = current_month_max_date.date()
-                # st.write(df_target)
+            #     # Get the current date and the maximum date for the current month
+            #     current_date = datetime.now().date()
+            #     current_month_max_date = current_date.replace(day=1) + pd.DateOffset(months=1) - pd.DateOffset(days=1)
+            #     current_month_max_date = current_month_max_date.date()
+            #     # st.write(df_target)
 
-                # Convert 'Actual Date' and 'Target Date' columns to datetime
-                df_actual['Collected Date'] = pd.to_datetime(df_actual['Collected Date']).dt.date
-                df_target['Target Date'] = pd.to_datetime(df_target['Target Date']).dt.date
+            #     # Convert 'Actual Date' and 'Target Date' columns to datetime
+            #     df_actual['Collected Date'] = pd.to_datetime(df_actual['Collected Date']).dt.date
+            #     df_target['Target Date'] = pd.to_datetime(df_target['Target Date']).dt.date
 
-                # Filter df_actual and df_target based on the current month's max date
-                df_actual = df_actual[df_actual['Collected Date'] <= current_month_max_date]
-                df_target = df_target[df_target['Target Date'] <= current_month_max_date]
+            #     # Filter df_actual and df_target based on the current month's max date
+            #     df_actual = df_actual[df_actual['Collected Date'] <= current_month_max_date]
+            #     df_target = df_target[df_target['Target Date'] <= current_month_max_date]
 
-                # Display the filtered DataFrames
-                merged_acttarg = pd.merge(df_actual, df_target, on=['Branch Code'], how='outer') 
-                # merged_acttarg
+            #     # Display the filtered DataFrames
+            #     merged_acttarg = pd.merge(df_actual, df_target, on=['Branch Code'], how='outer') 
+            #     # merged_acttarg
                     
-                df_merged =  pd.merge(dis_branch, merged_acttarg, on='Branch Code', how='right')
+            #     df_merged =  pd.merge(dis_branch, merged_acttarg, on='Branch Code', how='right')
 
 
-                # Combine unique values for filters
-                combined_districts = sorted(set(df_merged["District"].dropna().unique()))
+            #     # Combine unique values for filters
+            #     combined_districts = sorted(set(df_merged["District"].dropna().unique()))
                 
 
-                # Sidebar filters
-                st.sidebar.image("pages/michu.png")
-                # username = st.session_state.get("username", "")
-                full_name = st.session_state.get("full_name", "")
-                # role = st.session_state.get("role", "")
-                # st.sidebar.write(f'Welcome, :orange[{full_name}]')
-                st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
-                st.sidebar.header("Please filter")
+            #     # Sidebar filters
+            #     st.sidebar.image("pages/michu.png")
+            #     # username = st.session_state.get("username", "")
+            #     full_name = st.session_state.get("full_name", "")
+            #     # role = st.session_state.get("role", "")
+            #     # st.sidebar.write(f'Welcome, :orange[{full_name}]')
+            #     st.sidebar.markdown(f'<h4> Welcome, <span style="color: #e38524;">{full_name}</span></h4>', unsafe_allow_html=True)
+            #     st.sidebar.header("Please filter")
 
                     
-                # role = st.session_state.get("role", "")
-                if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
+            #     # role = st.session_state.get("role", "")
+            #     if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
 
-                    district = st.sidebar.multiselect("Select District", options=combined_districts)
+            #         district = st.sidebar.multiselect("Select District", options=combined_districts)
                     
 
-                    if not district:
-                        df_merged = df_merged.copy()
-                    else:
-                        df_merged = df_merged[df_merged["District"].isin(district)]
+            #         if not district:
+            #             df_merged = df_merged.copy()
+            #         else:
+            #             df_merged = df_merged[df_merged["District"].isin(district)]
 
-                if role != 'Branch User':
-                    combined_branches = sorted(set(df_merged["Branch"].dropna().unique()))
-                    branch = st.sidebar.multiselect("Select Branch", options=combined_branches)
+            #     if role != 'Branch User':
+            #         combined_branches = sorted(set(df_merged["Branch"].dropna().unique()))
+            #         branch = st.sidebar.multiselect("Select Branch", options=combined_branches)
 
-                    if not branch:
-                        df_merged = df_merged.copy()
-                    else:
-                        df_merged = df_merged[df_merged["Branch"].isin(branch)]
+            #         if not branch:
+            #             df_merged = df_merged.copy()
+            #         else:
+            #             df_merged = df_merged[df_merged["Branch"].isin(branch)]
                     
-                if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
-                    if not district and not branch:
-                        df_merged = df_merged
-                        # k_df_merged = k_df_merged
+            #     if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
+            #         if not district and not branch:
+            #             df_merged = df_merged
+            #             # k_df_merged = k_df_merged
                         
-                    elif district:
-                        df_merged = df_merged[df_merged["District"].isin(district)]
-                    elif branch:
-                        df_merged = df_merged[df_merged["Branch"].isin(branch)]
-                    else:
-                        df_merged = df_merged[df_merged["District"].isin(district) & df_merged["Branch"].isin(branch)]
+            #         elif district:
+            #             df_merged = df_merged[df_merged["District"].isin(district)]
+            #         elif branch:
+            #             df_merged = df_merged[df_merged["Branch"].isin(branch)]
+            #         else:
+            #             df_merged = df_merged[df_merged["District"].isin(district) & df_merged["Branch"].isin(branch)]
 
-                if df_merged is not None and not df_merged.empty:
-                    col1, col2 = st.sidebar.columns(2)
+            #     if df_merged is not None and not df_merged.empty:
+            #         col1, col2 = st.sidebar.columns(2)
 
-                    # Convert the date columns to datetime if they are not already
-                    df_merged["Target Date"] = pd.to_datetime(df_merged["Target Date"], errors='coerce')
-                    df_merged["Collected Date"] = pd.to_datetime(df_merged["Collected Date"], errors='coerce')
+            #         # Convert the date columns to datetime if they are not already
+            #         df_merged["Target Date"] = pd.to_datetime(df_merged["Target Date"], errors='coerce')
+            #         df_merged["Collected Date"] = pd.to_datetime(df_merged["Collected Date"], errors='coerce')
 
-                    # Determine the overall min and max dates
-                    overall_start_date = df_merged[["Target Date", "Collected Date"]].min().min()
-                    overall_end_date = df_merged[["Target Date", "Collected Date"]].max().max()
+            #         # Determine the overall min and max dates
+            #         overall_start_date = df_merged[["Target Date", "Collected Date"]].min().min()
+            #         overall_end_date = df_merged[["Target Date", "Collected Date"]].max().max()
 
-                    # Sidebar date filters
-                    with col1:
-                        start_date = st.date_input(
-                            "Start Date",
-                            value=overall_start_date.date(),  # Convert to `date` for st.date_input
-                            min_value=overall_start_date.date(),
-                            max_value=overall_end_date.date(),
-                        )
+            #         # Sidebar date filters
+            #         with col1:
+            #             start_date = st.date_input(
+            #                 "Start Date",
+            #                 value=overall_start_date.date(),  # Convert to `date` for st.date_input
+            #                 min_value=overall_start_date.date(),
+            #                 max_value=overall_end_date.date(),
+            #             )
 
-                    with col2:
-                        end_date = st.date_input(
-                            "End Date",
-                            value=overall_end_date.date(),
-                            min_value=overall_start_date.date(),
-                            max_value=overall_end_date.date(),
-                        )
-
-
-                    # Convert start_date and end_date to datetime for comparison
-                    start_date = pd.Timestamp(start_date)
-                    end_date = pd.Timestamp(end_date)
-
-                    df_filtered = df_merged[
-                        (start_date.to_period("M") <= df_merged["Target Date"].dt.to_period("M")) &
-                        (end_date.to_period("M") >= df_merged["Target Date"].dt.to_period("M"))
-                    ].copy()
-
-                    # df_filtered = df_merged[
-                    #     (df_merged["Target Date"] >= start_date)
-                    #     & (df_merged["Target Date"] <= end_date)
-                    # ].copy()
-
-                    # You can filter Collected Date separately if needed
-                    df_filtered_actual = df_merged[
-                        (df_merged["Collected Date"] >= start_date) & (df_merged["Collected Date"] <= end_date)
-                    ].copy()
+            #         with col2:
+            #             end_date = st.date_input(
+            #                 "End Date",
+            #                 value=overall_end_date.date(),
+            #                 min_value=overall_start_date.date(),
+            #                 max_value=overall_end_date.date(),
+            #             )
 
 
-                if role == "Admin" or role == 'under_admin' or role == 'under_admin':
-                    home_sidebar()
-                else:
-                    make_sidebar1()
+            #         # Convert start_date and end_date to datetime for comparison
+            #         start_date = pd.Timestamp(start_date)
+            #         end_date = pd.Timestamp(end_date)
+
+            #         df_filtered = df_merged[
+            #             (start_date.to_period("M") <= df_merged["Target Date"].dt.to_period("M")) &
+            #             (end_date.to_period("M") >= df_merged["Target Date"].dt.to_period("M"))
+            #         ].copy()
+
+            #         # df_filtered = df_merged[
+            #         #     (df_merged["Target Date"] >= start_date)
+            #         #     & (df_merged["Target Date"] <= end_date)
+            #         # ].copy()
+
+            #         # You can filter Collected Date separately if needed
+            #         df_filtered_actual = df_merged[
+            #             (df_merged["Collected Date"] >= start_date) & (df_merged["Collected Date"] <= end_date)
+            #         ].copy()
+
+
+            #     if role == "Admin" or role == 'under_admin' or role == 'under_admin':
+            #         home_sidebar()
+            #     else:
+            #         make_sidebar1()
 
             
-                # df_combine
-                st.markdown("""
-                    <style>
-                        .stTabs [data-baseweb="tab"] {
-                            margin-top: -0.9rem;
-                            margin-right: 5rem; /* Adjust the value to increase or decrease space between tabs */
-                            background-color: black;
-                            color: white; /* Optional: Change text color */
-                            padding: 0.5rem 1rem; /* Add some padding for better appearance */
-                            border-bottom: 2px solid #00adef;
-                        }
-                        .stTabs [data-baseweb="tab"].active {
-                        border-bottom-color: cyan !important;
-                        }
-                    </style>
-                    """, unsafe_allow_html=True)
+            #     # df_combine
+            #     st.markdown("""
+            #         <style>
+            #             .stTabs [data-baseweb="tab"] {
+            #                 margin-top: -0.9rem;
+            #                 margin-right: 5rem; /* Adjust the value to increase or decrease space between tabs */
+            #                 background-color: black;
+            #                 color: white; /* Optional: Change text color */
+            #                 padding: 0.5rem 1rem; /* Add some padding for better appearance */
+            #                 border-bottom: 2px solid #00adef;
+            #             }
+            #             .stTabs [data-baseweb="tab"].active {
+            #             border-bottom-color: cyan !important;
+            #             }
+            #         </style>
+            #         """, unsafe_allow_html=True)
                 
-                # -- for admin and sales admin --
+            #     # -- for admin and sales admin --
 
-                if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
-                    tab1, tab2 = st.tabs(["📈 Aggregate Report", "🗃 Report per District & Branch"])
+            #     if role == "Admin" or role == "Sales Admin" or role == 'under_admin':
+            #         tab1, tab2 = st.tabs(["📈 Aggregate Report", "🗃 Report per District & Branch"])
 
-                    with tab1:
-                        coll1, coll2 = st.columns(2)
-                        # Drop duplicates based on unique IDs
-                        df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                        df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #         with tab1:
+            #             coll1, coll2 = st.columns(2)
+            #             # Drop duplicates based on unique IDs
+            #             df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #             df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
-                        # Aggregate totals
-                        target_total = df_target_unique['Collection Target'].sum()
-                        actual_total = df_actual_unique['Actual Collected'].sum()
-                        percent_achieved = (actual_total / target_total) * 100 if target_total else 0
+            #             # Aggregate totals
+            #             target_total = df_target_unique['Collection Target'].sum()
+            #             actual_total = df_actual_unique['Actual Collected'].sum()
+            #             percent_achieved = (actual_total / target_total) * 100 if target_total else 0
 
-                        # Format numbers for labels
-                        def format_number(num):
-                            if num >= 1_000_000:
-                                return f"{num / 1_000_000:.2f}M"
-                            elif num >= 1_000:
-                                return f"{num / 1_000:.1f}K"
-                            return f"{num:.0f}"
+            #             # Format numbers for labels
+            #             def format_number(num):
+            #                 if num >= 1_000_000:
+            #                     return f"{num / 1_000_000:.2f}M"
+            #                 elif num >= 1_000:
+            #                     return f"{num / 1_000:.1f}K"
+            #                 return f"{num:.0f}"
 
-                        # Initialize the figure
-                        fig = go.Figure()
+            #             # Initialize the figure
+            #             fig = go.Figure()
 
-                        # Target bar (background bar)
-                        fig.add_trace(go.Bar(
-                            x=[target_total],
-                            y=["YTD Collection"],
-                            orientation='h',
-                            name='Target',
-                            marker=dict(color="#00adef"),
-                            text=[f"Target: {format_number(target_total)}"],
-                            textposition='inside',
-                            hovertemplate='Target: %{x:,.0f}<extra></extra>'
-                        ))
+            #             # Target bar (background bar)
+            #             fig.add_trace(go.Bar(
+            #                 x=[target_total],
+            #                 y=["YTD Collection"],
+            #                 orientation='h',
+            #                 name='Target',
+            #                 marker=dict(color="#00adef"),
+            #                 text=[f"Target: {format_number(target_total)}"],
+            #                 textposition='inside',
+            #                 hovertemplate='Target: %{x:,.0f}<extra></extra>'
+            #             ))
 
-                        # Actual bar (overlay)
-                        fig.add_trace(go.Bar(
-                            x=[actual_total],
-                            y=["YTD Collection"],
-                            orientation='h',
-                            name='Actual',
-                            marker=dict(color='#00ad7c' if percent_achieved >= 100 else '#e38524'),
-                            text=[f"Actual: {format_number(actual_total)} ({percent_achieved:.1f}%)"],
-                            textposition='outside',
-                            hovertemplate='Actual: %{x:,.0f}<br>Performance: ' + f'{percent_achieved:.1f}%<extra></extra>'
-                        ))
+            #             # Actual bar (overlay)
+            #             fig.add_trace(go.Bar(
+            #                 x=[actual_total],
+            #                 y=["YTD Collection"],
+            #                 orientation='h',
+            #                 name='Actual',
+            #                 marker=dict(color='#00ad7c' if percent_achieved >= 100 else '#e38524'),
+            #                 text=[f"Actual: {format_number(actual_total)} ({percent_achieved:.1f}%)"],
+            #                 textposition='outside',
+            #                 hovertemplate='Actual: %{x:,.0f}<br>Performance: ' + f'{percent_achieved:.1f}%<extra></extra>'
+            #             ))
 
-                        # Add vertical performance line (target threshold)
-                        fig.add_shape(
-                            type='line',
-                            x0=target_total, x1=target_total,
-                            y0=-0.4, y1=0.4,
-                            line=dict(color='black', width=2, dash='dash')
-                        )
+            #             # Add vertical performance line (target threshold)
+            #             fig.add_shape(
+            #                 type='line',
+            #                 x0=target_total, x1=target_total,
+            #                 y0=-0.4, y1=0.4,
+            #                 line=dict(color='black', width=2, dash='dash')
+            #             )
 
-                        # Update layout
-                        fig.update_layout(
-                            title="<b>🎯 Target vs Actual Michu Collection - YTD</b>",
-                            # barmode='overlay',
-                            xaxis=dict(showgrid=True, zeroline=True),
-                            yaxis=dict(showticklabels=True),
-                            height=300,
-                            margin=dict(l=60, r=40, t=60, b=40),
-                            legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
-                        )
+            #             # Update layout
+            #             fig.update_layout(
+            #                 title="<b>🎯 Target vs Actual Michu Collection - YTD</b>",
+            #                 # barmode='overlay',
+            #                 xaxis=dict(showgrid=True, zeroline=True),
+            #                 yaxis=dict(showticklabels=True),
+            #                 height=300,
+            #                 margin=dict(l=60, r=40, t=60, b=40),
+            #                 legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
+            #             )
 
-                        # Render in Streamlit
-                        st.plotly_chart(fig, use_container_width=True)
+            #             # Render in Streamlit
+            #             st.plotly_chart(fig, use_container_width=True)
 
 
                         
 
 
-                        col1,  col2 = st.columns([0.2, 0.8])
+            #             col1,  col2 = st.columns([0.2, 0.8])
 
-                        with col2:
-                            def convert_to_float(series):
-                                return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
-                            # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
-                            df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                            df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #             with col2:
+            #                 def convert_to_float(series):
+            #                     return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
+            #                 # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
+            #                 df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #                 df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
-                            # Group and aggregate the data for each metric using unique IDs
-                            target_grouped = df_target_unique.groupby('District').agg(
-                                {'Collection Target': 'sum'}).reset_index()
-                            actual_grouped = df_actual_unique.groupby('District').agg(
-                                {'Actual Collected': 'sum'}).reset_index()
-                            # Convert decimal columns to float
-                            target_grouped = target_grouped.apply(convert_to_float)
-                            actual_grouped = actual_grouped.apply(convert_to_float)
-                            # Merge the target and actual data on 'District' to align them
-                            merged_df = target_grouped.merge(actual_grouped, on='District', how='outer')
+            #                 # Group and aggregate the data for each metric using unique IDs
+            #                 target_grouped = df_target_unique.groupby('District').agg(
+            #                     {'Collection Target': 'sum'}).reset_index()
+            #                 actual_grouped = df_actual_unique.groupby('District').agg(
+            #                     {'Actual Collected': 'sum'}).reset_index()
+            #                 # Convert decimal columns to float
+            #                 target_grouped = target_grouped.apply(convert_to_float)
+            #                 actual_grouped = actual_grouped.apply(convert_to_float)
+            #                 # Merge the target and actual data on 'District' to align them
+            #                 merged_df = target_grouped.merge(actual_grouped, on='District', how='outer')
                             
 
-                            # Calculate the aggregated data for each metric
-                            aggregated_data = {
-                                'Collection Target': merged_df['Collection Target'].sum(),
-                                'Actual Collected': merged_df['Actual Collected'].sum(),
-                            }
+            #                 # Calculate the aggregated data for each metric
+            #                 aggregated_data = {
+            #                     'Collection Target': merged_df['Collection Target'].sum(),
+            #                     'Actual Collected': merged_df['Actual Collected'].sum(),
+            #                 }
 
-                            # Calculate 'Percentage(%)' for each metric
-                            aggregated_data['Percentage(%) Collection Amount'] = (aggregated_data['Actual Collected'] / aggregated_data['Collection Target'] * 100 if aggregated_data['Collection Target'] != 0 else 0)
-                            # # aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account'] * 100 if aggregated_data['Target Number Of Account'] != 0 else 0)
-                            # aggregated_data['Percentage(%) Disbursed Amount'] = (aggregated_data['Actual Disbursed Amount'] / aggregated_data['Target Disbursed Amount'] * 100 if aggregated_data['Target Disbursed Amount'] != 0 else 0)
+            #                 # Calculate 'Percentage(%)' for each metric
+            #                 aggregated_data['Percentage(%) Collection Amount'] = (aggregated_data['Actual Collected'] / aggregated_data['Collection Target'] * 100 if aggregated_data['Collection Target'] != 0 else 0)
+            #                 # # aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account'] * 100 if aggregated_data['Target Number Of Account'] != 0 else 0)
+            #                 # aggregated_data['Percentage(%) Disbursed Amount'] = (aggregated_data['Actual Disbursed Amount'] / aggregated_data['Target Disbursed Amount'] * 100 if aggregated_data['Target Disbursed Amount'] != 0 else 0)
 
-                            # Define the metrics
-                            metrics = ['Collected Amount']
+            #                 # Define the metrics
+            #                 metrics = ['Collected Amount']
                             
 
-                            # Create a list of dictionaries for final_df
-                            final_df_data = []
+            #                 # Create a list of dictionaries for final_df
+            #                 final_df_data = []
 
-                            for metric in metrics:
-                                target_value = aggregated_data[f'Collection Target']
-                                actual_value = aggregated_data[f'Actual Collected']
-                                percent_value = aggregated_data[f'Percentage(%) Collection Amount']
+            #                 for metric in metrics:
+            #                     target_value = aggregated_data[f'Collection Target']
+            #                     actual_value = aggregated_data[f'Actual Collected']
+            #                     percent_value = aggregated_data[f'Percentage(%) Collection Amount']
                                 
-                                final_df_data.append({
-                                    'Target': target_value,
-                                    'Actual': actual_value,
-                                    '%': percent_value,
-                                    'Metric': metric
-                                })
+            #                     final_df_data.append({
+            #                         'Target': target_value,
+            #                         'Actual': actual_value,
+            #                         '%': percent_value,
+            #                         'Metric': metric
+            #                     })
 
-                            # Create final_df DataFrame
-                            final_df = pd.DataFrame(final_df_data)
+            #                 # Create final_df DataFrame
+            #                 final_df = pd.DataFrame(final_df_data)
 
-                            # Round the 'Target' and 'Actual' columns to two decimal points
-                            final_df['Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
-                            final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
+            #                 # Round the 'Target' and 'Actual' columns to two decimal points
+            #                 final_df['Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
+            #                 final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
 
-                            # Format '%' with a percentage sign
-                            final_df['%'] = final_df['%'].map(lambda x: f"{x:.2f}%")
-                            # Drop rows where '%' is 'nan%'
-                            filtered_df = final_df[final_df['%'] != 'nan%']
+            #                 # Format '%' with a percentage sign
+            #                 final_df['%'] = final_df['%'].map(lambda x: f"{x:.2f}%")
+            #                 # Drop rows where '%' is 'nan%'
+            #                 filtered_df = final_df[final_df['%'] != 'nan%']
 
-                            # Reset the index and rename it to start from 1
-                            grouped_df_reset = filtered_df.reset_index(drop=True)
-                            grouped_df_reset.index = grouped_df_reset.index + 1
+            #                 # Reset the index and rename it to start from 1
+            #                 grouped_df_reset = filtered_df.reset_index(drop=True)
+            #                 grouped_df_reset.index = grouped_df_reset.index + 1
 
-                            # Apply styling
-                            def highlight_columns(s):
-                                colors = []
-                                for val in s:
-                                    if isinstance(val, str) and '%' in val:
-                                        percentage_value = float(val.strip('%'))
-                                        if percentage_value < 50:
-                                            colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                        elif 50 <= percentage_value < 70:
-                                            colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                        else:
-                                            colors.append('background-color: #008000; color: black; font-weight: bold;')  # green color for values 70% and above
-                                    else:
-                                        colors.append('')  # no color for other values
-                                return colors
+            #                 # Apply styling
+            #                 def highlight_columns(s):
+            #                     colors = []
+            #                     for val in s:
+            #                         if isinstance(val, str) and '%' in val:
+            #                             percentage_value = float(val.strip('%'))
+            #                             if percentage_value < 50:
+            #                                 colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
+            #                             elif 50 <= percentage_value < 70:
+            #                                 colors.append('background-color: #ffff00; color: black; font-weight: bold;')
+            #                             else:
+            #                                 colors.append('background-color: #008000; color: black; font-weight: bold;')  # green color for values 70% and above
+            #                         else:
+            #                             colors.append('')  # no color for other values
+            #                     return colors
 
-                            styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
-                                                    .set_properties(**{
-                                                        'text-align': 'center',
-                                                        'font-size': '20px'
-                                                    }) \
-                                                    .set_table_styles([
-                                                        dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-size', '25px'), ('font-weight', 'bold')])
-                                                    ])
+            #                 styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
+            #                                         .set_properties(**{
+            #                                             'text-align': 'center',
+            #                                             'font-size': '20px'
+            #                                         }) \
+            #                                         .set_table_styles([
+            #                                             dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-size', '25px'), ('font-weight', 'bold')])
+            #                                         ])
 
-                            # Convert styled DataFrame to HTML
-                            styled_html = styled_df.to_html()
+            #                 # Convert styled DataFrame to HTML
+            #                 styled_html = styled_df.to_html()
 
-                            # Display the result with custom CSS
-                            # st.write(":orange[Michu(Wabi & Guyya) YTD] (:blue[Year-To-Date]) 👇🏻")
-                            st.write(
-                                f'<span style="text-decoration: underline;">Michu Collection YTD (<span style="color: #00adef;">Year-To-Date</span>)</span>',
-                                unsafe_allow_html=True
-                            )
+            #                 # Display the result with custom CSS
+            #                 # st.write(":orange[Michu(Wabi & Guyya) YTD] (:blue[Year-To-Date]) 👇🏻")
+            #                 st.write(
+            #                     f'<span style="text-decoration: underline;">Michu Collection YTD (<span style="color: #00adef;">Year-To-Date</span>)</span>',
+            #                     unsafe_allow_html=True
+            #                 )
 
-                            st.markdown(styled_html, unsafe_allow_html=True)
+            #                 st.markdown(styled_html, unsafe_allow_html=True)
 
-                            st.write(" ")
-                            st.write(" ")
-                            st.write(" ")
+            #                 st.write(" ")
+            #                 st.write(" ")
+            #                 st.write(" ")
 
                     
 
-                    with tab2:
-                        col21, col22 = st.columns([0.1, 0.9])
-                        with col22:
-                            tab3, tab4 = st.tabs(["Per District", "Per Branch"])
+            #         with tab2:
+            #             col21, col22 = st.columns([0.1, 0.9])
+            #             with col22:
+            #                 tab3, tab4 = st.tabs(["Per District", "Per Branch"])
                             
-                            # Display combined data in a table
+            #                 # Display combined data in a table
                             
-                            with tab3: 
-                                col1, col2 = st.columns([0.1, 0.9])
-                                with col2:
-                                    # -- per District --
-                                    # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
-                                    df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                                    df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #                 with tab3: 
+            #                     col1, col2 = st.columns([0.1, 0.9])
+            #                     with col2:
+            #                         # -- per District --
+            #                         # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
+            #                         df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #                         df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
-                                    # Replace None/NaN with zero and convert to float
-                                    df_target_unique.loc[:,'Collection Target'] = df_target_unique['Collection Target'].astype(float)
-                                    df_actual_unique.loc[:,'Actual Collected'] = df_actual_unique['Actual Collected'].astype(float)
+            #                         # Replace None/NaN with zero and convert to float
+            #                         df_target_unique.loc[:,'Collection Target'] = df_target_unique['Collection Target'].astype(float)
+            #                         df_actual_unique.loc[:,'Actual Collected'] = df_actual_unique['Actual Collected'].astype(float)
                                     
 
 
-                                    # Group and aggregate the data for each metric using unique IDs
-                                    target_grouped = df_target_unique.groupby(['District']).agg(
-                                        {'Collection Target': 'sum'}).reset_index()
-                                    actual_grouped = df_actual_unique.groupby(['District']).agg(
-                                        {'Actual Collected': 'sum'}).reset_index()
+            #                         # Group and aggregate the data for each metric using unique IDs
+            #                         target_grouped = df_target_unique.groupby(['District']).agg(
+            #                             {'Collection Target': 'sum'}).reset_index()
+            #                         actual_grouped = df_actual_unique.groupby(['District']).agg(
+            #                             {'Actual Collected': 'sum'}).reset_index()
 
-                                    # Merge the target and actual data on 'District' and 'Branch' to align them
-                                    grouped_df = target_grouped.merge(actual_grouped, on=['District'], how='outer')
-                                    # Replace all NaN/None values with zero
-                                    grouped_df = grouped_df.fillna(0)
+            #                         # Merge the target and actual data on 'District' and 'Branch' to align them
+            #                         grouped_df = target_grouped.merge(actual_grouped, on=['District'], how='outer')
+            #                         # Replace all NaN/None values with zero
+            #                         grouped_df = grouped_df.fillna(0)
 
                                   
-                                    # Calculate Percentage(%)
-                                    grouped_df['Percentage(%)'] = grouped_df.apply(
-                                        lambda row: (
-                                            np.nan if row['Actual Collected'] == 0 and row['Collection Target'] == 0
-                                            else np.inf if row['Collection Target'] == 0 and row['Actual Collected'] != 0
-                                            else (row['Actual Collected'] / row['Collection Target']) * 100
-                                        ),
-                                        axis=1
-                                    )
+            #                         # Calculate Percentage(%)
+            #                         grouped_df['Percentage(%)'] = grouped_df.apply(
+            #                             lambda row: (
+            #                                 np.nan if row['Actual Collected'] == 0 and row['Collection Target'] == 0
+            #                                 else np.inf if row['Collection Target'] == 0 and row['Actual Collected'] != 0
+            #                                 else (row['Actual Collected'] / row['Collection Target']) * 100
+            #                             ),
+            #                             axis=1
+            #                         )
 
-                                    # Format 'Percentage(%)' with a percentage sign
-                                    grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+            #                         # Format 'Percentage(%)' with a percentage sign
+            #                         grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
 
-                                    # Calculate the totals for 'Collection Target' and 'Actual Collected'
-                                    total_target_unique = grouped_df['Collection Target'].sum()
-                                    total_actual_unique = grouped_df['Actual Collected'].sum()
-                                    total_percentage = (total_actual_unique / total_target_unique) * 100 if total_target_unique != 0 else 0
+            #                         # Calculate the totals for 'Collection Target' and 'Actual Collected'
+            #                         total_target_unique = grouped_df['Collection Target'].sum()
+            #                         total_actual_unique = grouped_df['Actual Collected'].sum()
+            #                         total_percentage = (total_actual_unique / total_target_unique) * 100 if total_target_unique != 0 else 0
                                     
-                                    # # Handle division by zero
-                                    # if total_target_unique == 'nan':
-                                    #     total_percentage = 0
-                                    # else:
-                                    #     total_percentage = (total_actual_unique / total_target_unique) * 100
+            #                         # # Handle division by zero
+            #                         # if total_target_unique == 'nan':
+            #                         #     total_percentage = 0
+            #                         # else:
+            #                         #     total_percentage = (total_actual_unique / total_target_unique) * 100
 
-                                    # Create a summary row
-                                    summary_row = pd.DataFrame([{
-                                        'District': 'Total',
-                                        'Collection Target': total_target_unique,
-                                        'Actual Collected': total_actual_unique,
-                                        'Percentage(%)': f"{total_percentage:.2f}%"
-                                    }])
+            #                         # Create a summary row
+            #                         summary_row = pd.DataFrame([{
+            #                             'District': 'Total',
+            #                             'Collection Target': total_target_unique,
+            #                             'Actual Collected': total_actual_unique,
+            #                             'Percentage(%)': f"{total_percentage:.2f}%"
+            #                         }])
 
                                     
 
-                                    # Append the summary row to the grouped DataFrame
-                                    grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
-                                    grouped_df['Collection Target'] = grouped_df['Collection Target'].map(lambda x: f"{x:,.0f}")
-                                    grouped_df['Actual Collected'] = grouped_df['Actual Collected'].map(lambda x: f"{x:,.0f}")
+            #                         # Append the summary row to the grouped DataFrame
+            #                         grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
+            #                         grouped_df['Collection Target'] = grouped_df['Collection Target'].map(lambda x: f"{x:,.0f}")
+            #                         grouped_df['Actual Collected'] = grouped_df['Actual Collected'].map(lambda x: f"{x:,.0f}")
 
-                                    # Reset the index and rename it to start from 1
+            #                         # Reset the index and rename it to start from 1
 
-                                    # Drop rows where 'Percentage(%)' is 'nan%'
-                                    filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
+            #                         # Drop rows where 'Percentage(%)' is 'nan%'
+            #                         filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
                                     
-                                    grouped_df_reset = filtered_df.reset_index(drop=True)
-                                    grouped_df_reset.index = grouped_df_reset.index + 1
-                                    # st.markdown("""
-                                    # <style>
-                                    #     [data-testid="stElementToolbar"] {
-                                    #     display: none;
-                                    #     }
-                                    # </style>
-                                    # """, unsafe_allow_html=True)
+            #                         grouped_df_reset = filtered_df.reset_index(drop=True)
+            #                         grouped_df_reset.index = grouped_df_reset.index + 1
+            #                         # st.markdown("""
+            #                         # <style>
+            #                         #     [data-testid="stElementToolbar"] {
+            #                         #     display: none;
+            #                         #     }
+            #                         # </style>
+            #                         # """, unsafe_allow_html=True)
 
-                                    # Apply styling
-                                    def highlight_columns(s):
-                                        colors = []
-                                        for val in s:
-                                            if isinstance(val, str) and '%' in val:
-                                                percentage_value = float(val.strip('%'))
-                                                if percentage_value < 50:
-                                                    colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                                elif 50 <= percentage_value < 70:
-                                                    colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                                elif percentage_value >= 70:
-                                                    colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                                                else:
-                                                    colors.append('') 
-                                            else:
-                                                colors.append('')  # no color for other values
-                                        return colors
+            #                         # Apply styling
+            #                         def highlight_columns(s):
+            #                             colors = []
+            #                             for val in s:
+            #                                 if isinstance(val, str) and '%' in val:
+            #                                     percentage_value = float(val.strip('%'))
+            #                                     if percentage_value < 50:
+            #                                         colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
+            #                                     elif 50 <= percentage_value < 70:
+            #                                         colors.append('background-color: #ffff00; color: black; font-weight: bold;')
+            #                                     elif percentage_value >= 70:
+            #                                         colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
+            #                                     else:
+            #                                         colors.append('') 
+            #                                 else:
+            #                                     colors.append('')  # no color for other values
+            #                             return colors
 
-                                    # Define function to highlight the Total row
-                                    def highlight_total_row(s):
-                                        is_total = s['District'] == 'Total'
-                                        return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
+            #                         # Define function to highlight the Total row
+            #                         def highlight_total_row(s):
+            #                             is_total = s['District'] == 'Total'
+            #                             return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
 
-                                    # Center-align data and apply styling
-                                    styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-                                                                    .apply(highlight_total_row, axis=1)\
-                                                                    .set_properties(**{'text-align': 'center'})
+            #                         # Center-align data and apply styling
+            #                         styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
+            #                                                         .apply(highlight_total_row, axis=1)\
+            #                                                         .set_properties(**{'text-align': 'center'})
 
-                                    # Display the result
-                                    # st.write(":blue[Michu(Wabi & Guyya) Unique Customer] 👇🏻")
-                                    st.write(
-                                        f'<span style="text-decoration: underline;">Michu <span style="color: #00adef;">Collected Amount</span></span>',
-                                        unsafe_allow_html=True
-                                    )
-                                    st.write(styled_df)
+            #                         # Display the result
+            #                         # st.write(":blue[Michu(Wabi & Guyya) Unique Customer] 👇🏻")
+            #                         st.write(
+            #                             f'<span style="text-decoration: underline;">Michu <span style="color: #00adef;">Collected Amount</span></span>',
+            #                             unsafe_allow_html=True
+            #                         )
+            #                         st.write(styled_df)
                                 
 
                         
 
-                            with tab4:
-                                col1, col2 = st.columns([0.1, 0.9])
-                                # -- per Branch --
-                                with col2:
-                                    # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
-                                    df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                                    df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #                 with tab4:
+            #                     col1, col2 = st.columns([0.1, 0.9])
+            #                     # -- per Branch --
+            #                     with col2:
+            #                         # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
+            #                         df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #                         df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
-                                    # Ensure all numerical values are converted to floats
-                                    df_target_unique.loc[:,'Collection Target'] = df_target_unique['Collection Target'].astype(float)
-                                    df_actual_unique.loc[:,'Actual Collected'] = df_actual_unique['Actual Collected'].astype(float)
+            #                         # Ensure all numerical values are converted to floats
+            #                         df_target_unique.loc[:,'Collection Target'] = df_target_unique['Collection Target'].astype(float)
+            #                         df_actual_unique.loc[:,'Actual Collected'] = df_actual_unique['Actual Collected'].astype(float)
 
-                                    # Group and aggregate the data for each metric using unique IDs
-                                    target_grouped = df_target_unique.groupby(['District', 'Branch']).agg(
-                                        {'Collection Target': 'sum'}).reset_index()
-                                    actual_grouped = df_actual_unique.groupby(['District', 'Branch']).agg(
-                                        {'Actual Collected': 'sum'}).reset_index()
+            #                         # Group and aggregate the data for each metric using unique IDs
+            #                         target_grouped = df_target_unique.groupby(['District', 'Branch']).agg(
+            #                             {'Collection Target': 'sum'}).reset_index()
+            #                         actual_grouped = df_actual_unique.groupby(['District', 'Branch']).agg(
+            #                             {'Actual Collected': 'sum'}).reset_index()
 
-                                    # Merge the target and actual data on 'District' and 'Branch' to align them
-                                    grouped_df = target_grouped.merge(actual_grouped, on=['District', 'Branch'], how='outer')
-                                    # Replace all NaN/None values with zero
-                                    grouped_df = grouped_df.fillna(0)
+            #                         # Merge the target and actual data on 'District' and 'Branch' to align them
+            #                         grouped_df = target_grouped.merge(actual_grouped, on=['District', 'Branch'], how='outer')
+            #                         # Replace all NaN/None values with zero
+            #                         grouped_df = grouped_df.fillna(0)
 
-                                    grouped_df['Percentage(%)'] = grouped_df.apply(
-                                        lambda row: (
-                                            np.nan if row['Actual Collected'] == 0 and row['Collection Target'] == 0
-                                            else np.inf if row['Collection Target'] == 0 and row['Actual Collected'] != 0
-                                            else (row['Actual Collected'] / row['Collection Target']) * 100
-                                        ),
-                                        axis=1
-                                    )
+            #                         grouped_df['Percentage(%)'] = grouped_df.apply(
+            #                             lambda row: (
+            #                                 np.nan if row['Actual Collected'] == 0 and row['Collection Target'] == 0
+            #                                 else np.inf if row['Collection Target'] == 0 and row['Actual Collected'] != 0
+            #                                 else (row['Actual Collected'] / row['Collection Target']) * 100
+            #                             ),
+            #                             axis=1
+            #                         )
 
-                                    # Calculate 'Percentage(%)'
-                                    # grouped_df['Percentage(%)'] = (grouped_df['Actual Collected'] / grouped_df['Target Disbursed Amount']) * 100
+            #                         # Calculate 'Percentage(%)'
+            #                         # grouped_df['Percentage(%)'] = (grouped_df['Actual Collected'] / grouped_df['Target Disbursed Amount']) * 100
 
-                                    # Format 'Percentage(%)' with a percentage sign
-                                    grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+            #                         # Format 'Percentage(%)' with a percentage sign
+            #                         grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
 
-                                    # Calculate the totals for 'Target Disbursed Amount' and 'Actual Collected'
-                                    total_target_disbursed = grouped_df['Collection Target'].sum()
-                                    total_actual_disbursed = grouped_df['Actual Collected'].sum()
-                                    total_percentage = (total_actual_disbursed / total_target_disbursed) * 100 if total_target_disbursed !=0 else 0
+            #                         # Calculate the totals for 'Target Disbursed Amount' and 'Actual Collected'
+            #                         total_target_disbursed = grouped_df['Collection Target'].sum()
+            #                         total_actual_disbursed = grouped_df['Actual Collected'].sum()
+            #                         total_percentage = (total_actual_disbursed / total_target_disbursed) * 100 if total_target_disbursed !=0 else 0
 
-                                    # Create a summary row
-                                    summary_row = pd.DataFrame([{
-                                        'District': 'Total',
-                                        'Branch': '',
-                                        'Collection Target': total_target_disbursed,
-                                        'Actual Collected': total_actual_disbursed,
-                                        'Percentage(%)': f"{total_percentage:.2f}%"
-                                    }])
+            #                         # Create a summary row
+            #                         summary_row = pd.DataFrame([{
+            #                             'District': 'Total',
+            #                             'Branch': '',
+            #                             'Collection Target': total_target_disbursed,
+            #                             'Actual Collected': total_actual_disbursed,
+            #                             'Percentage(%)': f"{total_percentage:.2f}%"
+            #                         }])
 
-                                    # Append the summary row to the grouped DataFrame
-                                    grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
+            #                         # Append the summary row to the grouped DataFrame
+            #                         grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
 
-                                    # Format 'Collection Target' and 'Actual Collected' to no decimal places
-                                    grouped_df['Collection Target'] = grouped_df['Collection Target'].map(lambda x: f"{x:,.0f}")
-                                    grouped_df['Actual Collected'] = grouped_df['Actual Collected'].map(lambda x: f"{x:,.0f}")
+            #                         # Format 'Collection Target' and 'Actual Collected' to no decimal places
+            #                         grouped_df['Collection Target'] = grouped_df['Collection Target'].map(lambda x: f"{x:,.0f}")
+            #                         grouped_df['Actual Collected'] = grouped_df['Actual Collected'].map(lambda x: f"{x:,.0f}")
 
-                                    # Drop rows where 'Percentage(%)' is 'nan%'
-                                    filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
+            #                         # Drop rows where 'Percentage(%)' is 'nan%'
+            #                         filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
 
-                                    # Reset the index and rename it to start from 1
-                                    grouped_df_reset = filtered_df.reset_index(drop=True)
-                                    grouped_df_reset.index = grouped_df_reset.index + 1
+            #                         # Reset the index and rename it to start from 1
+            #                         grouped_df_reset = filtered_df.reset_index(drop=True)
+            #                         grouped_df_reset.index = grouped_df_reset.index + 1
 
-                                    # Apply styling
-                                    def highlight_columns(s):
-                                        colors = []
-                                        for val in s:
-                                            if isinstance(val, str) and '%' in val:
-                                                percentage_value = float(val.strip('%'))
-                                                if percentage_value < 50:
-                                                    colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                                elif 50 <= percentage_value < 70:
-                                                    colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                                elif percentage_value >= 70:
-                                                    colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                                                else:
-                                                    colors.append('') 
-                                            else:
-                                                colors.append('')  # no color for other values
-                                        return colors
+            #                         # Apply styling
+            #                         def highlight_columns(s):
+            #                             colors = []
+            #                             for val in s:
+            #                                 if isinstance(val, str) and '%' in val:
+            #                                     percentage_value = float(val.strip('%'))
+            #                                     if percentage_value < 50:
+            #                                         colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
+            #                                     elif 50 <= percentage_value < 70:
+            #                                         colors.append('background-color: #ffff00; color: black; font-weight: bold;')
+            #                                     elif percentage_value >= 70:
+            #                                         colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
+            #                                     else:
+            #                                         colors.append('') 
+            #                                 else:
+            #                                     colors.append('')  # no color for other values
+            #                             return colors
 
-                                    # Define function to highlight the Total row
-                                    def highlight_total_row(s):
-                                        is_total = s['District'] == 'Total'
-                                        return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
+            #                         # Define function to highlight the Total row
+            #                         def highlight_total_row(s):
+            #                             is_total = s['District'] == 'Total'
+            #                             return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
 
-                                    # Center-align data and apply styling
-                                    styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-                                                                    .apply(highlight_total_row, axis=1)\
-                                                                    .set_properties(**{'text-align': 'center'})
+            #                         # Center-align data and apply styling
+            #                         styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
+            #                                                         .apply(highlight_total_row, axis=1)\
+            #                                                         .set_properties(**{'text-align': 'center'})
 
-                                    # Display the result
-                                    # st.write(":blue[Michu(Wabi & Guyya) Disbursed Amount] 👇🏻")
-                                    st.write(
-                                        f'<span style="text-decoration: underline;">Michu <span style="color: #00adef;">Collected Amount</span></span>',
-                                        unsafe_allow_html=True
-                                    )
-                                    st.write(styled_df)
+            #                         # Display the result
+            #                         # st.write(":blue[Michu(Wabi & Guyya) Disbursed Amount] 👇🏻")
+            #                         st.write(
+            #                             f'<span style="text-decoration: underline;">Michu <span style="color: #00adef;">Collected Amount</span></span>',
+            #                             unsafe_allow_html=True
+            #                         )
+            #                         st.write(styled_df)
 
                             
 
 
-                    with tab1:
-                        col1, col2 = st.columns([0.5, 0.5])
-                        # with col1:
-                        # Get the current date
-                        current_date = datetime.now().date()
+            #         with tab1:
+            #             col1, col2 = st.columns([0.5, 0.5])
+            #             # with col1:
+            #             # Get the current date
+            #             current_date = datetime.now().date()
 
-                        # Calculate the start and end date of the current month
-                        start_of_month = current_date.replace(day=1)
-                        end_of_month = (start_of_month + pd.DateOffset(months=1) - pd.DateOffset(days=1)).date()
+            #             # Calculate the start and end date of the current month
+            #             start_of_month = current_date.replace(day=1)
+            #             end_of_month = (start_of_month + pd.DateOffset(months=1) - pd.DateOffset(days=1)).date()
 
-                        # Filter the dataframe based on the selected date range
-                        df_filtered = df_merged[
-                            (df_merged["Target Date"].dt.date >= start_of_month) & 
-                            (df_merged["Target Date"].dt.date <= end_of_month)
-                        ].copy()
+            #             # Filter the dataframe based on the selected date range
+            #             df_filtered = df_merged[
+            #                 (df_merged["Target Date"].dt.date >= start_of_month) & 
+            #                 (df_merged["Target Date"].dt.date <= end_of_month)
+            #             ].copy()
 
-                        df_filtered_actual = df_merged[
-                            (df_merged["Collected Date"].dt.date >= start_of_month) & 
-                            (df_merged["Collected Date"].dt.date <= end_of_month)
-                        ].copy()
+            #             df_filtered_actual = df_merged[
+            #                 (df_merged["Collected Date"].dt.date >= start_of_month) & 
+            #                 (df_merged["Collected Date"].dt.date <= end_of_month)
+            #             ].copy()
 
-                        # Drop duplicates before aggregating if needed (optional)
-                        df_filtered = df_filtered.drop_duplicates(subset='target_Id')
-                        df_filtered_actual = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #             # Drop duplicates before aggregating if needed (optional)
+            #             df_filtered = df_filtered.drop_duplicates(subset='target_Id')
+            #             df_filtered_actual = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
                         
-                        # Group by unique target_Id and sum the target columns
-                        target_grouped = df_filtered.groupby('target_Id').agg({
-                            'Collection Target': 'sum'
-                        }).sum()
+            #             # Group by unique target_Id and sum the target columns
+            #             target_grouped = df_filtered.groupby('target_Id').agg({
+            #                 'Collection Target': 'sum'
+            #             }).sum()
             
-                        # Group by unique actual_Id and sum the actual columns
-                        actual_grouped = df_filtered_actual.groupby('actual_Id').agg({
-                            'Actual Collected': 'sum'
-                        }).sum()
-                        # Aggregate the data to get total values
+            #             # Group by unique actual_Id and sum the actual columns
+            #             actual_grouped = df_filtered_actual.groupby('actual_Id').agg({
+            #                 'Actual Collected': 'sum'
+            #             }).sum()
+            #             # Aggregate the data to get total values
                         
-                        totals = {
-                            'Collection Target': target_grouped['Collection Target'],
-                            'Actual Collected': actual_grouped['Actual Collected'],
-                        }
+            #             totals = {
+            #                 'Collection Target': target_grouped['Collection Target'],
+            #                 'Actual Collected': actual_grouped['Actual Collected'],
+            #             }
 
-                        # Create the bar chart
-                        fig = go.Figure()
+            #             # Create the bar chart
+            #             fig = go.Figure()
 
-                        # Add bars for Unique Customer and Number of Accounts
-                        def format_num(num):
-                            return f"{num:,.0f}"
+            #             # Add bars for Unique Customer and Number of Accounts
+            #             def format_num(num):
+            #                 return f"{num:,.0f}"
                         
 
-                        # Add bars for Disbursed Amount on secondary y-axis
-                        # Function to format numbers with commas
+            #             # Add bars for Disbursed Amount on secondary y-axis
+            #             # Function to format numbers with commas
                        
 
-                        # Add bars for Disbursed Amount on secondary y-axis
-                        # Function to format numbers with commas
-                        def format_number(num):
-                            if num >= 1_000_000:
-                                return f"{num / 1_000_000:,.2f}M"
-                            return f"{num:,.2f}"
-                        fig.add_trace(go.Bar(
-                            x=['Collection Target'],
-                            y=[totals['Collection Target']],
-                            name='Target',
-                            marker_color='#00adef',
-                            yaxis='y2',
-                            text=[format_number(totals['Collection Target'])],
-                            textposition='outside',
-                            showlegend=True
-                        ))
+            #             # Add bars for Disbursed Amount on secondary y-axis
+            #             # Function to format numbers with commas
+            #             def format_number(num):
+            #                 if num >= 1_000_000:
+            #                     return f"{num / 1_000_000:,.2f}M"
+            #                 return f"{num:,.2f}"
+            #             fig.add_trace(go.Bar(
+            #                 x=['Collection Target'],
+            #                 y=[totals['Collection Target']],
+            #                 name='Target',
+            #                 marker_color='#00adef',
+            #                 yaxis='y2',
+            #                 text=[format_number(totals['Collection Target'])],
+            #                 textposition='outside',
+            #                 showlegend=True
+            #             ))
 
-                        fig.add_trace(go.Bar(
-                            x=['Actual Collected'],
-                            y=[totals['Actual Collected']],
-                            name='Actual',
-                            marker_color='#e38524',
-                            yaxis='y2',
-                            text=[format_number(totals['Actual Collected'])],
-                            textposition='outside',
-                            showlegend=True
-                        ))
+            #             fig.add_trace(go.Bar(
+            #                 x=['Actual Collected'],
+            #                 y=[totals['Actual Collected']],
+            #                 name='Actual',
+            #                 marker_color='#e38524',
+            #                 yaxis='y2',
+            #                 text=[format_number(totals['Actual Collected'])],
+            #                 textposition='outside',
+            #                 showlegend=True
+            #             ))
 
-                        # Update the layout for better visualization
-                        fig.update_layout(
-                            # title='Michu(Wabi & Guyya) MTD (<span style="color: #00adef;">Month-To-Date </span>)',
-                            title=f'<span style="text-decoration: underline;">Michu  Collection MTD (<span style="color: #00adef; text-decoration: underline;">Month-To-Date</span>) </span>',
-                            xaxis=dict(title='Metrics'),
-                            yaxis=dict(
-                                title='Collection Traget',
-                                titlefont=dict(color='black'),
-                                tickfont=dict(color='black'),
-                            ),
-                            yaxis2=dict(
-                                title='Collected Amount',
-                                titlefont=dict(color='black'),
-                                tickfont=dict(color='black'),
-                                anchor='free',
-                                overlaying='y',
-                                side='right',
-                                position=1
-                            ),
-                            barmode='group',  # Group the bars side by side
-                            bargap=0.2,  # Gap between bars of adjacent location coordinates
-                            bargroupgap=0.1, # Gap between bars of the same location coordinate
-                            margin=dict(t=80),
-                            # legend=dict(
-                            # title='Legend',
-                            # itemsizing='constant'
-                            # )
-                        )
+            #             # Update the layout for better visualization
+            #             fig.update_layout(
+            #                 # title='Michu(Wabi & Guyya) MTD (<span style="color: #00adef;">Month-To-Date </span>)',
+            #                 title=f'<span style="text-decoration: underline;">Michu  Collection MTD (<span style="color: #00adef; text-decoration: underline;">Month-To-Date</span>) </span>',
+            #                 xaxis=dict(title='Metrics'),
+            #                 yaxis=dict(
+            #                     title='Collection Traget',
+            #                     titlefont=dict(color='black'),
+            #                     tickfont=dict(color='black'),
+            #                 ),
+            #                 yaxis2=dict(
+            #                     title='Collected Amount',
+            #                     titlefont=dict(color='black'),
+            #                     tickfont=dict(color='black'),
+            #                     anchor='free',
+            #                     overlaying='y',
+            #                     side='right',
+            #                     position=1
+            #                 ),
+            #                 barmode='group',  # Group the bars side by side
+            #                 bargap=0.2,  # Gap between bars of adjacent location coordinates
+            #                 bargroupgap=0.1, # Gap between bars of the same location coordinate
+            #                 margin=dict(t=80),
+            #                 # legend=dict(
+            #                 # title='Legend',
+            #                 # itemsizing='constant'
+            #                 # )
+            #             )
 
-                        # Display the chart in Streamlit
-                        # st.write("### Michu - Target vs Actual Comparison")
-                        st.plotly_chart(fig, use_container_width=True)
+            #             # Display the chart in Streamlit
+            #             # st.write("### Michu - Target vs Actual Comparison")
+            #             st.plotly_chart(fig, use_container_width=True)
 
                             
-                        c0ll12, coll22 = st.columns([0.2, 0.8])
-                        with coll22:
-                            def convert_to_float(series):
-                                return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
-                            # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
-                            df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                            df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #             c0ll12, coll22 = st.columns([0.2, 0.8])
+            #             with coll22:
+            #                 def convert_to_float(series):
+            #                     return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
+            #                 # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
+            #                 df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #                 df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
-                            # Group and aggregate the data for each metric using unique IDs
-                            target_grouped = df_target_unique.groupby('District').agg(
-                                {'Collection Target': 'sum'}).reset_index()
-                            actual_grouped = df_actual_unique.groupby('District').agg(
-                                {'Actual Collected': 'sum'}).reset_index()
-                            # Convert decimal columns to float
-                            target_grouped = target_grouped.apply(convert_to_float)
-                            actual_grouped = actual_grouped.apply(convert_to_float)
-                            # Merge the target and actual data on 'District' to align them
-                            merged_df = target_grouped.merge(actual_grouped, on='District', how='left')
+            #                 # Group and aggregate the data for each metric using unique IDs
+            #                 target_grouped = df_target_unique.groupby('District').agg(
+            #                     {'Collection Target': 'sum'}).reset_index()
+            #                 actual_grouped = df_actual_unique.groupby('District').agg(
+            #                     {'Actual Collected': 'sum'}).reset_index()
+            #                 # Convert decimal columns to float
+            #                 target_grouped = target_grouped.apply(convert_to_float)
+            #                 actual_grouped = actual_grouped.apply(convert_to_float)
+            #                 # Merge the target and actual data on 'District' to align them
+            #                 merged_df = target_grouped.merge(actual_grouped, on='District', how='left')
                             
 
-                            # Calculate the aggregated data for each metric
-                            aggregated_data = {
-                                'Collection Target': merged_df['Collection Target'].sum(),
-                                'Actual Collected': merged_df['Actual Collected'].sum()
-                            }
+            #                 # Calculate the aggregated data for each metric
+            #                 aggregated_data = {
+            #                     'Collection Target': merged_df['Collection Target'].sum(),
+            #                     'Actual Collected': merged_df['Actual Collected'].sum()
+            #                 }
 
-                            # Calculate 'Percentage(%)' for each metric
-                            # aggregated_data['Percentage(%) Unique Customer'] = (aggregated_data['Actual Unique Customer'] / aggregated_data['Target Unique Customer'] * 100 if aggregated_data['Target Unique Customer'] != 0 else 0)
-                            # aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account'] * 100 if aggregated_data['Target Number Of Account'] != 0 else 0)
-                            aggregated_data['Percentage(%) Collected Amount'] = (aggregated_data['Actual Collected'] / aggregated_data['Collection Target'] * 100 if aggregated_data['Collection Target'] != 0 else 0)
+            #                 # Calculate 'Percentage(%)' for each metric
+            #                 # aggregated_data['Percentage(%) Unique Customer'] = (aggregated_data['Actual Unique Customer'] / aggregated_data['Target Unique Customer'] * 100 if aggregated_data['Target Unique Customer'] != 0 else 0)
+            #                 # aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account'] * 100 if aggregated_data['Target Number Of Account'] != 0 else 0)
+            #                 aggregated_data['Percentage(%) Collected Amount'] = (aggregated_data['Actual Collected'] / aggregated_data['Collection Target'] * 100 if aggregated_data['Collection Target'] != 0 else 0)
 
 
-                            # Define the metrics
-                            metrics = ['Collected Amount']
+            #                 # Define the metrics
+            #                 metrics = ['Collected Amount']
 
-                            # Create a list of dictionaries for final_df
-                            final_df_data = []
+            #                 # Create a list of dictionaries for final_df
+            #                 final_df_data = []
 
-                            for metric in metrics:
-                                target_value = aggregated_data[f'Collection Target']
-                                actual_value = aggregated_data[f'Actual Collected']
-                                percent_value = aggregated_data[f'Percentage(%) Collected Amount']
+            #                 for metric in metrics:
+            #                     target_value = aggregated_data[f'Collection Target']
+            #                     actual_value = aggregated_data[f'Actual Collected']
+            #                     percent_value = aggregated_data[f'Percentage(%) Collected Amount']
                                 
-                                final_df_data.append({
-                                    'Target': target_value,
-                                    'Actual': actual_value,
-                                    '%': percent_value,
-                                    'Metric': metric
-                                })
+            #                     final_df_data.append({
+            #                         'Target': target_value,
+            #                         'Actual': actual_value,
+            #                         '%': percent_value,
+            #                         'Metric': metric
+            #                     })
 
-                            # Create final_df DataFrame
-                            final_df = pd.DataFrame(final_df_data)
+            #                 # Create final_df DataFrame
+            #                 final_df = pd.DataFrame(final_df_data)
 
-                            # Round the 'Target' and 'Actual' columns to two decimal points
-                            final_df['Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
-                            final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
+            #                 # Round the 'Target' and 'Actual' columns to two decimal points
+            #                 final_df['Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
+            #                 final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
 
-                            # Format '%' with a percentage sign
-                            final_df['%'] = final_df['%'].map(lambda x: f"{x:.2f}%")
-                            # Drop rows where '%' is 'nan%'
-                            filtered_df = final_df[final_df['%'] != 'nan%']
+            #                 # Format '%' with a percentage sign
+            #                 final_df['%'] = final_df['%'].map(lambda x: f"{x:.2f}%")
+            #                 # Drop rows where '%' is 'nan%'
+            #                 filtered_df = final_df[final_df['%'] != 'nan%']
 
-                            # Reset the index and rename it to start from 1
-                            grouped_df_reset = filtered_df.reset_index(drop=True)
-                            grouped_df_reset.index = grouped_df_reset.index + 1
+            #                 # Reset the index and rename it to start from 1
+            #                 grouped_df_reset = filtered_df.reset_index(drop=True)
+            #                 grouped_df_reset.index = grouped_df_reset.index + 1
 
-                            # Apply styling
-                            def highlight_columns(s):
-                                colors = []
-                                for val in s:
-                                    if isinstance(val, str) and '%' in val:
-                                        percentage_value = float(val.strip('%'))
-                                        if percentage_value < 50:
-                                            colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                        elif 50 <= percentage_value < 70:
-                                            colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                        elif percentage_value >= 70:
-                                            colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                                        else:
-                                            colors.append('')
-                                    else:
-                                        colors.append('')  # no color for other values
-                                return colors
+            #                 # Apply styling
+            #                 def highlight_columns(s):
+            #                     colors = []
+            #                     for val in s:
+            #                         if isinstance(val, str) and '%' in val:
+            #                             percentage_value = float(val.strip('%'))
+            #                             if percentage_value < 50:
+            #                                 colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
+            #                             elif 50 <= percentage_value < 70:
+            #                                 colors.append('background-color: #ffff00; color: black; font-weight: bold;')
+            #                             elif percentage_value >= 70:
+            #                                 colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
+            #                             else:
+            #                                 colors.append('')
+            #                         else:
+            #                             colors.append('')  # no color for other values
+            #                     return colors
 
-                            styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
-                                                    .set_properties(**{
-                                                        'text-align': 'center',
-                                                        'font-size': '20px'
-                                                    }) \
-                                                    .set_table_styles([
-                                                        dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-size', '25px'), ('font-weight', 'bold')])
-                                                    ])
+            #                 styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
+            #                                         .set_properties(**{
+            #                                             'text-align': 'center',
+            #                                             'font-size': '20px'
+            #                                         }) \
+            #                                         .set_table_styles([
+            #                                             dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-size', '25px'), ('font-weight', 'bold')])
+            #                                         ])
 
-                            # Convert styled DataFrame to HTML
-                            styled_html = styled_df.to_html()
+            #                 # Convert styled DataFrame to HTML
+            #                 styled_html = styled_df.to_html()
 
-                            # Display the result with custom CSS
-                            # st.write(":orange[Michu(Wabi & Guyya) MTD] (:blue[Month-To-Date]) 👇🏻")
-                            st.write(
-                                    f'<span style="text-decoration: underline;">Michu Collection MTD (<span style="color: #00adef;">Month-To-Date</span>)</span>',
-                                    unsafe_allow_html=True
-                                )
+            #                 # Display the result with custom CSS
+            #                 # st.write(":orange[Michu(Wabi & Guyya) MTD] (:blue[Month-To-Date]) 👇🏻")
+            #                 st.write(
+            #                         f'<span style="text-decoration: underline;">Michu Collection MTD (<span style="color: #00adef;">Month-To-Date</span>)</span>',
+            #                         unsafe_allow_html=True
+            #                     )
                             
-                            st.markdown(styled_html, unsafe_allow_html=True)
+            #                 st.markdown(styled_html, unsafe_allow_html=True)
 
-                            st.write(" ")
-                            st.write(" ")
-                            st.write(" ")
+            #                 st.write(" ")
+            #                 st.write(" ")
+            #                 st.write(" ")
 
                             
                             
-                # -- for role District User --
+            #     # -- for role District User --
 
-                if role == 'District User':
-                    tab1, tab2 = st.tabs(["📈 Aggregate Report", "🗃 Report per Branch"])
-                    with tab1:
+            #     if role == 'District User':
+            #         tab1, tab2 = st.tabs(["📈 Aggregate Report", "🗃 Report per Branch"])
+            #         with tab1:
                         
-                        # with cool1:
-                        df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                        df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #             # with cool1:
+            #             df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #             df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
                         
-                        # Aggregate totals
-                        target_total = df_target_unique['Collection Target'].sum()
-                        actual_total = df_actual_unique['Actual Collected'].sum()
-                        percent_achieved = (actual_total / target_total) * 100 if target_total else 0
+            #             # Aggregate totals
+            #             target_total = df_target_unique['Collection Target'].sum()
+            #             actual_total = df_actual_unique['Actual Collected'].sum()
+            #             percent_achieved = (actual_total / target_total) * 100 if target_total else 0
 
-                        # Format numbers for labels
-                        def format_number(num):
-                            if num >= 1_000_000:
-                                return f"{num / 1_000_000:.2f}M"
-                            elif num >= 1_000:
-                                return f"{num / 1_000:.1f}K"
-                            return f"{num:.0f}"
+            #             # Format numbers for labels
+            #             def format_number(num):
+            #                 if num >= 1_000_000:
+            #                     return f"{num / 1_000_000:.2f}M"
+            #                 elif num >= 1_000:
+            #                     return f"{num / 1_000:.1f}K"
+            #                 return f"{num:.0f}"
 
-                        # Initialize the figure
-                        fig = go.Figure()
+            #             # Initialize the figure
+            #             fig = go.Figure()
 
-                        # Target bar (background bar)
-                        fig.add_trace(go.Bar(
-                            x=[target_total],
-                            y=["YTD Collection"],
-                            orientation='h',
-                            name='Target',
-                            marker=dict(color="#00adef"),
-                            text=[f"Target: {format_number(target_total)}"],
-                            textposition='inside',
-                            hovertemplate='Target: %{x:,.0f}<extra></extra>'
-                        ))
+            #             # Target bar (background bar)
+            #             fig.add_trace(go.Bar(
+            #                 x=[target_total],
+            #                 y=["YTD Collection"],
+            #                 orientation='h',
+            #                 name='Target',
+            #                 marker=dict(color="#00adef"),
+            #                 text=[f"Target: {format_number(target_total)}"],
+            #                 textposition='inside',
+            #                 hovertemplate='Target: %{x:,.0f}<extra></extra>'
+            #             ))
 
-                        # Actual bar (overlay)
-                        fig.add_trace(go.Bar(
-                            x=[actual_total],
-                            y=["YTD Collection"],
-                            orientation='h',
-                            name='Actual',
-                            marker=dict(color='#00ad7c' if percent_achieved >= 100 else '#e38524'),
-                            text=[f"Actual: {format_number(actual_total)} ({percent_achieved:.1f}%)"],
-                            textposition='outside',
-                            hovertemplate='Actual: %{x:,.0f}<br>Performance: ' + f'{percent_achieved:.1f}%<extra></extra>'
-                        ))
+            #             # Actual bar (overlay)
+            #             fig.add_trace(go.Bar(
+            #                 x=[actual_total],
+            #                 y=["YTD Collection"],
+            #                 orientation='h',
+            #                 name='Actual',
+            #                 marker=dict(color='#00ad7c' if percent_achieved >= 100 else '#e38524'),
+            #                 text=[f"Actual: {format_number(actual_total)} ({percent_achieved:.1f}%)"],
+            #                 textposition='outside',
+            #                 hovertemplate='Actual: %{x:,.0f}<br>Performance: ' + f'{percent_achieved:.1f}%<extra></extra>'
+            #             ))
 
-                        # Add vertical performance line (target threshold)
-                        fig.add_shape(
-                            type='line',
-                            x0=target_total, x1=target_total,
-                            y0=-0.4, y1=0.4,
-                            line=dict(color='black', width=2, dash='dash')
-                        )
+            #             # Add vertical performance line (target threshold)
+            #             fig.add_shape(
+            #                 type='line',
+            #                 x0=target_total, x1=target_total,
+            #                 y0=-0.4, y1=0.4,
+            #                 line=dict(color='black', width=2, dash='dash')
+            #             )
 
-                        # Update layout
-                        fig.update_layout(
-                            title="<b>🎯 Target vs Actual Michu Collection - YTD</b>",
-                            # barmode='overlay',
-                            xaxis=dict(showgrid=True, zeroline=True),
-                            yaxis=dict(showticklabels=True),
-                            height=300,
-                            margin=dict(l=60, r=40, t=60, b=40),
-                            legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
-                        )
+            #             # Update layout
+            #             fig.update_layout(
+            #                 title="<b>🎯 Target vs Actual Michu Collection - YTD</b>",
+            #                 # barmode='overlay',
+            #                 xaxis=dict(showgrid=True, zeroline=True),
+            #                 yaxis=dict(showticklabels=True),
+            #                 height=300,
+            #                 margin=dict(l=60, r=40, t=60, b=40),
+            #                 legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
+            #             )
 
-                        # Render in Streamlit
-                        st.plotly_chart(fig, use_container_width=True)
+            #             # Render in Streamlit
+            #             st.plotly_chart(fig, use_container_width=True)
 
 
-                        cool1, cool2 = st.columns([0.2, 0.8])
-                        with cool2:
-                            # Drop duplicates based on target_Id and actual_Id
-                            df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                            df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
-                            def convert_to_float(series):
-                                return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
+            #             cool1, cool2 = st.columns([0.2, 0.8])
+            #             with cool2:
+            #                 # Drop duplicates based on target_Id and actual_Id
+            #                 df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #                 df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #                 def convert_to_float(series):
+            #                     return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
 
-                            # Group and aggregate the data for each metric using unique IDs
-                            target_grouped = df_target_unique.groupby('District').agg(
-                                {'Collection Target': 'sum'}).reset_index()
-                            actual_grouped = df_actual_unique.groupby('District').agg(
-                                {'Actual Collected': 'sum'}).reset_index()
-                            # Convert decimal columns to float
-                            target_grouped = target_grouped.apply(convert_to_float)
-                            actual_grouped = actual_grouped.apply(convert_to_float)
-                            # Merge the target and actual data on 'District' to align them
-                            merged_df = target_grouped.merge(actual_grouped, on='District', how='outer')
+            #                 # Group and aggregate the data for each metric using unique IDs
+            #                 target_grouped = df_target_unique.groupby('District').agg(
+            #                     {'Collection Target': 'sum'}).reset_index()
+            #                 actual_grouped = df_actual_unique.groupby('District').agg(
+            #                     {'Actual Collected': 'sum'}).reset_index()
+            #                 # Convert decimal columns to float
+            #                 target_grouped = target_grouped.apply(convert_to_float)
+            #                 actual_grouped = actual_grouped.apply(convert_to_float)
+            #                 # Merge the target and actual data on 'District' to align them
+            #                 merged_df = target_grouped.merge(actual_grouped, on='District', how='outer')
                             
 
-                            # Calculate the aggregated data for each metric
-                            aggregated_data = {
-                                'Collection Target': merged_df['Collection Target'].sum(),
-                                'Actual Collected': merged_df['Actual Collected'].sum(),
-                            }
+            #                 # Calculate the aggregated data for each metric
+            #                 aggregated_data = {
+            #                     'Collection Target': merged_df['Collection Target'].sum(),
+            #                     'Actual Collected': merged_df['Actual Collected'].sum(),
+            #                 }
 
-                            # Calculate 'Percentage(%)' for each metric
-                            aggregated_data['Percentage(%) Collection Amount'] = (aggregated_data['Actual Collected'] / aggregated_data['Collection Target'] * 100 if aggregated_data['Collection Target'] != 0 else 0)
-                            # # aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account'] * 100 if aggregated_data['Target Number Of Account'] != 0 else 0)
-                            # aggregated_data['Percentage(%) Disbursed Amount'] = (aggregated_data['Actual Disbursed Amount'] / aggregated_data['Target Disbursed Amount'] * 100 if aggregated_data['Target Disbursed Amount'] != 0 else 0)
+            #                 # Calculate 'Percentage(%)' for each metric
+            #                 aggregated_data['Percentage(%) Collection Amount'] = (aggregated_data['Actual Collected'] / aggregated_data['Collection Target'] * 100 if aggregated_data['Collection Target'] != 0 else 0)
+            #                 # # aggregated_data['Percentage(%) Number Of Account'] = (aggregated_data['Actual Number Of Account'] / aggregated_data['Target Number Of Account'] * 100 if aggregated_data['Target Number Of Account'] != 0 else 0)
+            #                 # aggregated_data['Percentage(%) Disbursed Amount'] = (aggregated_data['Actual Disbursed Amount'] / aggregated_data['Target Disbursed Amount'] * 100 if aggregated_data['Target Disbursed Amount'] != 0 else 0)
 
-                            # Define the metrics
-                            metrics = ['Collected Amount']
+            #                 # Define the metrics
+            #                 metrics = ['Collected Amount']
                             
 
-                            # Create a list of dictionaries for final_df
-                            final_df_data = []
+            #                 # Create a list of dictionaries for final_df
+            #                 final_df_data = []
 
-                            for metric in metrics:
-                                target_value = aggregated_data[f'Collection Target']
-                                actual_value = aggregated_data[f'Actual Collected']
-                                percent_value = aggregated_data[f'Percentage(%) Collection Amount']
+            #                 for metric in metrics:
+            #                     target_value = aggregated_data[f'Collection Target']
+            #                     actual_value = aggregated_data[f'Actual Collected']
+            #                     percent_value = aggregated_data[f'Percentage(%) Collection Amount']
                                 
-                                final_df_data.append({
-                                    'Target': target_value,
-                                    'Actual': actual_value,
-                                    '%': percent_value,
-                                    'Metric': metric
-                                })
+            #                     final_df_data.append({
+            #                         'Target': target_value,
+            #                         'Actual': actual_value,
+            #                         '%': percent_value,
+            #                         'Metric': metric
+            #                     })
 
-                            # Create final_df DataFrame
-                            final_df = pd.DataFrame(final_df_data)
+            #                 # Create final_df DataFrame
+            #                 final_df = pd.DataFrame(final_df_data)
 
-                            # Round the 'Target' and 'Actual' columns to two decimal points
-                            final_df['Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
-                            final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
+            #                 # Round the 'Target' and 'Actual' columns to two decimal points
+            #                 final_df['Target'] = final_df['Target'].map(lambda x: f"{x:,.0f}")
+            #                 final_df['Actual'] = final_df['Actual'].map(lambda x: f"{x:,.0f}")
 
-                            # Format '%' with a percentage sign
-                            final_df['%'] = final_df['%'].map(lambda x: f"{x:.2f}%")
-                            # Drop rows where '%' is 'nan%'
-                            filtered_df = final_df[final_df['%'] != 'nan%']
+            #                 # Format '%' with a percentage sign
+            #                 final_df['%'] = final_df['%'].map(lambda x: f"{x:.2f}%")
+            #                 # Drop rows where '%' is 'nan%'
+            #                 filtered_df = final_df[final_df['%'] != 'nan%']
 
-                            # Reset the index and rename it to start from 1
-                            grouped_df_reset = filtered_df.reset_index(drop=True)
-                            grouped_df_reset.index = grouped_df_reset.index + 1
+            #                 # Reset the index and rename it to start from 1
+            #                 grouped_df_reset = filtered_df.reset_index(drop=True)
+            #                 grouped_df_reset.index = grouped_df_reset.index + 1
 
-                            # Apply styling
-                            def highlight_columns(s):
-                                colors = []
-                                for val in s:
-                                    if isinstance(val, str) and '%' in val:
-                                        percentage_value = float(val.strip('%'))
-                                        if percentage_value < 50:
-                                            colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                        elif 50 <= percentage_value < 70:
-                                            colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                        else:
-                                            colors.append('background-color: #008000; color: black; font-weight: bold;')  # green color for values 70% and above
-                                    else:
-                                        colors.append('')  # no color for other values
-                                return colors
+            #                 # Apply styling
+            #                 def highlight_columns(s):
+            #                     colors = []
+            #                     for val in s:
+            #                         if isinstance(val, str) and '%' in val:
+            #                             percentage_value = float(val.strip('%'))
+            #                             if percentage_value < 50:
+            #                                 colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
+            #                             elif 50 <= percentage_value < 70:
+            #                                 colors.append('background-color: #ffff00; color: black; font-weight: bold;')
+            #                             else:
+            #                                 colors.append('background-color: #008000; color: black; font-weight: bold;')  # green color for values 70% and above
+            #                         else:
+            #                             colors.append('')  # no color for other values
+            #                     return colors
 
-                            styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
-                                                    .set_properties(**{
-                                                        'text-align': 'center',
-                                                        'font-size': '20px'
-                                                    }) \
-                                                    .set_table_styles([
-                                                        dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-size', '25px'), ('font-weight', 'bold')])
-                                                    ])
+            #                 styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0) \
+            #                                         .set_properties(**{
+            #                                             'text-align': 'center',
+            #                                             'font-size': '20px'
+            #                                         }) \
+            #                                         .set_table_styles([
+            #                                             dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-size', '25px'), ('font-weight', 'bold')])
+            #                                         ])
 
-                            # Convert styled DataFrame to HTML
-                            styled_html = styled_df.to_html()
+            #                 # Convert styled DataFrame to HTML
+            #                 styled_html = styled_df.to_html()
 
-                            # Display the result with custom CSS
-                            # st.write(":orange[Michu(Wabi & Guyya) YTD] (:blue[Year-To-Date]) 👇🏻")
-                            st.write(
-                                f'<span style="text-decoration: underline;">Michu Collection YTD (<span style="color: #00adef;">Year-To-Date</span>)</span>',
-                                unsafe_allow_html=True
-                            )
+            #                 # Display the result with custom CSS
+            #                 # st.write(":orange[Michu(Wabi & Guyya) YTD] (:blue[Year-To-Date]) 👇🏻")
+            #                 st.write(
+            #                     f'<span style="text-decoration: underline;">Michu Collection YTD (<span style="color: #00adef;">Year-To-Date</span>)</span>',
+            #                     unsafe_allow_html=True
+            #                 )
 
-                            st.markdown(styled_html, unsafe_allow_html=True)
+            #                 st.markdown(styled_html, unsafe_allow_html=True)
 
-                            st.write(" ")
-                            st.write(" ")
-                            st.write(" ")
+            #                 st.write(" ")
+            #                 st.write(" ")
+            #                 st.write(" ")
 
                             
 
 
 
 
-                    with tab2:
-                        colll1, colll2 = st.columns([0.1, 0.9])
+            #         with tab2:
+            #             colll1, colll2 = st.columns([0.1, 0.9])
                     
-                        with colll2:
-                            # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
-                            df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                            df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #             with colll2:
+            #                 # Drop duplicates based on target_Id and actual_Id to ensure unique IDs for summation
+            #                 df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #                 df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
-                            # Ensure all numerical values are converted to floats
-                            df_target_unique.loc[:,'Collection Target'] = df_target_unique['Collection Target'].astype(float)
-                            df_actual_unique.loc[:,'Actual Collected'] = df_actual_unique['Actual Collected'].astype(float)
+            #                 # Ensure all numerical values are converted to floats
+            #                 df_target_unique.loc[:,'Collection Target'] = df_target_unique['Collection Target'].astype(float)
+            #                 df_actual_unique.loc[:,'Actual Collected'] = df_actual_unique['Actual Collected'].astype(float)
 
-                            # Group and aggregate the data for each metric using unique IDs
-                            target_grouped = df_target_unique.groupby(['District', 'Branch']).agg(
-                                {'Collection Target': 'sum'}).reset_index()
-                            actual_grouped = df_actual_unique.groupby(['District', 'Branch']).agg(
-                                {'Actual Collected': 'sum'}).reset_index()
+            #                 # Group and aggregate the data for each metric using unique IDs
+            #                 target_grouped = df_target_unique.groupby(['District', 'Branch']).agg(
+            #                     {'Collection Target': 'sum'}).reset_index()
+            #                 actual_grouped = df_actual_unique.groupby(['District', 'Branch']).agg(
+            #                     {'Actual Collected': 'sum'}).reset_index()
 
-                            # Merge the target and actual data on 'District' and 'Branch' to align them
-                            grouped_df = target_grouped.merge(actual_grouped, on=['District', 'Branch'], how='outer')
-                            grouped_df = grouped_df.fillna(0)
+            #                 # Merge the target and actual data on 'District' and 'Branch' to align them
+            #                 grouped_df = target_grouped.merge(actual_grouped, on=['District', 'Branch'], how='outer')
+            #                 grouped_df = grouped_df.fillna(0)
 
-                            grouped_df['Percentage(%)'] = grouped_df.apply(
-                                lambda row: (
-                                    np.nan if row['Actual Collected'] == 0 and row['Collection Target'] == 0
-                                    else np.inf if row['Collection Target'] == 0 and row['Actual Collected'] != 0
-                                    else (row['Actual Collected'] / row['Collection Target']) * 100
-                                ),
-                                axis=1
-                            )
+            #                 grouped_df['Percentage(%)'] = grouped_df.apply(
+            #                     lambda row: (
+            #                         np.nan if row['Actual Collected'] == 0 and row['Collection Target'] == 0
+            #                         else np.inf if row['Collection Target'] == 0 and row['Actual Collected'] != 0
+            #                         else (row['Actual Collected'] / row['Collection Target']) * 100
+            #                     ),
+            #                     axis=1
+            #                 )
 
-                            # Calculate 'Percentage(%)'
-                            # grouped_df['Percentage(%)'] = (grouped_df['Actual Collected'] / grouped_df['Collection Target']) * 100
+            #                 # Calculate 'Percentage(%)'
+            #                 # grouped_df['Percentage(%)'] = (grouped_df['Actual Collected'] / grouped_df['Collection Target']) * 100
 
-                            # Format 'Percentage(%)' with a percentage sign
-                            grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+            #                 # Format 'Percentage(%)' with a percentage sign
+            #                 grouped_df['Percentage(%)'] = grouped_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
 
-                            # Calculate the totals for 'Collection Target' and 'Actual Collected'
-                            total_target_disbursed = grouped_df['Collection Target'].sum()
-                            total_actual_disbursed = grouped_df['Actual Collected'].sum()
-                            total_percentage = (total_actual_disbursed / total_target_disbursed) * 100 if total_target_disbursed !=0 else 0
+            #                 # Calculate the totals for 'Collection Target' and 'Actual Collected'
+            #                 total_target_disbursed = grouped_df['Collection Target'].sum()
+            #                 total_actual_disbursed = grouped_df['Actual Collected'].sum()
+            #                 total_percentage = (total_actual_disbursed / total_target_disbursed) * 100 if total_target_disbursed !=0 else 0
 
-                            # Create a summary row
-                            summary_row = pd.DataFrame([{
-                                'District': 'Total',
-                                'Branch': '',
-                                'Collection Target': total_target_disbursed,
-                                'Actual Collected': total_actual_disbursed,
-                                'Percentage(%)': f"{total_percentage:.2f}%"
-                            }])
+            #                 # Create a summary row
+            #                 summary_row = pd.DataFrame([{
+            #                     'District': 'Total',
+            #                     'Branch': '',
+            #                     'Collection Target': total_target_disbursed,
+            #                     'Actual Collected': total_actual_disbursed,
+            #                     'Percentage(%)': f"{total_percentage:.2f}%"
+            #                 }])
 
-                            # Append the summary row to the grouped DataFrame
-                            grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
+            #                 # Append the summary row to the grouped DataFrame
+            #                 grouped_df = pd.concat([grouped_df, summary_row], ignore_index=True)
 
-                            # Format 'Collection Target' and 'Actual Collected' to no decimal places
-                            grouped_df['Collection Target'] = grouped_df['Collection Target'].map(lambda x: f"{x:,.0f}")
-                            grouped_df['Actual Collected'] = grouped_df['Actual Collected'].map(lambda x: f"{x:,.0f}")
+            #                 # Format 'Collection Target' and 'Actual Collected' to no decimal places
+            #                 grouped_df['Collection Target'] = grouped_df['Collection Target'].map(lambda x: f"{x:,.0f}")
+            #                 grouped_df['Actual Collected'] = grouped_df['Actual Collected'].map(lambda x: f"{x:,.0f}")
 
-                            # Drop rows where 'Percentage(%)' is 'nan%'
-                            filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
+            #                 # Drop rows where 'Percentage(%)' is 'nan%'
+            #                 filtered_df = grouped_df[grouped_df['Percentage(%)'] != 'nan%']
 
-                            # Reset the index and rename it to start from 1
-                            grouped_df_reset = filtered_df.reset_index(drop=True)
-                            grouped_df_reset.index = grouped_df_reset.index + 1
+            #                 # Reset the index and rename it to start from 1
+            #                 grouped_df_reset = filtered_df.reset_index(drop=True)
+            #                 grouped_df_reset.index = grouped_df_reset.index + 1
 
-                            # Apply styling
-                            def highlight_columns(s):
-                                colors = []
-                                for val in s:
-                                    if isinstance(val, str) and '%' in val:
-                                        percentage_value = float(val.strip('%'))
-                                        if percentage_value < 50:
-                                            colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                        elif 50 <= percentage_value < 70:
-                                            colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                        elif percentage_value >= 70:
-                                            colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                                        else:
-                                            colors.append('')
-                                    else:
-                                        colors.append('')  # no color for other values
-                                return colors
+            #                 # Apply styling
+            #                 def highlight_columns(s):
+            #                     colors = []
+            #                     for val in s:
+            #                         if isinstance(val, str) and '%' in val:
+            #                             percentage_value = float(val.strip('%'))
+            #                             if percentage_value < 50:
+            #                                 colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
+            #                             elif 50 <= percentage_value < 70:
+            #                                 colors.append('background-color: #ffff00; color: black; font-weight: bold;')
+            #                             elif percentage_value >= 70:
+            #                                 colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
+            #                             else:
+            #                                 colors.append('')
+            #                         else:
+            #                             colors.append('')  # no color for other values
+            #                     return colors
 
-                            # Define function to highlight the Total row
-                            def highlight_total_row(s):
-                                is_total = s['District'] == 'Total'
-                                return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
+            #                 # Define function to highlight the Total row
+            #                 def highlight_total_row(s):
+            #                     is_total = s['District'] == 'Total'
+            #                     return ['background-color: #00adef; text-align: center' if is_total else 'text-align: center' for _ in s]
 
-                            # Center-align data and apply styling
-                            styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
-                                                            .apply(highlight_total_row, axis=1)\
-                                                            .set_properties(**{'text-align': 'center'})
+            #                 # Center-align data and apply styling
+            #                 styled_df = grouped_df_reset.style.apply(highlight_columns, axis=0)\
+            #                                                 .apply(highlight_total_row, axis=1)\
+            #                                                 .set_properties(**{'text-align': 'center'})
 
-                            # Display the result
-                            # st.write(":blue[Michu(Wabi & Guyya) Disbursed Amount]  👇🏻")
-                            st.write(
-                                f'<span style="text-decoration: underline;">Michu  <span style="color: #00adef;">Collected Amount</span></span>',
-                                unsafe_allow_html=True
-                            )
-                            st.write(styled_df)
+            #                 # Display the result
+            #                 # st.write(":blue[Michu(Wabi & Guyya) Disbursed Amount]  👇🏻")
+            #                 st.write(
+            #                     f'<span style="text-decoration: underline;">Michu  <span style="color: #00adef;">Collected Amount</span></span>',
+            #                     unsafe_allow_html=True
+            #                 )
+            #                 st.write(styled_df)
 
-                        # Michu-Kiyya
+            #             # Michu-Kiyya
 
 
                     
 
 
 
-                    with tab1:
-                        ccol1, ccol2 = st.columns(2)
-                        # with ccol1:
-                        # Get the current date
-                        current_date = datetime.now().date()
+            #         with tab1:
+            #             ccol1, ccol2 = st.columns(2)
+            #             # with ccol1:
+            #             # Get the current date
+            #             current_date = datetime.now().date()
 
-                        # Calculate the start and end date of the current month
-                        start_of_month = current_date.replace(day=1)
-                        end_of_month = (start_of_month + pd.DateOffset(months=1) - pd.DateOffset(days=1)).date()
+            #             # Calculate the start and end date of the current month
+            #             start_of_month = current_date.replace(day=1)
+            #             end_of_month = (start_of_month + pd.DateOffset(months=1) - pd.DateOffset(days=1)).date()
 
-                        # Filter the dataframe based on the selected date range
-                        df_filtered = df_merged[
-                            (df_merged["Target Date"].dt.date >= start_of_month) & 
-                            (df_merged["Target Date"].dt.date <= end_of_month)
-                        ].copy()
+            #             # Filter the dataframe based on the selected date range
+            #             df_filtered = df_merged[
+            #                 (df_merged["Target Date"].dt.date >= start_of_month) & 
+            #                 (df_merged["Target Date"].dt.date <= end_of_month)
+            #             ].copy()
 
-                        df_filtered_actual = df_merged[
-                            (df_merged["Collected Date"].dt.date >= start_of_month) & 
-                            (df_merged["Collected Date"].dt.date <= end_of_month)
-                        ].copy()
+            #             df_filtered_actual = df_merged[
+            #                 (df_merged["Collected Date"].dt.date >= start_of_month) & 
+            #                 (df_merged["Collected Date"].dt.date <= end_of_month)
+            #             ].copy()
 
-                        # Drop duplicates before aggregating if needed (optional)
-                        df_filtered = df_filtered.drop_duplicates(subset='target_Id')
-                        df_filtered_actual = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #             # Drop duplicates before aggregating if needed (optional)
+            #             df_filtered = df_filtered.drop_duplicates(subset='target_Id')
+            #             df_filtered_actual = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
                         
-                        # Group by unique target_Id and sum the target columns
-                        target_grouped = df_filtered.groupby('target_Id').agg({
-                            'Collection Target': 'sum'
-                        }).sum()
+            #             # Group by unique target_Id and sum the target columns
+            #             target_grouped = df_filtered.groupby('target_Id').agg({
+            #                 'Collection Target': 'sum'
+            #             }).sum()
             
-                        # Group by unique actual_Id and sum the actual columns
-                        actual_grouped = df_filtered_actual.groupby('actual_Id').agg({
-                            'Actual Collected': 'sum'
-                        }).sum()
-                        # Aggregate the data to get total values
+            #             # Group by unique actual_Id and sum the actual columns
+            #             actual_grouped = df_filtered_actual.groupby('actual_Id').agg({
+            #                 'Actual Collected': 'sum'
+            #             }).sum()
+            #             # Aggregate the data to get total values
                         
-                        totals = {
-                            'Collection Target': target_grouped['Collection Target'],
-                            'Actual Collected': actual_grouped['Actual Collected'],
-                        }
+            #             totals = {
+            #                 'Collection Target': target_grouped['Collection Target'],
+            #                 'Actual Collected': actual_grouped['Actual Collected'],
+            #             }
 
-                        # Create the bar chart
-                        fig = go.Figure()
+            #             # Create the bar chart
+            #             fig = go.Figure()
 
 
-                        # Add bars for Disbursed Amount on secondary y-axis
-                        # Function to format numbers with commas
-                        def format_number(num):
-                            if num >= 1_000_000:
-                                return f"{num / 1_000_000:,.2f}M"
-                            return f"{num:,.2f}"
-                        fig.add_trace(go.Bar(
-                            x=['Collection Target'],
-                            y=[totals['Collection Target']],
-                            name='Target',
-                            marker_color='#00adef',
-                            yaxis='y1',
-                            text=[format_number(totals['Collection Target'])],
-                            textposition='outside',
-                            showlegend=True
-                        ))
+            #             # Add bars for Disbursed Amount on secondary y-axis
+            #             # Function to format numbers with commas
+            #             def format_number(num):
+            #                 if num >= 1_000_000:
+            #                     return f"{num / 1_000_000:,.2f}M"
+            #                 return f"{num:,.2f}"
+            #             fig.add_trace(go.Bar(
+            #                 x=['Collection Target'],
+            #                 y=[totals['Collection Target']],
+            #                 name='Target',
+            #                 marker_color='#00adef',
+            #                 yaxis='y1',
+            #                 text=[format_number(totals['Collection Target'])],
+            #                 textposition='outside',
+            #                 showlegend=True
+            #             ))
 
-                        fig.add_trace(go.Bar(
-                            x=['Actual Collected'],
-                            y=[totals['Actual Collected']],
-                            name='Actual',
-                            marker_color='#e38524',
-                            yaxis='y2',
-                            text=[format_number(totals['Actual Collected'])],
-                            textposition='outside',
-                            showlegend=True
-                        ))
+            #             fig.add_trace(go.Bar(
+            #                 x=['Actual Collected'],
+            #                 y=[totals['Actual Collected']],
+            #                 name='Actual',
+            #                 marker_color='#e38524',
+            #                 yaxis='y2',
+            #                 text=[format_number(totals['Actual Collected'])],
+            #                 textposition='outside',
+            #                 showlegend=True
+            #             ))
 
-                        # Update the layout for better visualization
-                        current_month_name = datetime.now().strftime("%B")
-                        fig.update_layout(
-                            # title=f'Michu(Wabi & Guyya), Month-To-Date (<span style="color: #00adef;">{current_month_name} </span>)',
+            #             # Update the layout for better visualization
+            #             current_month_name = datetime.now().strftime("%B")
+            #             fig.update_layout(
+            #                 # title=f'Michu(Wabi & Guyya), Month-To-Date (<span style="color: #00adef;">{current_month_name} </span>)',
                             
-                            title=f'<span style="text-decoration: underline;"> Michu Collection Month-To-Date (<span style="color: #00adef; text-decoration: underline;">{current_month_name} </span>) </span>',
-                            xaxis=dict(title='Metrics'),
-                            yaxis=dict(
-                                title='Collection Target',
-                                titlefont=dict(color='black'),
-                                tickfont=dict(color='black'),
-                            ),
-                            yaxis2=dict(
-                                title='Collected Amount',
-                                titlefont=dict(color='black'),
-                                tickfont=dict(color='black'),
-                                anchor='free',
-                                overlaying='y',
-                                side='right',
-                                position=1
-                            ),
-                            barmode='group',  # Group the bars side by side
-                            bargap=0.2,  # Gap between bars of adjacent location coordinates
-                            bargroupgap=0.1, # Gap between bars of the same location coordinate
-                            margin=dict(t=80),
-                            # legend=dict(
-                            # title='Legend',
-                            # itemsizing='constant'
-                            # )
-                        )
+            #                 title=f'<span style="text-decoration: underline;"> Michu Collection Month-To-Date (<span style="color: #00adef; text-decoration: underline;">{current_month_name} </span>) </span>',
+            #                 xaxis=dict(title='Metrics'),
+            #                 yaxis=dict(
+            #                     title='Collection Target',
+            #                     titlefont=dict(color='black'),
+            #                     tickfont=dict(color='black'),
+            #                 ),
+            #                 yaxis2=dict(
+            #                     title='Collected Amount',
+            #                     titlefont=dict(color='black'),
+            #                     tickfont=dict(color='black'),
+            #                     anchor='free',
+            #                     overlaying='y',
+            #                     side='right',
+            #                     position=1
+            #                 ),
+            #                 barmode='group',  # Group the bars side by side
+            #                 bargap=0.2,  # Gap between bars of adjacent location coordinates
+            #                 bargroupgap=0.1, # Gap between bars of the same location coordinate
+            #                 margin=dict(t=80),
+            #                 # legend=dict(
+            #                 # title='Legend',
+            #                 # itemsizing='constant'
+            #                 # )
+            #             )
 
-                        # Display the chart in Streamlit
-                        # st.write("### Michu - Target vs Actual Comparison")
-                        st.plotly_chart(fig, use_container_width=True)
+            #             # Display the chart in Streamlit
+            #             # st.write("### Michu - Target vs Actual Comparison")
+            #             st.plotly_chart(fig, use_container_width=True)
 
 
-                        col1, col2 = st.columns([0.2, 0.8])
-                        with col2:
-                            # Drop duplicates based on target_Id and actual_Id
-                            df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                            df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #             col1, col2 = st.columns([0.2, 0.8])
+            #             with col2:
+            #                 # Drop duplicates based on target_Id and actual_Id
+            #                 df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #                 df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
                             
-                            def convert_to_float(series):
-                                return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
+            #                 def convert_to_float(series):
+            #                     return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
 
-                            disbursed_amount_df = df_target_unique.groupby(['District']).agg(
-                                {'Collection Target': 'sum'}).reset_index()
-                            actual_disbursed_amount_df = df_actual_unique.groupby(['District']).agg(
-                                {'Actual Collected': 'sum'}).reset_index()
-                            # Convert decimals to float
-                            disbursed_amount_df['Collection Target'] = convert_to_float(disbursed_amount_df['Collection Target'])
+            #                 disbursed_amount_df = df_target_unique.groupby(['District']).agg(
+            #                     {'Collection Target': 'sum'}).reset_index()
+            #                 actual_disbursed_amount_df = df_actual_unique.groupby(['District']).agg(
+            #                     {'Actual Collected': 'sum'}).reset_index()
+            #                 # Convert decimals to float
+            #                 disbursed_amount_df['Collection Target'] = convert_to_float(disbursed_amount_df['Collection Target'])
                             
-                            actual_disbursed_amount_df['Actual Collected'] = convert_to_float(actual_disbursed_amount_df['Actual Collected'])
+            #                 actual_disbursed_amount_df['Actual Collected'] = convert_to_float(actual_disbursed_amount_df['Actual Collected'])
                             
-                            disbursed_amount_df = disbursed_amount_df.merge(actual_disbursed_amount_df, on=['District'], how='left')
+            #                 disbursed_amount_df = disbursed_amount_df.merge(actual_disbursed_amount_df, on=['District'], how='left')
 
-                            def calculate_percentage_dis(row):
-                                if row['Collection Target'] == 0:
-                                    if row['Actual Collected'] == 0:
-                                        return np.nan  # Case 1: Both Target and Actual are 0
-                                    else:
-                                        return np.inf  # Case 2: Target is 0 but Actual is not
-                                else:
-                                    return (row['Actual Collected'] / row['Collection Target']) * 100  # Case 3: Safe to calculate
+            #                 def calculate_percentage_dis(row):
+            #                     if row['Collection Target'] == 0:
+            #                         if row['Actual Collected'] == 0:
+            #                             return np.nan  # Case 1: Both Target and Actual are 0
+            #                         else:
+            #                             return np.inf  # Case 2: Target is 0 but Actual is not
+            #                     else:
+            #                         return (row['Actual Collected'] / row['Collection Target']) * 100  # Case 3: Safe to calculate
 
-                            # Apply the function to each row
-                            disbursed_amount_df['Percentage(%)'] = disbursed_amount_df.apply(calculate_percentage_dis, axis=1)
+            #                 # Apply the function to each row
+            #                 disbursed_amount_df['Percentage(%)'] = disbursed_amount_df.apply(calculate_percentage_dis, axis=1)
 
-                            disbursed_amount_df['Metric'] = 'Collected Amount'
+            #                 disbursed_amount_df['Metric'] = 'Collected Amount'
 
                     
-                            # account_df = account_df.rename(columns={
-                            #     'Target Number Of Account': 'Target', 'Actual Number Of Account': 'Actual'})
-                            disbursed_amount_df = disbursed_amount_df.rename(columns={
-                                'Collection Target': 'Target', 'Actual Collected': 'Actual'})
+            #                 # account_df = account_df.rename(columns={
+            #                 #     'Target Number Of Account': 'Target', 'Actual Number Of Account': 'Actual'})
+            #                 disbursed_amount_df = disbursed_amount_df.rename(columns={
+            #                     'Collection Target': 'Target', 'Actual Collected': 'Actual'})
 
-                            # Round the 'Target' and 'Actual' columns to 2 decimal points
-                            disbursed_amount_df['Target'] = disbursed_amount_df['Target'].map(lambda x: f"{x:,.0f}")
-                            disbursed_amount_df['Actual'] = disbursed_amount_df['Actual'].map(lambda x: f"{x:,.0f}")
+            #                 # Round the 'Target' and 'Actual' columns to 2 decimal points
+            #                 disbursed_amount_df['Target'] = disbursed_amount_df['Target'].map(lambda x: f"{x:,.0f}")
+            #                 disbursed_amount_df['Actual'] = disbursed_amount_df['Actual'].map(lambda x: f"{x:,.0f}")
 
-                            # Format 'Percentage(%)' with a percentage sign
-                            disbursed_amount_df['Percentage(%)'] = disbursed_amount_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+            #                 # Format 'Percentage(%)' with a percentage sign
+            #                 disbursed_amount_df['Percentage(%)'] = disbursed_amount_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
 
-                            # Reset the index and rename it to start from 1
-                            combined_df_reset = disbursed_amount_df.reset_index(drop=True)
-                            combined_df_reset.index = combined_df_reset.index + 1
+            #                 # Reset the index and rename it to start from 1
+            #                 combined_df_reset = disbursed_amount_df.reset_index(drop=True)
+            #                 combined_df_reset.index = combined_df_reset.index + 1
 
-                            # Apply styling
-                            def highlight_columns(s):
-                                colors = []
-                                for val in s:
-                                    if isinstance(val, str) and '%' in val:
-                                        percentage_value = float(val.strip('%'))
-                                        if percentage_value < 50:
-                                            colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                        elif 50 <= percentage_value < 70:
-                                            colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                        elif percentage_value >= 70:
-                                            colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                                        else:
-                                            colors.append('')
-                                    else:
-                                        colors.append('')  # no color for other values
-                                return colors
+            #                 # Apply styling
+            #                 def highlight_columns(s):
+            #                     colors = []
+            #                     for val in s:
+            #                         if isinstance(val, str) and '%' in val:
+            #                             percentage_value = float(val.strip('%'))
+            #                             if percentage_value < 50:
+            #                                 colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
+            #                             elif 50 <= percentage_value < 70:
+            #                                 colors.append('background-color: #ffff00; color: black; font-weight: bold;')
+            #                             elif percentage_value >= 70:
+            #                                 colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
+            #                             else:
+            #                                 colors.append('')
+            #                         else:
+            #                             colors.append('')  # no color for other values
+            #                     return colors
                             
-                            styled_df = combined_df_reset.style.apply(highlight_columns, axis=0) \
-                                                            .set_properties(**{
-                                                                'text-align': 'center'
-                                                            }) \
-                                                            .set_table_styles([
-                                                                dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-weight', 'bold')])
-                                                            ])
-                            # Convert styled DataFrame to HTML
-                            styled_html = styled_df.to_html()
+            #                 styled_df = combined_df_reset.style.apply(highlight_columns, axis=0) \
+            #                                                 .set_properties(**{
+            #                                                     'text-align': 'center'
+            #                                                 }) \
+            #                                                 .set_table_styles([
+            #                                                     dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-weight', 'bold')])
+            #                                                 ])
+            #                 # Convert styled DataFrame to HTML
+            #                 styled_html = styled_df.to_html()
 
-                            # Display the result
-                            # st.write(f":orange[Michu(Wabi & Guyya), Month-To-Date] (:blue[{current_month_name}]) 👇🏻")
-                            st.write(
-                                    f'<span style="text-decoration: underline;">Michu Collection Month-To-Date (<span style="color: #00adef;">{current_month_name}</span>)</span>',
-                                    unsafe_allow_html=True
-                                )
-                            st.write(styled_html, unsafe_allow_html=True)
+            #                 # Display the result
+            #                 # st.write(f":orange[Michu(Wabi & Guyya), Month-To-Date] (:blue[{current_month_name}]) 👇🏻")
+            #                 st.write(
+            #                         f'<span style="text-decoration: underline;">Michu Collection Month-To-Date (<span style="color: #00adef;">{current_month_name}</span>)</span>',
+            #                         unsafe_allow_html=True
+            #                     )
+            #                 st.write(styled_html, unsafe_allow_html=True)
 
 
 
-                            st.write("")
-                            st.write("")
+            #                 st.write("")
+            #                 st.write("")
 
                        
                         
 
-                if role == 'Branch User':
-                    ccool1, ccool2 = st.columns(2)
-                    # with ccool1:
-                    df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                    df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #     if role == 'Branch User':
+            #         ccool1, ccool2 = st.columns(2)
+            #         # with ccool1:
+            #         df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #         df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
                     
-                    # Aggregate totals
-                    target_total = df_target_unique['Collection Target'].sum()
-                    actual_total = df_actual_unique['Actual Collected'].sum()
-                    percent_achieved = (actual_total / target_total) * 100 if target_total else 0
+            #         # Aggregate totals
+            #         target_total = df_target_unique['Collection Target'].sum()
+            #         actual_total = df_actual_unique['Actual Collected'].sum()
+            #         percent_achieved = (actual_total / target_total) * 100 if target_total else 0
 
-                    # Format numbers for labels
-                    def format_number(num):
-                        if num >= 1_000_000:
-                            return f"{num / 1_000_000:.2f}M"
-                        elif num >= 1_000:
-                            return f"{num / 1_000:.1f}K"
-                        return f"{num:.0f}"
+            #         # Format numbers for labels
+            #         def format_number(num):
+            #             if num >= 1_000_000:
+            #                 return f"{num / 1_000_000:.2f}M"
+            #             elif num >= 1_000:
+            #                 return f"{num / 1_000:.1f}K"
+            #             return f"{num:.0f}"
 
-                    # Initialize the figure
-                    fig = go.Figure()
+            #         # Initialize the figure
+            #         fig = go.Figure()
 
-                    # Target bar (background bar)
-                    fig.add_trace(go.Bar(
-                        x=[target_total],
-                        y=["YTD Collection"],
-                        orientation='h',
-                        name='Target',
-                        marker=dict(color="#00adef"),
-                        text=[f"Target: {format_number(target_total)}"],
-                        textposition='inside',
-                        hovertemplate='Target: %{x:,.0f}<extra></extra>'
-                    ))
+            #         # Target bar (background bar)
+            #         fig.add_trace(go.Bar(
+            #             x=[target_total],
+            #             y=["YTD Collection"],
+            #             orientation='h',
+            #             name='Target',
+            #             marker=dict(color="#00adef"),
+            #             text=[f"Target: {format_number(target_total)}"],
+            #             textposition='inside',
+            #             hovertemplate='Target: %{x:,.0f}<extra></extra>'
+            #         ))
 
-                    # Actual bar (overlay)
-                    fig.add_trace(go.Bar(
-                        x=[actual_total],
-                        y=["YTD Collection"],
-                        orientation='h',
-                        name='Actual',
-                        marker=dict(color='#00ad7c' if percent_achieved >= 100 else '#e38524'),
-                        text=[f"Actual: {format_number(actual_total)} ({percent_achieved:.1f}%)"],
-                        textposition='outside',
-                        hovertemplate='Actual: %{x:,.0f}<br>Performance: ' + f'{percent_achieved:.1f}%<extra></extra>'
-                    ))
+            #         # Actual bar (overlay)
+            #         fig.add_trace(go.Bar(
+            #             x=[actual_total],
+            #             y=["YTD Collection"],
+            #             orientation='h',
+            #             name='Actual',
+            #             marker=dict(color='#00ad7c' if percent_achieved >= 100 else '#e38524'),
+            #             text=[f"Actual: {format_number(actual_total)} ({percent_achieved:.1f}%)"],
+            #             textposition='outside',
+            #             hovertemplate='Actual: %{x:,.0f}<br>Performance: ' + f'{percent_achieved:.1f}%<extra></extra>'
+            #         ))
 
-                    # Add vertical performance line (target threshold)
-                    fig.add_shape(
-                        type='line',
-                        x0=target_total, x1=target_total,
-                        y0=-0.4, y1=0.4,
-                        line=dict(color='black', width=2, dash='dash')
-                    )
+            #         # Add vertical performance line (target threshold)
+            #         fig.add_shape(
+            #             type='line',
+            #             x0=target_total, x1=target_total,
+            #             y0=-0.4, y1=0.4,
+            #             line=dict(color='black', width=2, dash='dash')
+            #         )
 
-                    # Update layout
-                    fig.update_layout(
-                        title="<b>🎯 Target vs Actual Michu Collection - YTD</b>",
-                        # barmode='overlay',
-                        xaxis=dict(showgrid=True, zeroline=True),
-                        yaxis=dict(showticklabels=True),
-                        height=300,
-                        margin=dict(l=60, r=40, t=60, b=40),
-                        legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
-                    )
+            #         # Update layout
+            #         fig.update_layout(
+            #             title="<b>🎯 Target vs Actual Michu Collection - YTD</b>",
+            #             # barmode='overlay',
+            #             xaxis=dict(showgrid=True, zeroline=True),
+            #             yaxis=dict(showticklabels=True),
+            #             height=300,
+            #             margin=dict(l=60, r=40, t=60, b=40),
+            #             legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
+            #         )
 
-                    # Render in Streamlit
-                    st.plotly_chart(fig, use_container_width=True)
+            #         # Render in Streamlit
+            #         st.plotly_chart(fig, use_container_width=True)
 
 
 
-                    col11, col22 = st.columns([0.2, 0.8])
+            #         col11, col22 = st.columns([0.2, 0.8])
 
-                    with col22:
-                        # Drop duplicates based on target_Id and actual_Id
-                        df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                        df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #         with col22:
+            #             # Drop duplicates based on target_Id and actual_Id
+            #             df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #             df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
-                        # Function to convert decimal.Decimal to float
-                        def convert_to_float(series):
-                            return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
+            #             # Function to convert decimal.Decimal to float
+            #             def convert_to_float(series):
+            #                 return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
 
-                        disbursed_amount_df = df_target_unique.groupby(['District', 'Branch']).agg(
-                            {'Collection Target': 'sum'}).reset_index()
-                        actual_disbursed_amount_df = df_actual_unique.groupby(['District', 'Branch']).agg(
-                            {'Actual Collected': 'sum'}).reset_index()
+            #             disbursed_amount_df = df_target_unique.groupby(['District', 'Branch']).agg(
+            #                 {'Collection Target': 'sum'}).reset_index()
+            #             actual_disbursed_amount_df = df_actual_unique.groupby(['District', 'Branch']).agg(
+            #                 {'Actual Collected': 'sum'}).reset_index()
 
-                        # Convert decimals to float
-                        disbursed_amount_df['Collection Target'] = convert_to_float(disbursed_amount_df['Collection Target'])
-                        actual_disbursed_amount_df['Actual Collected'] = convert_to_float(actual_disbursed_amount_df['Actual Collected'])
+            #             # Convert decimals to float
+            #             disbursed_amount_df['Collection Target'] = convert_to_float(disbursed_amount_df['Collection Target'])
+            #             actual_disbursed_amount_df['Actual Collected'] = convert_to_float(actual_disbursed_amount_df['Actual Collected'])
 
-                        disbursed_amount_df = disbursed_amount_df.merge(actual_disbursed_amount_df, on=['District', 'Branch'], how='left')
+            #             disbursed_amount_df = disbursed_amount_df.merge(actual_disbursed_amount_df, on=['District', 'Branch'], how='left')
 
-                        def calculate_percentage_dis(row):
-                            if row['Collection Target'] == 0:
-                                if row['Actual Collected'] == 0:
-                                    return np.nan  # Case 1: Both Target and Actual are 0
-                                else:
-                                    return np.inf  # Case 2: Target is 0 but Actual is not
-                            else:
-                                return (row['Actual Collected'] / row['Collection Target']) * 100  # Case 3: Safe to calculate
+            #             def calculate_percentage_dis(row):
+            #                 if row['Collection Target'] == 0:
+            #                     if row['Actual Collected'] == 0:
+            #                         return np.nan  # Case 1: Both Target and Actual are 0
+            #                     else:
+            #                         return np.inf  # Case 2: Target is 0 but Actual is not
+            #                 else:
+            #                     return (row['Actual Collected'] / row['Collection Target']) * 100  # Case 3: Safe to calculate
 
-                        # Apply the function to each row
-                        disbursed_amount_df['Percentage(%)'] = disbursed_amount_df.apply(calculate_percentage_dis, axis=1)
+            #             # Apply the function to each row
+            #             disbursed_amount_df['Percentage(%)'] = disbursed_amount_df.apply(calculate_percentage_dis, axis=1)
 
-                        # disbursed_amount_df['Percentage(%)'] = (
-                        #     disbursed_amount_df['Actual Collected'] / disbursed_amount_df['Collection Target']) * 100
-                        disbursed_amount_df['Metric'] = 'Collected Amount'
+            #             # disbursed_amount_df['Percentage(%)'] = (
+            #             #     disbursed_amount_df['Actual Collected'] / disbursed_amount_df['Collection Target']) * 100
+            #             disbursed_amount_df['Metric'] = 'Collected Amount'
 
-                        disbursed_amount_df = disbursed_amount_df.rename(columns={
-                            'Collection Target': 'Target', 'Actual Collected': 'Actual'})
+            #             disbursed_amount_df = disbursed_amount_df.rename(columns={
+            #                 'Collection Target': 'Target', 'Actual Collected': 'Actual'})
 
-                        disbursed_amount_df['Target'] = disbursed_amount_df['Target'].map(lambda x: f"{x:,.0f}")
-                        disbursed_amount_df['Actual'] = disbursed_amount_df['Actual'].map(lambda x: f"{x:,.0f}")
+            #             disbursed_amount_df['Target'] = disbursed_amount_df['Target'].map(lambda x: f"{x:,.0f}")
+            #             disbursed_amount_df['Actual'] = disbursed_amount_df['Actual'].map(lambda x: f"{x:,.0f}")
 
-                        # Format 'Percentage(%)' with a percentage sign
-                        disbursed_amount_df['Percentage(%)'] = disbursed_amount_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+            #             # Format 'Percentage(%)' with a percentage sign
+            #             disbursed_amount_df['Percentage(%)'] = disbursed_amount_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
 
-                        # Reset the index and rename it to start from 1
-                        combined_df_reset = disbursed_amount_df.reset_index(drop=True)
-                        combined_df_reset.index = combined_df_reset.index + 1
+            #             # Reset the index and rename it to start from 1
+            #             combined_df_reset = disbursed_amount_df.reset_index(drop=True)
+            #             combined_df_reset.index = combined_df_reset.index + 1
 
-                        # Apply styling
-                        def highlight_columns(s):
-                            colors = []
-                            for val in s:
-                                if isinstance(val, str) and '%' in val:
-                                    percentage_value = float(val.strip('%'))
-                                    if percentage_value < 50:
-                                        colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                    elif 50 <= percentage_value < 70:
-                                        colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                    elif percentage_value >= 70:
-                                        colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                                    else:
-                                        colors.append('')
-                                else:
-                                    colors.append('')  # no color for other values
-                            return colors
+            #             # Apply styling
+            #             def highlight_columns(s):
+            #                 colors = []
+            #                 for val in s:
+            #                     if isinstance(val, str) and '%' in val:
+            #                         percentage_value = float(val.strip('%'))
+            #                         if percentage_value < 50:
+            #                             colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
+            #                         elif 50 <= percentage_value < 70:
+            #                             colors.append('background-color: #ffff00; color: black; font-weight: bold;')
+            #                         elif percentage_value >= 70:
+            #                             colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
+            #                         else:
+            #                             colors.append('')
+            #                     else:
+            #                         colors.append('')  # no color for other values
+            #                 return colors
 
-                        styled_df = combined_df_reset.style.apply(highlight_columns, axis=0) \
-                                                            .set_properties(**{
-                                                                'text-align': 'center'
-                                                            }) \
-                                                            .set_table_styles([
-                                                                dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-weight', 'bold')])
-                                                            ])
-                        # Convert styled DataFrame to HTML
-                        styled_html = styled_df.to_html()
+            #             styled_df = combined_df_reset.style.apply(highlight_columns, axis=0) \
+            #                                                 .set_properties(**{
+            #                                                     'text-align': 'center'
+            #                                                 }) \
+            #                                                 .set_table_styles([
+            #                                                     dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-weight', 'bold')])
+            #                                                 ])
+            #             # Convert styled DataFrame to HTML
+            #             styled_html = styled_df.to_html()
 
-                        # Display the result
-                        # st.write(":orange[Michu(Wabi & Guyya) YTD] (:blue[Year-To-Date]) 👇🏻")
-                        st.write(
-                                f'<span style="text-decoration: underline;">Michu Collection YTD (<span style="color: #00adef;">Year-To-Date</span>)</span>',
-                                unsafe_allow_html=True
-                            )
-                        # st.title='Target vs Actual (<span style="color: #00adef;">Year to Date </span>)'
-                        st.write(styled_html, unsafe_allow_html=True)
+            #             # Display the result
+            #             # st.write(":orange[Michu(Wabi & Guyya) YTD] (:blue[Year-To-Date]) 👇🏻")
+            #             st.write(
+            #                     f'<span style="text-decoration: underline;">Michu Collection YTD (<span style="color: #00adef;">Year-To-Date</span>)</span>',
+            #                     unsafe_allow_html=True
+            #                 )
+            #             # st.title='Target vs Actual (<span style="color: #00adef;">Year to Date </span>)'
+            #             st.write(styled_html, unsafe_allow_html=True)
 
-                        st.write(" ")
-                        st.write(" ")
-                        st.write(" ")
+            #             st.write(" ")
+            #             st.write(" ")
+            #             st.write(" ")
 
 
 
                     
 
                         
-                    # with ccool1:
-                    # Get the current date
-                    # current_date = datetime.now().date()
+            #         # with ccool1:
+            #         # Get the current date
+            #         # current_date = datetime.now().date()
 
-                    # Get the current date
-                    current_date = datetime.now().date()
+            #         # Get the current date
+            #         current_date = datetime.now().date()
 
-                    # Calculate the start and end date of the current month
-                    start_of_month = current_date.replace(day=1)
-                    end_of_month = (start_of_month + pd.DateOffset(months=1) - pd.DateOffset(days=1)).date()
+            #         # Calculate the start and end date of the current month
+            #         start_of_month = current_date.replace(day=1)
+            #         end_of_month = (start_of_month + pd.DateOffset(months=1) - pd.DateOffset(days=1)).date()
 
-                    # Filter the dataframe based on the selected date range
-                    df_filtered = df_merged[
-                        (df_merged["Target Date"].dt.date >= start_of_month) & 
-                        (df_merged["Target Date"].dt.date <= end_of_month)
-                    ].copy()
+            #         # Filter the dataframe based on the selected date range
+            #         df_filtered = df_merged[
+            #             (df_merged["Target Date"].dt.date >= start_of_month) & 
+            #             (df_merged["Target Date"].dt.date <= end_of_month)
+            #         ].copy()
 
-                    df_filtered_actual = df_merged[
-                        (df_merged["Collected Date"].dt.date >= start_of_month) & 
-                        (df_merged["Collected Date"].dt.date <= end_of_month)
-                    ].copy()
+            #         df_filtered_actual = df_merged[
+            #             (df_merged["Collected Date"].dt.date >= start_of_month) & 
+            #             (df_merged["Collected Date"].dt.date <= end_of_month)
+            #         ].copy()
                     
 
-                    df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                    df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
+            #         df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #         df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
                     
-                    # Group by unique target_Id and sum the target columns
-                    target_grouped = df_target_unique.groupby('target_Id').agg({
-                        'Collection Target': 'sum'
-                    }).sum()
+            #         # Group by unique target_Id and sum the target columns
+            #         target_grouped = df_target_unique.groupby('target_Id').agg({
+            #             'Collection Target': 'sum'
+            #         }).sum()
 
-                    # Group by unique actual_Id and sum the actual columns
-                    actual_grouped = df_actual_unique.groupby('actual_Id').agg({
-                        'Actual Collected': 'sum'
-                    }).sum()
-                    # Aggregate the data to get total values
+            #         # Group by unique actual_Id and sum the actual columns
+            #         actual_grouped = df_actual_unique.groupby('actual_Id').agg({
+            #             'Actual Collected': 'sum'
+            #         }).sum()
+            #         # Aggregate the data to get total values
                     
-                    totals = {
-                        'Collection Target': target_grouped['Collection Target'],
-                        'Actual Collected': actual_grouped['Actual Collected'],
-                    }
+            #         totals = {
+            #             'Collection Target': target_grouped['Collection Target'],
+            #             'Actual Collected': actual_grouped['Actual Collected'],
+            #         }
 
-                    # Create the bar chart
-                    fig = go.Figure()
-
-
-                    # Add bars for Disbursed Amount on secondary y-axis
-                    # Function to format numbers with commas
-                    def format_number(num):
-                        if num >= 1_000_000:
-                            return f"{num / 1_000_000:,.2f}M"
-                        return f"{num:,.2f}"
-                    fig.add_trace(go.Bar(
-                        x=['Collection Target'],
-                        y=[totals['Collection Target']],
-                        name='Target',
-                        marker_color='#00adef',
-                        yaxis='y2',
-                        text=[format_number(totals['Collection Target'])],
-                        textposition='outside',
-                        showlegend=True
-                    ))
-
-                    fig.add_trace(go.Bar(
-                        x=['Actual Collected'],
-                        y=[totals['Actual Collected']],
-                        name='Actual',
-                        marker_color='#e38524',
-                        yaxis='y2',
-                        text=[format_number(totals['Actual Collected'])],
-                        textposition='outside',
-                        showlegend=True
-                    ))
-
-                    # Update the layout for better visualization
-                    current_month_name = datetime.now().strftime("%B")
-                    fig.update_layout(
-                        # title=f'Michu(Wabi & Guyya), Month-To-Date (<span style="color: #00adef;">{current_month_name} </span>)',
-                        title=f'<span style="text-decoration: underline;"> Michu Collection  Month-To-Date (<span style="color: #00adef; text-decoration: underline;">{current_month_name} </span>) </span>',
-                        xaxis=dict(title='Metrics'),
-                        yaxis=dict(
-                            title='Unique Customer',
-                            titlefont=dict(color='black'),
-                            tickfont=dict(color='black'),
-                        ),
-                        yaxis2=dict(
-                            title='Collected Amount',
-                            titlefont=dict(color='black'),
-                            tickfont=dict(color='black'),
-                            anchor='free',
-                            overlaying='y',
-                            side='right',
-                            position=1
-                        ),
-                        barmode='group',  # Group the bars side by side
-                        bargap=0.2,  # Gap between bars of adjacent location coordinates
-                        bargroupgap=0.1, # Gap between bars of the same location coordinate
-                        margin=dict(t=80),
-                        # legend=dict(
-                        # title='Legend',
-                        # itemsizing='constant'
-                        # )
-                    )
-
-                    # Display the chart in Streamlit
-                    # st.write("### Michu - Target vs Actual Comparison")
-                    st.plotly_chart(fig, use_container_width=True)
+            #         # Create the bar chart
+            #         fig = go.Figure()
 
 
+            #         # Add bars for Disbursed Amount on secondary y-axis
+            #         # Function to format numbers with commas
+            #         def format_number(num):
+            #             if num >= 1_000_000:
+            #                 return f"{num / 1_000_000:,.2f}M"
+            #             return f"{num:,.2f}"
+            #         fig.add_trace(go.Bar(
+            #             x=['Collection Target'],
+            #             y=[totals['Collection Target']],
+            #             name='Target',
+            #             marker_color='#00adef',
+            #             yaxis='y2',
+            #             text=[format_number(totals['Collection Target'])],
+            #             textposition='outside',
+            #             showlegend=True
+            #         ))
+
+            #         fig.add_trace(go.Bar(
+            #             x=['Actual Collected'],
+            #             y=[totals['Actual Collected']],
+            #             name='Actual',
+            #             marker_color='#e38524',
+            #             yaxis='y2',
+            #             text=[format_number(totals['Actual Collected'])],
+            #             textposition='outside',
+            #             showlegend=True
+            #         ))
+
+            #         # Update the layout for better visualization
+            #         current_month_name = datetime.now().strftime("%B")
+            #         fig.update_layout(
+            #             # title=f'Michu(Wabi & Guyya), Month-To-Date (<span style="color: #00adef;">{current_month_name} </span>)',
+            #             title=f'<span style="text-decoration: underline;"> Michu Collection  Month-To-Date (<span style="color: #00adef; text-decoration: underline;">{current_month_name} </span>) </span>',
+            #             xaxis=dict(title='Metrics'),
+            #             yaxis=dict(
+            #                 title='Unique Customer',
+            #                 titlefont=dict(color='black'),
+            #                 tickfont=dict(color='black'),
+            #             ),
+            #             yaxis2=dict(
+            #                 title='Collected Amount',
+            #                 titlefont=dict(color='black'),
+            #                 tickfont=dict(color='black'),
+            #                 anchor='free',
+            #                 overlaying='y',
+            #                 side='right',
+            #                 position=1
+            #             ),
+            #             barmode='group',  # Group the bars side by side
+            #             bargap=0.2,  # Gap between bars of adjacent location coordinates
+            #             bargroupgap=0.1, # Gap between bars of the same location coordinate
+            #             margin=dict(t=80),
+            #             # legend=dict(
+            #             # title='Legend',
+            #             # itemsizing='constant'
+            #             # )
+            #         )
+
+            #         # Display the chart in Streamlit
+            #         # st.write("### Michu - Target vs Actual Comparison")
+            #         st.plotly_chart(fig, use_container_width=True)
 
 
 
 
-                    coll11, coll22 = st.columns([0.2, 0.8])
-                    with coll22:
-                        # Drop duplicates based on target_Id and actual_Id
-                        df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
-                        df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
-
-                        # Function to convert decimal.Decimal to float
-                        def convert_to_float(series):
-                            return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
-
-                        disbursed_amount_df = df_target_unique.groupby(['District', 'Branch']).agg(
-                            {'Collection Target': 'sum'}).reset_index()
-                        actual_disbursed_amount_df = df_actual_unique.groupby(['District', 'Branch']).agg(
-                            {'Actual Collected': 'sum'}).reset_index()
 
 
-                        # Convert decimals to float
-                        disbursed_amount_df['Collection Target'] = convert_to_float(disbursed_amount_df['Collection Target'])
-                        actual_disbursed_amount_df['Actual Collected'] = convert_to_float(actual_disbursed_amount_df['Actual Collected'])
+            #         coll11, coll22 = st.columns([0.2, 0.8])
+            #         with coll22:
+            #             # Drop duplicates based on target_Id and actual_Id
+            #             df_target_unique = df_filtered.drop_duplicates(subset='target_Id')
+            #             df_actual_unique = df_filtered_actual.drop_duplicates(subset='actual_Id')
 
-                        disbursed_amount_df = disbursed_amount_df.merge(actual_disbursed_amount_df, on=['District', 'Branch'], how='left')
+            #             # Function to convert decimal.Decimal to float
+            #             def convert_to_float(series):
+            #                 return series.apply(lambda x: float(x) if isinstance(x, decimal.Decimal) else x)
 
-                        def calculate_percentage_dis(row):
-                            if row['Collection Target'] == 0:
-                                if row['Actual Collected'] == 0:
-                                    return np.nan  # Case 1: Both Target and Actual are 0
-                                else:
-                                    return np.inf  # Case 2: Target is 0 but Actual is not
-                            else:
-                                return (row['Actual Collected'] / row['Collection Target']) * 100  # Case 3: Safe to calculate
-
-                        # Apply the function to each row
-                        disbursed_amount_df['Percentage(%)'] = disbursed_amount_df.apply(calculate_percentage_dis, axis=1)
-
-                        disbursed_amount_df['Metric'] = 'Collected Amount'
-
-                        disbursed_amount_df = disbursed_amount_df.rename(columns={
-                            'Collection Target': 'Target', 'Actual Collected': 'Actual'})
+            #             disbursed_amount_df = df_target_unique.groupby(['District', 'Branch']).agg(
+            #                 {'Collection Target': 'sum'}).reset_index()
+            #             actual_disbursed_amount_df = df_actual_unique.groupby(['District', 'Branch']).agg(
+            #                 {'Actual Collected': 'sum'}).reset_index()
 
 
-                        disbursed_amount_df['Target'] = disbursed_amount_df['Target'].map(lambda x: f"{x:,.0f}")
-                        disbursed_amount_df['Actual'] = disbursed_amount_df['Actual'].map(lambda x: f"{x:,.0f}")
+            #             # Convert decimals to float
+            #             disbursed_amount_df['Collection Target'] = convert_to_float(disbursed_amount_df['Collection Target'])
+            #             actual_disbursed_amount_df['Actual Collected'] = convert_to_float(actual_disbursed_amount_df['Actual Collected'])
 
-                        # Format 'Percentage(%)' with a percentage sign
-                        disbursed_amount_df['Percentage(%)'] = disbursed_amount_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+            #             disbursed_amount_df = disbursed_amount_df.merge(actual_disbursed_amount_df, on=['District', 'Branch'], how='left')
 
-                        # Reset the index and rename it to start from 1
-                        combined_df_reset = disbursed_amount_df.reset_index(drop=True)
-                        combined_df_reset.index = combined_df_reset.index + 1
+            #             def calculate_percentage_dis(row):
+            #                 if row['Collection Target'] == 0:
+            #                     if row['Actual Collected'] == 0:
+            #                         return np.nan  # Case 1: Both Target and Actual are 0
+            #                     else:
+            #                         return np.inf  # Case 2: Target is 0 but Actual is not
+            #                 else:
+            #                     return (row['Actual Collected'] / row['Collection Target']) * 100  # Case 3: Safe to calculate
 
-                        # Apply styling
-                        def highlight_columns(s):
-                            colors = []
-                            for val in s:
-                                if isinstance(val, str) and '%' in val:
-                                    percentage_value = float(val.strip('%'))
-                                    if percentage_value < 50:
-                                        colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
-                                    elif 50 <= percentage_value < 70:
-                                        colors.append('background-color: #ffff00; color: black; font-weight: bold;')
-                                    elif percentage_value >= 70:
-                                        colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
-                                    else:
-                                        colors.append('') 
-                                else:
-                                    colors.append('')  # no color for other values
-                            return colors
+            #             # Apply the function to each row
+            #             disbursed_amount_df['Percentage(%)'] = disbursed_amount_df.apply(calculate_percentage_dis, axis=1)
 
-                        styled_df = combined_df_reset.style.apply(highlight_columns, axis=0) \
-                                                            .set_properties(**{
-                                                                'text-align': 'center'
-                                                            }) \
-                                                            .set_table_styles([
-                                                                dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-weight', 'bold')])
-                                                            ])
-                        # Convert styled DataFrame to HTML
-                        styled_html = styled_df.to_html()
+            #             disbursed_amount_df['Metric'] = 'Collected Amount'
 
-                        # Display the result
-                        # st.write(f":orange[Michu(Wabi & Guyya), Month-To-Date] (:blue[{current_month_name}]) 👇🏻")
-                        st.write(
-                                f'<span style="text-decoration: underline;">Michu Collection  Month-To-Date (<span style="color: #00adef;">{current_month_name}</span>)</span>',
-                                unsafe_allow_html=True
-                            )
-                        # st.title='Target vs Actual (<span style="color: #00adef;">Year to Date </span>)'
-                        st.write(styled_html, unsafe_allow_html=True)
-
-                        st.write(" ")
-                        st.write(" ")
-                        st.write(" ")
+            #             disbursed_amount_df = disbursed_amount_df.rename(columns={
+            #                 'Collection Target': 'Target', 'Actual Collected': 'Actual'})
 
 
-            except Exception as e:
-                traceback.print_exc()
-                st.error(f"An error occurred while loading data: {e}")
-            # finally:
-            #     if db_instance:
-            #         db_instance.close_connection()
-            # Auto-refresh interval (in seconds)
-            refresh_interval = 600  # 5 minutes
-            st_autorefresh(interval=refresh_interval * 1000, key="Michu report dash")
+            #             disbursed_amount_df['Target'] = disbursed_amount_df['Target'].map(lambda x: f"{x:,.0f}")
+            #             disbursed_amount_df['Actual'] = disbursed_amount_df['Actual'].map(lambda x: f"{x:,.0f}")
+
+            #             # Format 'Percentage(%)' with a percentage sign
+            #             disbursed_amount_df['Percentage(%)'] = disbursed_amount_df['Percentage(%)'].map(lambda x: f"{x:.2f}%")
+
+            #             # Reset the index and rename it to start from 1
+            #             combined_df_reset = disbursed_amount_df.reset_index(drop=True)
+            #             combined_df_reset.index = combined_df_reset.index + 1
+
+            #             # Apply styling
+            #             def highlight_columns(s):
+            #                 colors = []
+            #                 for val in s:
+            #                     if isinstance(val, str) and '%' in val:
+            #                         percentage_value = float(val.strip('%'))
+            #                         if percentage_value < 50:
+            #                             colors.append('background-color: #FF0000; color: black; font-weight: bold;')  # red color for values below 50%
+            #                         elif 50 <= percentage_value < 70:
+            #                             colors.append('background-color: #ffff00; color: black; font-weight: bold;')
+            #                         elif percentage_value >= 70:
+            #                             colors.append('background-color: #008000; color: black; font-weight: bold;')  # blue color for values 50% and above
+            #                         else:
+            #                             colors.append('') 
+            #                     else:
+            #                         colors.append('')  # no color for other values
+            #                 return colors
+
+            #             styled_df = combined_df_reset.style.apply(highlight_columns, axis=0) \
+            #                                                 .set_properties(**{
+            #                                                     'text-align': 'center'
+            #                                                 }) \
+            #                                                 .set_table_styles([
+            #                                                     dict(selector='th', props=[('text-align', 'center'), ('background-color', '#00adef'), ('font-weight', 'bold')])
+            #                                                 ])
+            #             # Convert styled DataFrame to HTML
+            #             styled_html = styled_df.to_html()
+
+            #             # Display the result
+            #             # st.write(f":orange[Michu(Wabi & Guyya), Month-To-Date] (:blue[{current_month_name}]) 👇🏻")
+            #             st.write(
+            #                     f'<span style="text-decoration: underline;">Michu Collection  Month-To-Date (<span style="color: #00adef;">{current_month_name}</span>)</span>',
+            #                     unsafe_allow_html=True
+            #                 )
+            #             # st.title='Target vs Actual (<span style="color: #00adef;">Year to Date </span>)'
+            #             st.write(styled_html, unsafe_allow_html=True)
+
+            #             st.write(" ")
+            #             st.write(" ")
+            #             st.write(" ")
+
+
+            # except Exception as e:
+            #     traceback.print_exc()
+            #     st.error(f"An error occurred while loading data: {e}")
+            # # finally:
+            # #     if db_instance:
+            # #         db_instance.close_connection()
+            # # Auto-refresh interval (in seconds)
+            # refresh_interval = 600  # 5 minutes
+            # st_autorefresh(interval=refresh_interval * 1000, key="Michu report dash")
 
 
 

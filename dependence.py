@@ -5338,6 +5338,31 @@ def upload_to_target(df):
 
 
 
+def upload_to_colltarget(df):
+    try:
+        insert_query = """
+            INSERT INTO target_past_collection (branch_code, collection_target, target_date)
+            VALUES (%s, %s, %s)
+            """
+        data_to_insert = [tuple(x) for x in df[['branch_code', 'collection_target', 'target_date']].values.tolist()]
+        # Ensure data_to_insert is not empty
+        if data_to_insert:
+            # Make sure data_to_insert is a list of tuples
+            if all(isinstance(item, tuple) for item in data_to_insert):
+                rows_inserted = db_ops.insert_many(insert_query, data_to_insert)
+                st.success(f"{rows_inserted} rows uploaded successfully.")
+                return True
+            else:
+                st.error("Data to insert should be a list of tuples.")
+        else:
+            st.warning("No data to insert into the unique_intersection table.")
+    except Exception as e:
+        st.error(f"Error can't upload data: {e}")
+        # Print a full stack trace for debugging
+        print("Database fetch error:", e)
+        traceback.print_exc()  # This prints the full error trace to the terminal
+
+
 def any_target_date_exists_conv(df):
      # Format the dates using the format_target_date function
     formatted_dates = tuple(df['convdisbursed_date'].apply(format_target_date).tolist())
